@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>EasyMDE Standalone</title>
+    <style>
+        body { margin: 0; }
+        .md-export-title { border-top: 1px solid #d0d7de; margin: 0; padding: 0.5rem 1rem; font-size: 0.75rem; letter-spacing: 0.04em; color: #6e7781; background: #f6f8fa; }
+        .md-export-output { width: 100%; box-sizing: border-box; padding: 1rem; font-family: monospace; field-sizing: content; border: none; resize: none; }
+    </style>
+</head>
+<body>
+
+    <textarea id="easymde-target"></textarea>
+
+    <h2 class="md-export-title">MARKDOWN 2-WAY EDITABLE</h2>
+    <textarea class="md-export-output" id="easymde-markdown-output" rows="14" spellcheck="false"></textarea>
+
+    <script type="module">
+        // Use the package's self-contained dist bundle (one CodeMirror 5 inside),
+        // not jsDelivr's /+esm build: that build compiles each CodeMirror addon/mode
+        // subpath separately and inlines a private CodeMirror copy into every one,
+        // so the gfm mode & co. register on copies the editor never sees and all
+        // Markdown highlighting silently disappears. The bundle is UMD; imported as
+        // a module it takes the browser-global branch and exposes window.EasyMDE.
+        import 'https://cdn.jsdelivr.net/npm/easymde@2.21.0/dist/easymde.min.js';
+        const EasyMDE = window.EasyMDE;
+
+        // EasyMDE ships its stylesheet (which also bundles the CodeMirror 5 theme)
+        // as a separate CSS file, injected from JS so the demo's CDN references
+        // all live together beside the import above.
+        const cssLink = document.createElement('link');
+        cssLink.rel = 'stylesheet';
+        cssLink.href = 'https://cdn.jsdelivr.net/npm/easymde@2.21.0/dist/easymde.min.css';
+        document.head.appendChild(cssLink);
+
+        const output = document.getElementById('easymde-markdown-output');
+
+        const content = [
+            '# Markdown demo',
+            '',
+            'A paragraph with **bold**, *italic*, `inline code`, and a [link](https://example.com).',
+            '',
+            '- Bullet one',
+            '- Bullet two',
+            '',
+            '1. First',
+            '2. Second',
+            '',
+            '> A blockquote.',
+            '',
+            '```js',
+            "console.log('Hello, Markdown!')",
+            '```',
+        ].join('\n');
+
+        // EasyMDE is a Markdown *source* editor built on CodeMirror 5 — the document
+        // it holds already IS the Markdown, highlighted (not rendered) as you type.
+        // No toolbar / statusbar; no spellchecker / autofocus,
+        // and no Font Awesome auto-download (only the disabled toolbar would use it).
+        const easymde = new EasyMDE({
+            element: document.getElementById('easymde-target'),
+            initialValue: content,
+            toolbar: false,
+            status: false,
+            spellChecker: false,
+            autofocus: false,
+            autoDownloadFontAwesome: false,
+            lineWrapping: true,
+        });
+
+        // Guards against the editor -> markdown -> editor update echoing back.
+        let syncing = false;
+
+        // EasyMDE edits plain Markdown text, so the document *is* the export.
+        const renderMarkdown = () => {
+            if (syncing) return;
+            output.value = easymde.value();
+        };
+
+        easymde.codemirror.on('change', renderMarkdown);
+
+        // Markdown -> editor: replace the whole document with the edited text.
+        output.addEventListener('input', () => {
+            syncing = true;
+            easymde.value(output.value);
+            syncing = false;
+        });
+
+        renderMarkdown();
+    </script>
+
+</body>
+</html>

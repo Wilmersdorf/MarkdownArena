@@ -1,0 +1,2521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Markdown Arena — Compare 24 Markdown Editors Side by Side</title>
+    <link rel="icon" href="icons/favicon.svg" type="image/svg+xml">
+    <link rel="mask-icon" href="icons/favicon.svg" color="#2563eb">
+    <link rel="apple-touch-icon" href="icons/favicon.svg">
+
+    <meta name="description" content="Compare 24 Markdown editors side by side: TipTap, ProseMirror, Lexical, CodeMirror, Monaco and more. Live demos, Markdown round-trip, math support and licenses.">
+    <link rel="canonical" href="https://markdownarena.com/">
+    <meta name="theme-color" content="#2563eb">
+
+    <meta property="og:site_name" content="Markdown Arena">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://markdownarena.com/">
+    <meta property="og:title" content="Markdown Arena — Compare 24 Markdown Editors Side by Side">
+    <meta property="og:description" content="Compare 24 Markdown editors side by side: TipTap, ProseMirror, Lexical, CodeMirror, Monaco and more. Live demos, Markdown round-trip, math support and licenses.">
+    <meta property="og:image" content="https://markdownarena.com/og.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Markdown Arena — logos of 24 Markdown editors compared side by side">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Markdown Arena — Compare 24 Markdown Editors Side by Side">
+    <meta name="twitter:description" content="Compare 24 Markdown editors side by side: TipTap, ProseMirror, Lexical, CodeMirror, Monaco and more. Live demos, Markdown round-trip, math support and licenses.">
+    <meta name="twitter:image" content="https://markdownarena.com/og.png">
+    <meta name="twitter:creator" content="@wilmers_dorf">
+
+    <link rel="preconnect" href="https://ga.jspm.io" crossorigin>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <style>
+        html { height: 100%; }
+        body {
+            font-family: system-ui, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f4f6f8;
+            box-sizing: border-box;
+            min-height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        .site-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            padding: 0.6rem 1rem;
+        }
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 0.55rem;
+            /* Shrinkable: when the row gets tight the title text wraps inside
+               this slot (its longest word is the floor) instead of overflowing. */
+            min-width: 0;
+        }
+        .site-logo {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.1em;
+            height: 2rem;
+            padding: 0 0.5rem;
+            flex: none;
+            border-radius: 5px;
+            background: linear-gradient(135deg, #2563eb, #7c3aed);
+            color: #fff;
+            border: 1px solid transparent;
+            font-family: inherit;
+            font-size: 1rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            cursor: pointer;
+            user-select: none;
+        }
+        .site-logo__arrow {
+            font-weight: 700;
+            line-height: 1;
+        }
+        .page-title {
+            margin: 0;
+            font-size: 1.1rem;
+            font-weight: 700;
+            letter-spacing: -0.01em;
+            color: #24292e;
+            line-height: 1.2;
+            /* Invisible while the title fits on one line (its slot shrinks to
+               the text), but whenever a tight header wraps it onto two lines —
+               at ANY viewport width — they read as a centered block. */
+            text-align: center;
+        }
+        .page-title__link {
+            margin: 0;
+            padding: 0;
+            border: none;
+            background: none;
+            font: inherit;
+            color: inherit;
+            text-align: inherit;
+            cursor: pointer;
+        }
+        .site-links {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .site-links a,
+        .site-links .share-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 2rem;
+            height: 2rem;
+            padding: 0;
+            border: none;
+            background: none;
+            cursor: pointer;
+            border-radius: 6px;
+            color: #57606a;
+            transition: background 0.15s ease, color 0.15s ease;
+        }
+        .site-links a:hover,
+        .site-links .share-btn:hover { background: #e3e8ee; color: #1d4ed8; }
+        .site-links .share-btn.is-copied { background: #dafbe1; color: #1a7f37; }
+        .site-links svg { width: 1.25rem; height: 1.25rem; }
+
+        /* ---- Arena stepper (header add/remove control) ---- */
+        .arena-ctrl {
+            display: flex;
+            align-items: center;
+            flex-shrink: 0;
+            border: 1px solid #d0d7de;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        .arena-ctrl__btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 2rem;
+            height: 2rem;
+            padding: 0;
+            border: none;
+            background: none;
+            color: #57606a;
+            font-size: 1.1rem;
+            line-height: 1;
+            cursor: pointer;
+            transition: background 0.15s ease;
+        }
+        .arena-ctrl__btn:hover:not(:disabled) { background: #e3e8ee; }
+        .arena-ctrl__btn:disabled { color: #afb8c1; cursor: default; }
+        .arena-ctrl__count {
+            padding: 0 0.6rem;
+            border-left: 1px solid #d0d7de;
+            border-right: 1px solid #d0d7de;
+            font-size: 0.85rem;
+            color: #57606a;
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+        }
+        /* Below ~480px tighten the header so brand + stepper + share/GitHub/X
+           icons share one row on a small phone: the stepper keeps just its
+           number (the word "arena(s)" is dropped), the gaps shrink and the
+           title (see .brand) may wrap onto a second line within its slot
+           (centered via .page-title). The icon buttons carry
+           ~0.375rem of invisible hit-area padding each side; negative margins
+           pull it out of the layout so the gap before the icons and the right
+           page edge measure the same as the header's text-edged gaps. */
+        @media (max-width: 480px) {
+            .arena-ctrl__word { display: none; }
+            .site-header { gap: 0.5rem; padding: 0.6rem; }
+            .page-title { font-size: 1rem; }
+            .site-links { gap: 0.15rem; margin: 0 -0.375rem; }
+        }
+
+        /* ---- Custom dropdown ---- */
+        .dropdown {
+            position: relative;
+            width: 100%;
+            font-size: 1rem;
+            color: #24292e;
+        }
+        /* The clickable control that shows the current selection */
+        .dropdown__trigger {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 0.6rem;
+            width: 100%;
+            box-sizing: border-box;
+            padding: 0.75rem 1rem;
+            font: inherit;
+            color: inherit;
+            text-align: left;
+            background: #fff;
+            border: 1px solid #d0d7de;
+            cursor: pointer;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+        .dropdown__trigger:hover { border-color: #afb8c1; }
+        /* No focus ring on the trigger. `outline: none` still has to stay, otherwise
+           the browser paints its OWN default outline here in place of ours — and
+           because focus lingers on the trigger while the menu is open, that outline
+           would pop in at the top of the control the moment the keyboard is used.
+           Keyboard position is shown by the menu's highlighted option instead. */
+        .dropdown__trigger:focus,
+        .dropdown__trigger:focus-visible { outline: none; }
+
+        /* Keyboard-shortcut hints (menu toggle + previous/next editor) shown right
+           after the resting "Select editor…" text (kept close to it, via the
+           trigger's flex gap, so they clearly belong to the prompt rather than
+           drifting to the far edge). Only on devices with a real keyboard +
+           pointer, so touch users never see hints for keys they don't have.
+           Gated on the label's prompt state so they show for "Select editor…"
+           but not once an editor name fills the label. */
+        .dropdown__hint {
+            display: none;
+            padding: 0.05rem 0.4rem;
+            border: 1px solid #d0d7de;
+            border-radius: 5px;
+            font-family: inherit;
+            font-size: 0.72em;
+            font-weight: 600;
+            color: #57606a;
+            background: #f6f8fa;
+        }
+        @media (hover: hover) and (pointer: fine) {
+            .dropdown.is-prompt .dropdown__hint { display: inline-block; }
+        }
+
+        /* Chevron that rotates when the menu is open */
+        .dropdown__arrow {
+            flex: none;
+            display: block;
+            position: relative;
+            top: 1px;
+            width: 12px;
+            height: 8px;
+            transition: transform 0.15s ease;
+            color: #57606a;
+        }
+        .dropdown.is-open .dropdown__arrow { transform: rotate(180deg); }
+
+        /* The popup list */
+        .dropdown__menu {
+            position: absolute;
+            top: calc(100% + 6px);
+            left: 6px;
+            right: 6px;
+            margin: 0;
+            padding: 0.35rem;
+            list-style: none;
+            /* The list receives focus() on open; suppress the browser's default
+               focus outline (the highlighted option marks keyboard position). */
+            outline: none;
+            background: #fff;
+            border: 1px solid #d0d7de;
+            border-radius: 6px;
+            box-shadow: 0 8px 24px rgba(31, 35, 40, 0.15);
+            /* Sit above any editor's own stacking (e.g. ProseMirror's menu bar
+               uses z-index: 10), so the selector list is never punched through. */
+            z-index: 1000;
+
+            /* Hidden by default; toggled via the open state. Hidden via display
+               (not visibility): a visibility:hidden menu still counts toward the
+               page's scrollable overflow, so the closed 25-option list let the
+               page scroll well past the arenas into the gray page background
+               whenever a short demo was mounted. display: none removes it from
+               layout entirely; allow-discrete + @starting-style keep the fade. */
+            display: none;
+            opacity: 0;
+            transform: translateY(-4px);
+            transition: opacity 0.15s ease, transform 0.15s ease, display 0.15s;
+            transition-behavior: allow-discrete;
+        }
+        .dropdown.is-open .dropdown__menu {
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+        }
+        /* Entry transition: the values the just-shown menu animates FROM the
+           moment it flips to display: block (without this the fade-in would
+           start at its end state and not animate at all). */
+        @starting-style {
+            .dropdown.is-open .dropdown__menu {
+                opacity: 0;
+                transform: translateY(-4px);
+            }
+        }
+
+        .dropdown__option {
+            display: flex;
+            align-items: center;
+            padding: 0.6rem 0.75rem;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        /* The actual content row. The <li> above stays full-width (so its hover
+           background spans the whole menu); this inner row is what gets capped on
+           desktop, keeping the right-aligned download figure near the name. */
+        .dropdown__option-row {
+            display: flex;
+            align-items: center;
+            flex: 1;
+            min-width: 0;
+        }
+        .option-meta {
+            margin-left: auto;
+            padding-left: 1rem;
+            font-size: 0.85em;
+            color: #57606a;
+        }
+        .option-icon {
+            width: 1.15em;
+            height: 1.15em;
+            object-fit: contain;
+            vertical-align: -0.22em;
+            margin-right: 0.5rem;
+        }
+        .dropdown__option:hover,
+        .dropdown__option.is-active {
+            background: #e6ebf0;
+        }
+        .dropdown__option.is-selected {
+            font-weight: 600;
+            color: #0969da;
+        }
+
+        /* ---- Editor info panel (between dropdown and editor) ---- */
+        .info-panel {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            /* When the height-equalizer stretches a panel past its natural
+               height, keep the badge rows packed at the top (row gap stays
+               0.4rem) instead of spreading to fill — spare space goes below. */
+            align-content: flex-start;
+            gap: 0.4rem 0.5rem;
+            /* border-box so the JS height-equalizer's min-height (measured as a
+               border-box rect) doesn't gain the padding/border a second time */
+            box-sizing: border-box;
+            padding: 0.5rem 1rem;
+            background: #fff;
+            border-left: 1px solid #d0d7de;
+            border-right: 1px solid #d0d7de;
+            border-bottom: 1px solid #d0d7de;
+            font-size: 0.85rem;
+        }
+        .info-panel[hidden] { display: none; }
+        /* ---- Badge: one blue pill, shared by the comparison table and the
+           per-editor info bar so the two views render identically. A single
+           badge() helper emits it as an <a> (opens a link), a <button> (opens a
+           modal / a demo) or a <span> (plain), all styled the same here. ---- */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3em;
+            padding: 0.2rem 0.6rem;
+            border: none;
+            border-radius: 999px;
+            background: #ddf4ff;
+            color: #0969da;
+            font: inherit;
+            /* `font: inherit` resets weight/numeric to the page defaults, so
+               re-assert them: every badge (links, score/type buttons, plain
+               spans) shares one weight and tabular figures. */
+            font-weight: 600;
+            font-variant-numeric: tabular-nums;
+            line-height: 1.25;
+            white-space: nowrap;
+            text-decoration: none;
+            vertical-align: middle;
+        }
+        a.badge, button.badge { cursor: pointer; }
+        a.badge:hover, button.badge:hover { background: #b6e3ff; }
+        /* The editor-type badge holds a single < > glyph; size it up from the
+           small end-column link icons (it has internal padding and reads smaller). */
+        .badge--type svg { width: 1.4em; height: 1.4em; display: block; }
+        /* Comments on/off badge (code view only): a speech-bubble icon that
+           gains a slash while comments are hidden. */
+        .comments-btn svg { width: 1.2em; height: 1.2em; display: block; }
+        .comments-btn .comments-btn__slash { display: none; }
+        .comments-btn.is-off .comments-btn__slash { display: block; }
+        /* Demo alignment badge: an align-left / align-center icon showing the
+           CURRENT state (body.demos-left, see the viewport rules). The long
+           lines are shared; the short lines swap between flush-left and
+           centered. */
+        .align-btn svg { width: 1.2em; height: 1.2em; display: block; }
+        .align-btn .align-btn__left { display: none; }
+        body.demos-left .align-btn .align-btn__left { display: block; }
+        body.demos-left .align-btn .align-btn__center { display: none; }
+        /* The sheet cap (see .demo-frame) can only bind above 1280px viewport
+           width, so centered vs left-aligned is indistinguishable below —
+           hide the badge. */
+        @media (max-width: 1280px) {
+            .align-btn { display: none; }
+        }
+        /* Star pill (info bar): the user's favourite toggle — a lone filled ★
+           in both states; the pill turning yellow-gold is what marks starred.
+           The compare table (own column) and the dropdown (right of the
+           downloads figure) re-show the state read-only as a gold ★. */
+        .star-badge.is-starred { background: #feed8e; color: #d49d04; }
+        button.star-badge.is-starred:hover { background: #f8dc4e; }
+        .star-mark { color: #d49d04; }
+        /* Unstarred rows render the ★ too, just unpainted — every row/cell
+           reserves the same space, keeping the dropdown's download figures and
+           the table's star column aligned. */
+        .star-mark--off { visibility: hidden; }
+        .dropdown__option-row .star-mark { margin-left: 0.45rem; }
+        .info-icon {
+            width: 0.95em;
+            height: 0.95em;
+            vertical-align: -0.15em;
+        }
+
+        /* ---- Source code view ---- */
+        .code-view {
+            margin: 0;
+            padding: 1rem;
+            /* Border-box so the capped sheet is exactly as wide as the demo
+               iframe; own white background — the viewport behind it goes grey
+               on desktop. */
+            box-sizing: border-box;
+            background: #fff;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            font-size: 0.8rem;
+            line-height: 1.5;
+            color: #24292e;
+            white-space: pre-wrap;
+            word-break: break-word;
+            tab-size: 2;
+        }
+        /* highlight.js (lazy-loaded on the first "View code") adds its own block
+           padding + background to `pre code.hljs`; .code-view already pads, so
+           neutralise the inner gutter and let the viewport background show. */
+        .code-view code.hljs {
+            padding: 0;
+            background: transparent;
+        }
+
+        /* ---- Arenas: a row of equal-width editor "arenas" ---- */
+        #arenas {
+            flex: 1 1 auto;
+            display: flex;
+            align-items: stretch;
+        }
+        /* flex-basis 0 (not auto) so N arenas share the width EQUALLY however
+           wide their content is; min-width lets that content shrink with the
+           column — the compare table then scrolls inside its own
+           .compare__scroll rather than forcing its arena wider. */
+        .arena {
+            flex: 1 1 0;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+        /* Visually separate side-by-side arenas from one another. A border
+           only — a margin would break the equal-width split above. */
+        .arena + .arena {
+            border-left: 2px solid #d0d7de;
+        }
+        /* Columns are unusable on a phone — stack the arenas there instead,
+           separated horizontally rather than vertically. Stacked, the flex
+           axis is height, where basis 0 would squash each arena to an equal
+           share and let its content overflow — size by content (auto) again. */
+        @media (max-width: 767px) {
+            #arenas { flex-direction: column; }
+            .arena { flex: 1 1 auto; }
+            .arena + .arena {
+                border-left: none;
+                margin-top: 1.25rem;
+                border-top: 2px solid #d0d7de;
+            }
+        }
+        /* The container where the selected demo's iframe lives */
+        .arena__viewport {
+            position: relative;
+            flex: 1 1 auto;
+            padding: 0;
+            background: #fff;
+            border: none;
+            min-height: 0;
+            /* Let content grow the page so the window scrolls as a whole,
+               rather than the viewport being its own internal scroll region. */
+            overflow: visible;
+        }
+        /* On desktop the demo iframe is capped and centered (see .demo-frame);
+           tint the exposed gutters the same light grey the demos use for their
+           "MARKDOWN — 2-WAY EDITABLE" bar, so the white demo reads as a
+           centered sheet. */
+        @media (min-width: 768px) {
+            .arena__viewport { background: #f6f8fa; }
+        }
+        /* Left mode (the info bar's align badge, global + persisted): the
+           sheets hug the left edge at full width on a white viewport — the
+           uncapped look. Outranks the desktop grey above by specificity. */
+        body.demos-left .arena__viewport { background: #fff; }
+        body.demos-left .demo-frame,
+        body.demos-left .code-view {
+            max-width: none;
+            margin-inline: 0;
+        }
+        /* Each demo runs in its own same-origin iframe — an isolated document
+           with its own import map and module registry. Script in loadEditor
+           grows the frame to its content height, so the window still scrolls
+           as one page instead of the demo scrolling inside a box. */
+        .demo-frame {
+            display: block;
+            width: 100%;
+            border: none;
+            background: #fff;
+        }
+        /* Cap the white sheets — the demo iframe and the "View code" source —
+           at 1280px or 4/6 of the viewport, whichever is bigger, and center
+           them. Below 1280px viewport width the cap can never bind, so narrow
+           screens are unaffected. */
+        .demo-frame,
+        .code-view {
+            max-width: max(1280px, 66.6667vw);
+            margin-inline: auto;
+        }
+        .placeholder { color: #aaa; font-style: italic; }
+
+        /* ---- Comparison table (all editors at once) ---- */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+        .compare {
+            box-sizing: border-box;
+            width: 100%;
+            padding: 1rem;
+            /* Own white sheet: the sticky first column is opaque white, so on
+               the desktop-grey viewport the rest of the table must be white
+               too or that column reads as a stripe. */
+            background: #fff;
+        }
+        /* The horizontal scroll lives on this inner wrapper, not on .compare, so
+           the page padding isn't part of the scroll area. Otherwise scrolled
+           columns bleed into the left padding strip, in front of which the
+           sticky first column can't pin. */
+        .compare__scroll {
+            overflow-x: auto;
+        }
+        .compare__caption {
+            margin: 0 0 0.75rem;
+            font-size: 0.85rem;
+            color: #57606a;
+        }
+        .compare__note {
+            margin: 0.9rem 0 0;
+            font-size: 0.85rem;
+            line-height: 1.5;
+            color: #57606a;
+        }
+        .compare__heading {
+            margin: 1.4rem 0 0;
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #24292e;
+        }
+        .compare__benefits {
+            margin: 0.4rem 0 0;
+            padding-left: 1.1rem;
+        }
+        .compare__benefits li { margin: 0.15rem 0; }
+        /* "Hide inactive" toggle + its info button, sitting just below the table. */
+        .compare__controls {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 0.9rem 0 0;
+        }
+        /* Stacked toggle rows sit closer together than the gap above the group. */
+        .compare__controls + .compare__controls { margin-top: 0.45rem; }
+        /* Compact view: hide the lower-priority columns. Header cell and body cells
+           share a data-col, so hiding both keeps every remaining column aligned. */
+        .compare-table.is-compact [data-col="stars"],
+        .compare-table.is-compact [data-col="status"],
+        .compare-table.is-compact [data-col="math"],
+        .compare-table.is-compact [data-col="basedOn"],
+        .compare-table.is-compact [data-col="docs"],
+        .compare-table.is-compact [data-col="standalone"] { display: none; }
+        .compare-toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+            color: #24292e;
+            cursor: pointer;
+            user-select: none;
+        }
+        .compare-toggle__input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+        .compare-toggle__track {
+            position: relative;
+            flex: none;
+            width: 34px;
+            height: 20px;
+            border-radius: 999px;
+            background: #d0d7de;
+            transition: background 0.15s ease;
+        }
+        .compare-toggle__thumb {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #fff;
+            transition: transform 0.15s ease;
+        }
+        .compare-toggle__input:checked + .compare-toggle__track { background: #0969da; }
+        .compare-toggle__input:checked + .compare-toggle__track .compare-toggle__thumb { transform: translateX(14px); }
+        .compare-toggle__input:focus-visible + .compare-toggle__track { outline: 2px solid #0969da; outline-offset: 2px; }
+        .compare__controls-hint { font-size: 0.85rem; color: #57606a; }
+        .omit-icon { width: 1.1em; height: 1.1em; object-fit: contain; vertical-align: -0.2em; margin-right: 0.4rem; }
+        /* Inline code chips (e.g. `**bold**`) in the notes below the table and in
+           modal notes, matching the site's other code snippets. */
+        .compare__note code,
+        .md-row__note code {
+            padding: 0.1em 0.35em;
+            border-radius: 4px;
+            background: #eaeef2;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            font-size: 0.92em;
+            color: #24292e;
+        }
+        .compare-table {
+            /* Size each column to its content rather than stretching to fill
+               the viewport — full width on desktop distributes the extra space
+               unevenly and the columns look randomly sized. */
+            width: auto;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+        .compare-table th {
+            padding: 0.4rem 0.7rem;
+            text-align: left;
+            white-space: nowrap;
+            font-weight: 600;
+            color: #57606a;
+            border-bottom: 1px solid #d0d7de;
+        }
+        .compare-table th.is-numeric { text-align: right; }
+        .compare-table th.is-center,
+        .compare-table td.is-center { text-align: center; }
+        /* Sortable headers: clickable, and the active one is highlighted with a caret. */
+        .compare-table th.is-sortable { cursor: pointer; user-select: none; }
+        .compare-table th.is-sortable:hover,
+        .compare-table th.is-sorted { color: #24292e; }
+        .sort-ind { margin-left: 0.3rem; font-size: 0.72em; }
+        .compare-table td {
+            padding: 0.4rem 0.7rem;
+            text-align: left;
+            white-space: nowrap;
+            border-bottom: 1px solid #eaeef2;
+        }
+        .compare-table tr:last-child td { border-bottom: none; }
+        /* Give columns more breathing room on desktop so they don't look cramped. */
+        @media (min-width: 768px) {
+            .compare-table th,
+            .compare-table td {
+                /* 3px tighter each side (≈6px narrower per column) so the table
+                   doesn't overflow into a horizontal scroll on a 1080p screen. */
+                padding: 0.5rem calc(1.5rem - 3px);
+            }
+            /* Compact view hides half the columns, so the survivors can afford
+               2px more breathing room each side. */
+            .compare-table.is-compact th,
+            .compare-table.is-compact td {
+                padding: 0.5rem calc(1.5rem - 1px);
+            }
+            /* Group the header icons next to the brand on the left rather than
+               pushing them out to the far right edge. */
+            .site-header {
+                justify-content: flex-start;
+                gap: 1.5rem;
+            }
+            /* Cap just the inner option row (not the <li>, whose background must
+               stay full-width) so the right-aligned download figure stays near
+               the editor name instead of drifting to the far edge. */
+            .dropdown__option-row {
+                max-width: 520px;
+            }
+        }
+        /* The four trailing icon-link columns (Website · Docs · Playground ·
+           Standalone) hold a single glyph each, so they don't need the wide
+           text-column gutters — tighten their horizontal padding. */
+        .compare-table th:nth-last-child(-n+4),
+        .compare-table td:nth-last-child(-n+4) {
+            padding-left: 0.4rem;
+            padding-right: 0.4rem;
+        }
+        /* The star column costs only the glyph itself — the neighbouring
+           columns' gutters already separate it. */
+        .compare-table th.star-col,
+        .compare-table td.star-col {
+            padding-left: 0;
+            padding-right: 0;
+        }
+        .compare-table td.is-numeric {
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+        }
+        .compare-table tbody tr:hover { background: #f6f8fa; }
+        /* Pin the editor-name column so it stays visible while the rest of the
+           table scrolls sideways (mainly for narrow/mobile viewports). It needs
+           an opaque background so the scrolling columns don't show through. */
+        .compare-table th:first-child,
+        .compare-table td:first-child {
+            position: sticky;
+            left: 0;
+            z-index: 1;
+            background: #fff;
+        }
+        .compare-table tbody tr:hover td:first-child { background: #f6f8fa; }
+        .compare-name {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 600;
+            color: #1f2328;
+        }
+        .compare-name img {
+            width: 1.2em;
+            height: 1.2em;
+            object-fit: contain;
+        }
+        /* Plain text link used by the modal breakdowns and the notes / feedback
+           lists below the table. (Table cells and info-bar badges are pills, via
+           .badge; these inline links are not.) */
+        .compare-link { color: #0969da; text-decoration: none; }
+        .compare-link:hover { text-decoration: underline; }
+
+        /* Type rows in the editor-type explanation modal reuse the .badge pill
+           (as a static <span>) for the glyph. */
+        .type-head { display: flex; align-items: center; gap: 0.5rem; color: #24292e; }
+        .type-head__name { font-weight: 600; }
+
+        /* Support-level pill, shared by the modal breakdown. Colour encodes the
+           tier so the ladder reads at a glance. */
+        .md-level {
+            display: inline-block;
+            padding: 0.1rem 0.5rem;
+            border-radius: 999px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        .md-level--native  { background: #dafbe1; color: #1a7f37; }
+        .md-level--native-partial { background: #d2f4ea; color: #117f68; }
+        .md-level--library { background: #fff8c5; color: #9a6700; }
+        .md-level--paid    { background: #fbefff; color: #8250df; }
+        .md-level--custom  { background: #ffece5; color: #bc4c00; }
+        .md-level--none    { background: #eaeef2; color: #57606a; }
+
+        /* ---- Markdown breakdown modal ---- */
+        .md-modal[hidden] { display: none; }
+        .md-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+        .md-modal__backdrop {
+            position: absolute;
+            inset: 0;
+            background: rgba(31, 35, 40, 0.5);
+        }
+        .md-modal__card {
+            position: relative;
+            width: min(560px, 100%);
+            max-height: calc(100vh - 2rem);
+            overflow-y: auto;
+            box-sizing: border-box;
+            padding: 1.25rem 1.5rem 1.5rem;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 12px 40px rgba(31, 35, 40, 0.28);
+        }
+        .md-modal__card:focus { outline: none; }
+        .md-modal__close {
+            position: absolute;
+            top: 0.6rem;
+            right: 0.6rem;
+            width: 2rem;
+            height: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            border: none;
+            border-radius: 6px;
+            background: none;
+            color: #57606a;
+            font-size: 1.4rem;
+            line-height: 1;
+            cursor: pointer;
+        }
+        .md-modal__close:hover { background: #eaeef2; color: #24292e; }
+        .md-modal__title {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin: 0 2rem 0.25rem 0;
+            font-size: 1.15rem;
+            color: #24292e;
+        }
+        .md-modal__title img { width: 1.3em; height: 1.3em; object-fit: contain; }
+        .md-modal__score {
+            padding: 0.1rem 0.55rem;
+            border-radius: 999px;
+            background: #ddf4ff;
+            color: #0969da;
+            font-size: 0.85rem;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+        }
+        .md-breakdown { margin: 0.75rem 0 0; padding: 0; list-style: none; }
+        .md-row {
+            padding: 0.75rem 0;
+            border-top: 1px solid #eaeef2;
+        }
+        .md-row:first-child { border-top: none; }
+        .md-row__head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+        }
+        .md-row__dim { font-weight: 600; color: #24292e; }
+        .md-row__note {
+            margin: 0.3rem 0 0;
+            font-size: 0.85rem;
+            line-height: 1.5;
+            color: #57606a;
+        }
+        /* Collapsible scoring explanation (native <details>) — keeps the modal short. */
+        .md-calc {
+            margin: 1rem 0 0;
+            padding-top: 0.75rem;
+            border-top: 1px solid #eaeef2;
+            font-size: 0.78rem;
+            color: #57606a;
+        }
+        .md-calc__summary {
+            cursor: pointer;
+            font-weight: 600;
+            color: #0969da;
+            list-style: none;
+        }
+        .md-calc__summary::-webkit-details-marker { display: none; }
+        .md-calc__summary::before {
+            content: '▸';
+            display: inline-block;
+            margin-right: 0.35rem;
+            transition: transform 0.15s ease;
+        }
+        .md-calc[open] .md-calc__summary::before { transform: rotate(90deg); }
+        .md-calc__body { margin: 0.5rem 0 0; line-height: 1.6; }
+    </style>
+</head>
+<body>
+
+    <header class="site-header">
+        <div class="brand">
+            <button type="button" class="site-logo" id="brand-logo">M<span class="site-logo__arrow">↓</span>A</button>
+            <h1 class="page-title"><button type="button" class="page-title__link" id="brand-title">Markdown Arena</button></h1>
+        </div>
+        <div class="arena-ctrl" id="arena-ctrl">
+            <button type="button" class="arena-ctrl__btn" id="arena-remove" title="Remove arena" disabled>−</button>
+            <span class="arena-ctrl__count" id="arena-count">1<span class="arena-ctrl__word"> arena</span></span>
+            <button type="button" class="arena-ctrl__btn" id="arena-add" title="Add arena">+</button>
+        </div>
+        <nav class="site-links">
+            <button type="button" id="share-btn" class="share-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+            </button>
+            <a href="https://github.com/wilmersdorf/MarkdownArena" target="_blank" rel="noopener">
+                <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.6 7.6 0 0 1 2-.27c.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
+            </a>
+            <a href="https://x.com/wilmers_dorf" target="_blank" rel="noopener">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24h-6.66l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+            </a>
+        </nav>
+    </header>
+
+    <div id="arenas">
+        <section class="arena">
+            <div class="controls">
+                <div class="dropdown" id="editor-dropdown">
+                    <button type="button" class="dropdown__trigger">
+                        <svg class="dropdown__arrow" viewBox="0 0 12 8">
+                            <path fill="none" stroke="currentColor" stroke-width="1.5"
+                                  stroke-linecap="round" stroke-linejoin="round" d="M1.5 1.5 6 6l4.5-4.5"/>
+                        </svg>
+                        <span class="dropdown__label">Select editor…</span>
+                        <kbd class="dropdown__hint" title="Open editor menu">Ctrl</kbd>
+                        <kbd class="dropdown__hint" title="Previous editor">Alt ↑</kbd>
+                        <kbd class="dropdown__hint" title="Next editor">Alt ↓</kbd>
+                    </button>
+                    <ul class="dropdown__menu" tabindex="-1"></ul>
+                </div>
+            </div>
+
+            <div class="info-panel" hidden></div>
+
+            <div class="arena__viewport">
+                <p class="placeholder">Select an editor to load its live demo.</p>
+            </div>
+        </section>
+    </div>
+
+    <!-- Markdown-support breakdown, opened from a score's info icon. Lives outside
+         the viewport (which is rebuilt on every view change) so it persists. -->
+    <div class="md-modal" id="md-modal" hidden>
+        <div class="md-modal__backdrop"></div>
+        <div class="md-modal__card" tabindex="-1"></div>
+    </div>
+
+    <script type="module">
+        /* ---------- Arenas ---------- */
+        // The page can show any number of independent editor "arenas", laid
+        // out side by side as equal-width columns (stacked on phones — see
+        // #arenas / .arena in the markup + CSS), each with its own dropdown,
+        // info panel, viewport and demo lifecycle. arenas[0] is the PRIMARY
+        // arena: the only one wired to the browser history/URL
+        // (?editor=<slug>) and the global keyboard shortcuts (Ctrl tap,
+        // Alt+↑/↓). Extra arenas (added/removed via the header stepper) land
+        // on a trimmed comparison view — the sortable table without the
+        // toggles/notes — whose Demo buttons pick that arena's editor;
+        // selecting one just mounts its demo, nothing else on the page changes.
+        const arenasEl = document.getElementById('arenas');
+        const arenas = [];
+
+        // Every open dropdown menu on the page, across every arena — lets
+        // opening one close any other (only one menu open at a time) and
+        // lets an iframe mousedown (see loadEditor) close whichever happens
+        // to be open, regardless of which arena it belongs to.
+        const allDropdowns = [];
+        function closeAllMenus() {
+            allDropdowns.forEach(d => { if (d.isOpen()) d.closeMenu({ focusTrigger: false }); });
+        }
+
+        // Demos run in their own <iframe> (see loadEditor); every view change
+        // just removes the current frame. That alone disposes a demo completely
+        // — its document, listeners, timers and workers die with the frame — so
+        // no demo needs an explicit teardown hook anymore.
+        function teardownDemo(arena) {
+            if (arena.frameObserver) { arena.frameObserver.disconnect(); arena.frameObserver = null; }
+            arena.viewport.innerHTML = '';
+        }
+
+        // localStorage can be blocked entirely (privacy modes throw on any
+        // access) — reads fall back to null, writes just don't persist.
+        const storage = {
+            get(key) { try { return localStorage.getItem(key); } catch { return null; } },
+            set(key, value) { try { localStorage.setItem(key, value); } catch { /* not persisted, still applies */ } },
+        };
+
+        /* ---------- Starred editors ---------- */
+        // The user's own favourites, persisted as a JSON array of editor slugs
+        // (the path's folder name, e.g. "tip-tap").
+        // Toggled ONLY by the info bar's star pill (wired via data-star in
+        // wireBadges); the compare table (own column) and the dropdown (after
+        // the downloads figure) re-show the state read-only as a ★ marker.
+        const STARRED_KEY = 'starred-editors';
+        const slugFromPath = (path) => path.split('/')[1];
+        let starredSlugs = new Set();
+        // Entries written before slugs were full paths — normalize on read.
+        try { starredSlugs = new Set((JSON.parse(storage.get(STARRED_KEY)) || []).map(v => v.includes('/') ? slugFromPath(v) : v)); } catch { /* bad JSON — start unstarred */ }
+        const isStarred = (path) => starredSlugs.has(slugFromPath(path));
+        const starMarkHtml = (editor) => `<span class="star-mark${isStarred(editor.path) ? '' : ' star-mark--off'}">★</span>`;
+        const starBadgeHtml = (editor) => {
+            const on = isStarred(editor.path);
+            return `<button type="button" class="badge star-badge${on ? ' is-starred' : ''}" data-star="${editor.path}" title="${on ? 'Unstar' : 'Star'} this editor">★</button>`;
+        };
+
+        /* ---------- Dropdown option row HTML ---------- */
+        // Shared by the dropdown menu options and the deep-link label fallback below.
+        const optionRowHtml = (editor) => `<span class="dropdown__option-row">${editor.icon ? `<img class="option-icon" src="${editor.icon}" alt="" />` : ''}<span>${editor.name}</span><span class="option-meta">↓ ${compact(editor.npmWeeklyDownloads)}/wk</span>${starMarkHtml(editor)}</span>`;
+
+        /* ---------- Custom dropdown factory ---------- */
+        // Encapsulates one dropdown control end to end: its trigger/label/menu
+        // element refs, the live `options` array, the keyboard cursor
+        // (`activeIndex`), open/close, the container keydown handler and the
+        // document click-away listener. `onSelect(value)` fires once a choice
+        // is committed (click, or Enter/Space in the menu); the caller decides
+        // what a selection means — the primary arena also routes/pushes
+        // history, extra arenas just load a demo.
+        function createDropdown(rootEl, { onSelect } = {}) {
+            const trigger = rootEl.querySelector('.dropdown__trigger');
+            const label = rootEl.querySelector('.dropdown__label');
+            const menu = rootEl.querySelector('.dropdown__menu');
+            let options = [];        // live list of <li> option elements
+            let activeIndex = 0;     // keyboard cursor position within the menu
+
+            const isOpen = () => rootEl.classList.contains('is-open');
+
+            function setActive(index) {
+                activeIndex = (index + options.length) % options.length;
+                options.forEach((o, i) => o.classList.toggle('is-active', i === activeIndex));
+                options[activeIndex].scrollIntoView({ block: 'nearest' });
+            }
+
+            function openMenu() {
+                if (!options.length) return;   // list not built yet (fetch pending or failed)
+                closeAllMenus();   // only one menu open at a time across the whole page
+                rootEl.classList.add('is-open');
+                const selected = options.findIndex(o => o.classList.contains('is-selected'));
+                setActive(selected < 0 ? 0 : selected);
+                // Move focus INTO the control so the container's keydown handler receives
+                // arrows/Escape however the menu was opened. Focus the trigger, not the
+                // menu: the just-revealed <ul> is mid visibility-transition and often
+                // can't take focus (focus would silently stay wherever it was — on
+                // <body> for the global Ctrl shortcut, breaking every key). The trigger
+                // is a plain button, always focusable, and lives inside the dropdown.
+                trigger.focus();
+            }
+
+            function closeMenu({ focusTrigger = true } = {}) {
+                rootEl.classList.remove('is-open');
+                if (focusTrigger) trigger.focus();
+            }
+
+            function selectOption(index) {
+                const value = options[index].dataset.value;
+                closeMenu();
+                onSelect(value);
+            }
+
+            // (Re)build the option <li>s from a list of editors. `withCompare`
+            // prepends the "Compare all editors" entry — this is the one
+            // shared code path both the primary and every extra arena use to
+            // render their options.
+            function setOptions(entries, { withCompare = false } = {}) {
+                menu.innerHTML = '';
+                if (withCompare) {
+                    const compareLi = document.createElement('li');
+                    compareLi.className = 'dropdown__option';
+                    compareLi.dataset.value = COMPARE_VALUE;
+                    compareLi.innerHTML = '<span class="dropdown__option-row"><img class="option-icon" src="icons/compare.svg" alt="" /><span>Compare all editors</span></span>';
+                    menu.appendChild(compareLi);
+                }
+                entries.forEach(editor => {
+                    const li = document.createElement('li');
+                    li.className = 'dropdown__option';
+                    li.dataset.value = editor.path;
+                    li.innerHTML = optionRowHtml(editor);
+                    menu.appendChild(li);
+                });
+                options = Array.from(menu.querySelectorAll('.dropdown__option'));
+                options.forEach((option, index) => {
+                    option.addEventListener('click', () => selectOption(index));
+                    option.addEventListener('mousemove', () => setActive(index));
+                });
+            }
+
+            // Clear any selected option (used by the primary arena's landing/
+            // compare view, which shows no option as selected).
+            function clearSelected() {
+                options.forEach(o => o.classList.remove('is-selected'));
+            }
+
+            // Mark `value`'s option selected and mirror it into the trigger
+            // label; clears any previous selection first.
+            function setSelected(value) {
+                clearSelected();
+                const option = options.find(o => o.dataset.value === value);
+                if (option) {
+                    option.classList.add('is-selected');
+                    label.innerHTML = option.innerHTML;
+                }
+                return option;
+            }
+
+            function resetLabel(text) {
+                label.textContent = text;
+            }
+
+            trigger.addEventListener('click', () => {
+                isOpen() ? closeMenu() : openMenu();
+            });
+
+            // One keydown handler for the whole control, keyed on open/closed state
+            // rather than on which element has focus. It lives on the dropdown
+            // container, so it fires whether focus is on the trigger or the menu.
+            // That matters because opening with the MOUSE can leave focus on the
+            // trigger (menu.focus() doesn't stick while the menu is still mid
+            // visibility-transition); a per-element handler would then let the first
+            // arrow re-trigger "open" and only move the highlight on the second press.
+            rootEl.addEventListener('keydown', (e) => {
+                if (!isOpen()) {
+                    if (e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        openMenu();
+                    }
+                    return;
+                }
+                switch (e.key) {
+                    case 'ArrowDown': e.preventDefault(); setActive(activeIndex + 1); break;
+                    case 'ArrowUp':   e.preventDefault(); setActive(activeIndex - 1); break;
+                    case 'Home':      e.preventDefault(); setActive(0); break;
+                    case 'End':       e.preventDefault(); setActive(options.length - 1); break;
+                    case 'Enter':
+                    case ' ':         e.preventDefault(); selectOption(activeIndex); break;
+                    // Close AND drop focus (rather than handing it back to the trigger),
+                    // so a single Escape fully dismisses the control. Only one of these
+                    // holds focus; blur() on the other is a harmless no-op.
+                    case 'Escape':    e.preventDefault(); closeMenu({ focusTrigger: false }); trigger.blur(); menu.blur(); break;
+                    case 'Tab':       closeMenu({ focusTrigger: false }); break;
+                }
+            });
+
+            document.addEventListener('click', (e) => {
+                if (isOpen() && !rootEl.contains(e.target)) closeMenu({ focusTrigger: false });
+            });
+
+            const instance = {
+                rootEl, label,
+                isOpen, openMenu, closeMenu, setOptions, setSelected, clearSelected, resetLabel, selectOption,
+                get options() { return options; },
+            };
+            allDropdowns.push(instance);
+            return instance;
+        }
+
+        // Default document title, restored when no editor is routed (see renderSelection).
+        const DEFAULT_TITLE = document.title;
+        // Filled once editors.json is fetched: maps a path -> editor metadata
+        const editorsByPath = new Map();
+        let editorList = [];     // ordered list of editor metadata (for the compare table)
+        let omittedList = [];    // editors listed but not shipped as demos (e.g. commercial-only)
+        const COMPARE_VALUE = '__compare__'; // sentinel dropdown value for the comparison table
+        const SELECT_PROMPT = 'Select editor…'; // resting label shown for the compare/landing view
+        let codeView = false;    // GLOBAL code/demo toggle — one click flips every arena
+        // GLOBAL minimal/full editor mode — Full by default for first-time
+        // visitors, persisted like the compare toggles ('0' = an explicit
+        // Minimal choice). When on, each demo loads the editor's experimental
+        // full variant instead of the minimal one.
+        let fullEditors = storage.get('full-editors') !== '0';
+        // The document to load for an editor path: its full variant
+        // (editor/<slug>/full/index.html) in Full mode, else the canonical
+        // minimal demo. Applied ONLY where a demo is loaded (loadEditor /
+        // showCode) — routing, the table, dropdowns and currentPath all keep
+        // the canonical minimal path.
+        const demoPath = (path) => fullEditors ? path.replace(/\/index\.html$/, '/full/index.html') : path;
+        // Same document as a clean directory URL (editor/<slug>/ or
+        // editor/<slug>/full/) for user-facing links — the host serves the
+        // directory's index.html.
+        const demoUrl = (path) => demoPath(path).replace(/index\.html$/, '');
+
+        /* ---------- The primary arena ---------- */
+        // Its markup is the .arena already in the page source (kept, along
+        // with its kbd hints); extra arenas are added later from a template
+        // without the hints.
+        const primaryRoot = arenasEl.querySelector(':scope > .arena');
+        const primaryArena = {
+            root: primaryRoot,
+            viewport: primaryRoot.querySelector('.arena__viewport'),
+            infoPanel: primaryRoot.querySelector('.info-panel'),
+            dropdown: null,
+            frameObserver: null,
+            currentPath: '',
+            // Each arena's table sorts on its own. Default view: most-
+            // downloaded first (matches the dropdown's ranking).
+            sortState: { key: 'downloads', dir: 'desc' },
+        };
+        arenas.push(primaryArena);
+        // Only the primary arena's viewport gets the FULL comparison view
+        // (toggles + notes); extra arenas get the trimmed table only.
+        const primaryViewport = primaryArena.viewport;
+
+        primaryArena.dropdown = createDropdown(document.getElementById('editor-dropdown'), {
+            onSelect: (value) => { renderSelection(value); pushRoute(value); },
+        });
+
+        // The shortcuts use the same physical keys on every platform, but macOS
+        // writes its modifiers with native glyphs (⌃ Control, ⌥ Option) rather
+        // than the words "Ctrl"/"Alt", so relabel the hints there. Only the
+        // primary arena's dropdown has these hints — extra arenas' dropdowns
+        // (added later) never get them.
+        const isMac = /Mac/i.test(navigator.platform || navigator.userAgent || '');
+        if (isMac) primaryArena.dropdown.rootEl.querySelectorAll('.dropdown__hint').forEach(kbd => {
+            kbd.textContent = kbd.textContent.replace('Ctrl', '⌃').replace('Alt ', '⌥');
+        });
+
+        /* ---------- Load editor metadata, then build the dropdown ---------- */
+        async function init() {
+            try {
+                const res = await fetch('editors.json');
+                const data = await res.json();
+                // Order by weekly downloads (descending) so the dropdown shares
+                // the comparison table's popularity ranking.
+                editorList = data.editors.slice().sort((a, b) => b.npmWeeklyDownloads - a.npmWeeklyDownloads);
+                omittedList = Array.isArray(data.omitted) ? data.omitted : [];
+                editorList.forEach(editor => editorsByPath.set(editor.path, editor));
+
+                // Inject SoftwareApplication structured data from the live list (no build step).
+                const ld = { "@context": "https://schema.org", "@graph": [
+                    { "@type": "WebSite", "name": "Markdown Arena", "url": "https://markdownarena.com/" },
+                    { "@type": "ItemList", "itemListElement": editorList.map((e, i) => ({
+                        "@type": "ListItem", "position": i + 1,
+                        "item": { "@type": "SoftwareApplication", "name": e.name, "url": e.website },
+                    })) },
+                ] };
+                const ldEl = document.createElement('script');
+                ldEl.type = 'application/ld+json';
+                ldEl.textContent = JSON.stringify(ld);
+                document.head.appendChild(ldEl);
+
+                // "Compare all" sits at the top of the list, above the per-editor demos.
+                primaryArena.dropdown.setOptions(visibleEditors(), { withCompare: true });
+            } catch (err) {
+                primaryViewport.innerHTML = `<p style="color:red;">Could not load editor list: ${err.message}</p>`;
+                return;   // nothing to route to or render without the list
+            }
+
+            // Open the editor named in the URL (?editor=<slug>) as a deep link, else
+            // land on the comparison table. Seed the initial history entry so
+            // Back/Forward and sharing the address bar work.
+            const initial = routeValueFromUrl();
+            history.replaceState({ value: initial }, '', routeUrl(initial));
+            renderSelection(initial);
+        }
+
+        /* ---------- Primary-arena selection ---------- */
+        // Apply a selection (COMPARE_VALUE or an editor path) to the PRIMARY
+        // arena: update its dropdown's selected state/label and render the
+        // view. Does NOT touch history — callers decide whether this is a new
+        // navigation (the dropdown's onSelect) or a Back/Forward / initial-
+        // load sync (popstate / init).
+        function renderSelection(value) {
+            // Navigating (dropdown, table Demo button, Back/Forward, deep link)
+            // always lands on the demo view: leave the global code mode and flip
+            // the other arenas back to their demos — the primary arena re-renders
+            // below either way.
+            if (codeView) applyCodeView(false, { except: primaryArena });
+            const dd = primaryArena.dropdown;
+
+            if (value === COMPARE_VALUE || !editorsByPath.has(value)) {
+                // Compare is the landing view, so reset the dropdown to its initial
+                // "Select editor" state rather than showing it as the selection.
+                dd.clearSelected();
+                dd.resetLabel(SELECT_PROMPT);
+                dd.rootEl.classList.add('is-prompt');   // reveals the desktop shortcut hints
+                renderInfo(primaryArena, '');            // hides the single-editor info panel
+                renderComparison(primaryArena);
+                document.title = DEFAULT_TITLE;
+                return;
+            }
+
+            // The value may be an inactive editor hidden from the menu (deep link /
+            // history) — the demo still loads, so label the trigger directly.
+            if (!dd.setSelected(value)) dd.label.innerHTML = optionRowHtml(editorsByPath.get(value));
+            dd.rootEl.classList.remove('is-prompt');   // an editor fills the label — hide the hints
+            document.title = `${editorsByPath.get(value).name} — Markdown Arena`;
+            renderInfo(primaryArena, value);
+            loadEditor(primaryArena, value);
+        }
+
+        // Jump straight to a given dropdown value on the PRIMARY arena: an
+        // editor's demo (used by the compare table rows) or COMPARE_VALUE
+        // (the comparison table).
+        function selectByPath(path) {
+            const dd = primaryArena.dropdown;
+            const index = dd.options.findIndex(o => o.dataset.value === path);
+            if (index >= 0) dd.selectOption(index);
+        }
+
+        // Clicking the logo or the title returns to the comparison table (the
+        // landing view), which sits in the dropdown as the COMPARE_VALUE option.
+        const goToComparison = () => selectByPath(COMPARE_VALUE);
+        document.getElementById('brand-logo').addEventListener('click', goToComparison);
+        document.getElementById('brand-title').addEventListener('click', goToComparison);
+
+        /* ---------- URL routing (deep links + Back/Forward) ---------- */
+        // Each editor gets a slug from its folder, e.g. "editor/tip-tap/index.html"
+        // -> "tip-tap", used as the ?editor=<slug> query so URLs are shareable.
+        const editorSlug = (editor) => slugFromPath(editor.path);
+        const pathFromSlug = (slug) => {
+            const editor = editorList.find(e => editorSlug(e) === slug);
+            return editor ? editor.path : '';
+        };
+
+        // The URL for a view: the bare page for the comparison, ?editor=<slug> for an editor.
+        function routeUrl(value) {
+            if (value === COMPARE_VALUE || !editorsByPath.has(value)) return location.pathname;
+            return `${location.pathname}?editor=${encodeURIComponent(editorSlug(editorsByPath.get(value)))}`;
+        }
+
+        // The view the current URL points at (an editor path, or COMPARE_VALUE).
+        function routeValueFromUrl() {
+            const slug = new URLSearchParams(location.search).get('editor');
+            return (slug && pathFromSlug(slug)) || COMPARE_VALUE;
+        }
+
+        // Push a new history entry only when the URL actually changes, so Back returns
+        // here (instead of leaving the site) and the address bar stays shareable.
+        function pushRoute(value) {
+            const url = routeUrl(value);
+            if (url !== location.pathname + location.search) {
+                history.pushState({ value }, '', url);
+            }
+        }
+
+        // Back/Forward: re-render whatever view the URL now points at (no new entry).
+        // An entry still carrying the #code marker (Forward, or Back across a
+        // navigation made from the code view) opens as the demo instead — strip
+        // the marker so the code view is only ever one Back-press deep.
+        window.addEventListener('popstate', (e) => {
+            if (location.hash === '#code') {
+                history.replaceState(e.state, '', location.pathname + location.search);
+            }
+            renderSelection((e.state && e.state.value) || routeValueFromUrl());
+        });
+
+        /* ---------- Extra arenas (header stepper: add / remove) ---------- */
+        // Markup for an EXTRA arena. Deliberately NOT the primary arena's
+        // markup: it has no kbd hints — those hints describe the global
+        // shortcuts, which only ever act on the primary arena — and its
+        // dropdown carries no id (ids can't repeat).
+        const EXTRA_ARENA_HTML = `
+            <div class="controls">
+                <div class="dropdown">
+                    <button type="button" class="dropdown__trigger">
+                        <svg class="dropdown__arrow" viewBox="0 0 12 8">
+                            <path fill="none" stroke="currentColor" stroke-width="1.5"
+                                  stroke-linecap="round" stroke-linejoin="round" d="M1.5 1.5 6 6l4.5-4.5"/>
+                        </svg>
+                        <span class="dropdown__label">${SELECT_PROMPT}</span>
+                    </button>
+                    <ul class="dropdown__menu" tabindex="-1"></ul>
+                </div>
+            </div>
+
+            <div class="info-panel" hidden></div>
+
+            <div class="arena__viewport"></div>`;
+
+        const arenaCountEl = document.getElementById('arena-count');
+        const arenaAddBtn = document.getElementById('arena-add');
+        const arenaRemoveBtn = document.getElementById('arena-remove');
+        const MAX_ARENAS = 9;
+
+        function updateArenaStepper() {
+            const n = arenas.length;
+            arenaCountEl.innerHTML = `${n}<span class="arena-ctrl__word"> arena${n === 1 ? '' : 's'}</span>`;
+            arenaRemoveBtn.disabled = n <= 1;            // minimum is 1 arena
+            arenaAddBtn.disabled = n >= MAX_ARENAS;      // maximum is MAX_ARENAS
+        }
+
+        // Apply a selection (COMPARE_VALUE or an editor path) to an EXTRA
+        // arena — the counterpart of renderSelection above, minus everything
+        // routing-related: extra arenas never touch history or the URL. The
+        // compare entry returns the arena to its trimmed table view.
+        function renderExtraSelection(arena, value) {
+            if (value === COMPARE_VALUE || !editorsByPath.has(value)) {
+                arena.dropdown.clearSelected();
+                arena.dropdown.resetLabel(SELECT_PROMPT);
+                renderInfo(arena, '');       // hides the single-editor info panel
+                renderComparison(arena);     // trimmed: caption + table only
+                return;
+            }
+            if (!arena.dropdown.setSelected(value)) arena.dropdown.label.innerHTML = optionRowHtml(editorsByPath.get(value));
+            renderInfo(arena, value);
+            // The code/demo mode is global — a new selection joins whichever
+            // view the other arenas are in.
+            if (codeView) showCode(arena); else loadEditor(arena, value);
+        }
+
+        // Appends a new arena as the rightmost column: its own dropdown (the
+        // options are the already-fetched visibleEditors() filtered set, compare entry included),
+        // its own info panel and its own viewport, opening on the trimmed
+        // comparison view — its table's Demo buttons are the arena's picker.
+        function addArena() {
+            if (arenas.length >= MAX_ARENAS) return;   // hard cap, mirrors the disabled + button
+            const section = document.createElement('section');
+            section.className = 'arena';
+            section.innerHTML = EXTRA_ARENA_HTML;
+            arenasEl.appendChild(section);
+
+            const arena = {
+                root: section,
+                viewport: section.querySelector('.arena__viewport'),
+                infoPanel: section.querySelector('.info-panel'),
+                dropdown: null,
+                frameObserver: null,
+                currentPath: '',
+                sortState: { key: 'downloads', dir: 'desc' },   // this arena's own table order
+            };
+            arena.dropdown = createDropdown(section.querySelector('.dropdown'), {
+                onSelect: (value) => renderExtraSelection(arena, value),
+            });
+            arena.dropdown.setOptions(visibleEditors(), { withCompare: true });
+
+            arenas.push(arena);
+            updateArenaStepper();
+            renderComparison(arena);   // land on the trimmed table, not a blank pane
+            syncInfoPanelHeights();    // the new column narrows the others — re-wrap
+        }
+
+        // Removes the LAST arena (a no-op below the 1-arena minimum).
+        // teardownDemo disposes its demo, same as any other view change;
+        // removing the <section> takes the rest of its DOM with it.
+        function removeArena() {
+            if (arenas.length <= 1) return;
+            const arena = arenas.pop();
+            teardownDemo(arena);
+            const idx = allDropdowns.indexOf(arena.dropdown);
+            if (idx >= 0) allDropdowns.splice(idx, 1);
+            arena.root.remove();
+            updateArenaStepper();
+            syncInfoPanelHeights();   // the remaining columns widen — re-wrap
+        }
+
+        arenaAddBtn.addEventListener('click', addArena);
+        arenaRemoveBtn.addEventListener('click', removeArena);
+        updateArenaStepper();
+
+        // App-wide shortcuts, installed on a document. They go on THIS page's
+        // document and, because key events never cross a frame boundary, on
+        // each demo iframe's document as well (loadEditor calls this when a
+        // frame loads — same-origin, so we can listen inside it directly).
+        // The armed state is shared across documents on purpose: it's one
+        // gesture to the user, wherever the keys happen to land.
+        //
+        // Tapping Ctrl on its own toggles the menu — a quick way to reach the editor
+        // picker from anywhere, including inside a demo. It commits on keyup, and any
+        // OTHER key pressed while Ctrl is held cancels it, so real combos (Ctrl+C,
+        // Ctrl+B in a demo, Ctrl+R, …) never fire the toggle; a mousedown cancels it
+        // too, so Ctrl+click doesn't leave a toggle armed. All three listeners run in
+        // the CAPTURE phase, like the Alt+↑/↓ handler below: editors stop the
+        // propagation of combos they handle (Monaco swallows Ctrl+A "select all",
+        // for one), so a bubble-phase listener would miss the canceling keydown and
+        // releasing Ctrl would wrongly open the menu. Capture on the document runs
+        // before the demo can stop the event.
+        let ctrlTapArmed = false;
+        function wireAppShortcuts(doc) {
+            doc.addEventListener('keydown', (e) => {
+                if (e.key === 'Control') { if (!e.repeat) ctrlTapArmed = true; }
+                else ctrlTapArmed = false;
+            }, true);
+            doc.addEventListener('mousedown', () => { ctrlTapArmed = false; }, true);
+            doc.addEventListener('keyup', (e) => {
+                if (e.key !== 'Control' || !ctrlTapArmed) return;
+                ctrlTapArmed = false;
+                if (!mdModal.hidden) return;   // leave the menu alone while a modal is open
+                const dd = primaryArena.dropdown;
+                dd.isOpen() ? dd.closeMenu({ focusTrigger: false }) : dd.openMenu();
+            }, true);
+
+            // Alt+↓ / Alt+↑ (⌥ on macOS) show the next / previous dropdown item,
+            // wrapping through "Compare all editors" — from anywhere, including
+            // inside a demo. Registered in the CAPTURE phase and stopped there, so
+            // a demo's own keymap never sees the combo (CodeMirror, for one, binds
+            // Alt+↑/↓ to "move line") and the dropdown's open-menu handler doesn't
+            // double-step. A held key keeps being swallowed but only steps once —
+            // every step loads a demo and pushes a history entry. This always
+            // steps the PRIMARY arena's dropdown, wherever the keys happen to land.
+            doc.addEventListener('keydown', (e) => {
+                if (!e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
+                if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+                const dd = primaryArena.dropdown;
+                if (!mdModal.hidden || !dd.options.length) return;   // modal open / list not built yet
+                e.preventDefault();
+                e.stopPropagation();
+                if (e.repeat) return;
+                const selected = dd.options.findIndex(o => o.classList.contains('is-selected'));
+                // No option is marked selected on the compare/landing view — step
+                // from the "Compare all editors" entry in that case.
+                const current = selected >= 0 ? selected : dd.options.findIndex(o => o.dataset.value === COMPARE_VALUE);
+                const step = e.key === 'ArrowDown' ? 1 : -1;
+                dd.selectOption((current + step + dd.options.length) % dd.options.length);
+            }, true);
+        }
+        wireAppShortcuts(document);
+
+        /* ---------- Info panel ---------- */
+        const GITHUB_ICON = `<svg class="info-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.6 7.6 0 0 1 2-.27c.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>`;
+        const NPM_ICON = `<svg class="info-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M0 0v16h16V0H0Zm13 13h-2V5H8v8H3V3h10v10Z"/></svg>`;
+        const WEBSITE_ICON = `<svg class="info-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="8" cy="8" r="6.5"/><ellipse cx="8" cy="8" rx="3" ry="6.5"/><path d="M1.5 8h13M2.2 5.3h11.6M2.2 10.7h11.6"/></svg>`;
+        const DOCS_ICON = `<svg class="info-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"><path d="M8 3.5C6.8 2.6 5.4 2.3 3 2.3v9.4c2.4 0 3.8.3 5 1.2 1.2-.9 2.6-1.2 5-1.2V2.3c-2.4 0-3.8.3-5 1.2Z"/><path d="M8 3.5v9.4"/></svg>`;
+        // Simple play button — a bare triangle.
+        const PLAYGROUND_ICON = `<svg class="info-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M3.5 2.5v11l9-5.5z"/></svg>`;
+        // Box with an out-arrow — opens our self-contained standalone page.
+        const STANDALONE_ICON = `<svg class="info-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M11 8.8v3.7a1 1 0 0 1-1 1H3.5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h3.7"/><path d="M9.5 2.5h4v4"/><path d="M13.5 2.5 7.5 8.5"/></svg>`;
+
+        const COMPACT_FORMAT = new Intl.NumberFormat('en-US', {
+            notation: 'compact',
+            maximumFractionDigits: 0,
+        });
+        const compact = (n) => COMPACT_FORMAT.format(n);
+
+        // Fallback link for a framework label when an editor doesn't supply its
+        // own integration doc — points at the framework's home/reference instead.
+        const FRAMEWORK_LINKS = {
+            'JS': 'https://developer.mozilla.org/en-US/docs/Web/JavaScript',
+            'React': 'https://react.dev',
+            'Vue': 'https://vuejs.org',
+            'Svelte': 'https://svelte.dev',
+            'Angular': 'https://angular.dev',
+            'Solid': 'https://www.solidjs.com',
+        };
+
+        // An editor's `frameworks` is a list of { name, docs? }. `docs` is the
+        // editor's own integration guide for that framework (only set where the
+        // editor ships first-party bindings); otherwise we fall back to the
+        // framework's home page. A framework-specific entry gets a tooltip so the
+        // distinction (native integration vs. baseline JS) is discoverable.
+        function frameworkHref(fw) {
+            return fw.docs || FRAMEWORK_LINKS[fw.name] || '';
+        }
+        function frameworkTitle(fw) {
+            return fw.docs ? `${fw.name} integration docs` : '';
+        }
+
+        /* ---------- Badge rendering ---------- */
+        // One pill, rendered the same wherever it appears (the comparison table
+        // and the per-editor info bar). Everything is optional:
+        //   icons     — inline-SVG/img HTML shown before the text (string or array)
+        //   prefix    — lead-in before the text, pill-only (badgeText, the table's
+        //               text-only variant, drops it along with the icons)
+        //   text      — the label
+        //   link      — href; when set the badge is an <a> that opens in a new tab
+        //   button    — render a <button> instead (a badge that opens a modal / demo)
+        //   className — extra class(es) appended after `badge` (e.g. 'badge--type')
+        //   attrs     — extra attributes (title, data-*) as a plain object
+        function badge({ prefix = '', icons, text = '', link, button = false, className = '', attrs = {} } = {}) {
+            const iconHtml = [].concat(icons ?? []).filter(Boolean).join('');
+            const cls = className ? `badge ${className}` : 'badge';
+            const attrStr = Object.entries(attrs).map(([k, v]) => ` ${k}="${v}"`).join('');
+            const inner = `${iconHtml}${prefix}${text}`;
+            if (link) return `<a class="${cls}" href="${link}" target="_blank" rel="noopener"${attrStr}>${inner}</a>`;
+            if (button) return `<button type="button" class="${cls}"${attrStr}>${inner}</button>`;
+            return `<span class="${cls}"${attrStr}>${inner}</span>`;
+        }
+
+        // Render one BADGES entry for an editor. Its make() returns a single
+        // badge's options, an array of them (e.g. one per framework), or null for
+        // nothing (an empty table cell / no badge on the info bar).
+        const badgesHtml = (spec) => spec == null ? '' : [].concat(spec).map(badge).join(' ');
+
+        // Space-tight table variant (for BADGES entries flagged `textInTable`):
+        // the text only — no icon, no pill — as a plain link when the badge has
+        // one, otherwise bare text. The info bar still uses badgesHtml() (full pill).
+        const badgeText = (spec) => spec == null ? '' : [].concat(spec).map(b =>
+            b.link ? `<a class="compare-link" href="${b.link}" target="_blank" rel="noopener">${b.text ?? ''}</a>` : (b.text ?? '')
+        ).join(', ');
+
+        // Badges wrap to a different number of lines per editor, so side-by-side
+        // arenas can show info panels of ragged heights. On desktop (arenas in
+        // one row) equalize them: reset every panel to its natural height,
+        // measure the visible ones, and apply the tallest to all. Mobile stacks
+        // the arenas, so panels keep their natural height there. Re-run whenever
+        // wrapping can change: a selection (renderInfo), an arena added/removed
+        // (column widths change), or a window resize.
+        const desktopArenas = window.matchMedia('(min-width: 768px)');
+        function syncInfoPanelHeights() {
+            arenas.forEach(a => { a.infoPanel.style.minHeight = ''; });
+            if (!desktopArenas.matches) return;
+            const panels = arenas.map(a => a.infoPanel).filter(p => !p.hidden);
+            if (panels.length < 2) return;
+            const max = Math.max(...panels.map(p => p.getBoundingClientRect().height));
+            panels.forEach(p => { p.style.minHeight = `${max}px`; });
+        }
+        window.addEventListener('resize', syncInfoPanelHeights);
+
+        function renderInfo(arena, targetPath) {
+            const editor = editorsByPath.get(targetPath);
+            const infoPanel = arena.infoPanel;
+
+            if (!editor) {
+                infoPanel.hidden = true;
+                infoPanel.innerHTML = '';
+                arena.currentPath = '';   // nothing selected — applyCodeView skips this arena
+                syncInfoPanelHeights();
+                return;
+            }
+
+            // The star pill first, then every badge in the shared BADGES order,
+            // the global Minimal/Full mode badge, the global alignment badge,
+            // the info-bar-only "View code" toggle (the table has its own
+            // "Demo" button instead) and, in the code view, its comments
+            // on/off companion.
+            infoPanel.innerHTML = starBadgeHtml(editor) + BADGES.map(b => badgesHtml(b.make(editor))).join('') +
+                modeBadgeHtml() +
+                alignBtnHtml() +
+                `<button type="button" class="badge view-code-btn">${codeView ? 'View demo' : 'View code'}</button>` +
+                (codeView ? commentsBtnHtml() : '');
+            infoPanel.hidden = false;
+
+            arena.currentPath = targetPath;
+            infoPanel.querySelector('.view-code-btn').addEventListener('click', toggleCode);
+            const commentsBtn = infoPanel.querySelector('.comments-btn');
+            if (commentsBtn) commentsBtn.addEventListener('click', toggleComments);
+            infoPanel.querySelector('.mode-badge').addEventListener('click', toggleEditorMode);
+            infoPanel.querySelector('.align-btn').addEventListener('click', toggleAlign);
+            wireBadges(infoPanel, arena);
+            syncInfoPanelHeights();
+        }
+
+        // Comments on/off in the code view. Like the code/demo mode itself the
+        // state is global — one click flips every arena's source view — and it
+        // persists across visits via localStorage. The badge only exists while
+        // the code view is on: renderInfo adds it to a panel rendered in that
+        // mode, applyCodeView inserts/removes it when the mode flips.
+        const COMMENTS_KEY = 'code-comments-hidden';
+        let commentsHidden = storage.get(COMMENTS_KEY) === '1';
+
+        const commentsBtnHtml = () =>
+            `<button type="button" class="badge comments-btn${commentsHidden ? ' is-off' : ''}" title="${commentsHidden ? 'Show comments' : 'Hide comments'}">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M1.75 2.75h12.5v8.5H8.25l-3.5 3v-3h-3z"/>
+                    <path class="comments-btn__slash" d="M2.5 13.5 13.5 2.5"/>
+                </svg>
+            </button>`;
+
+        function toggleComments() {
+            commentsHidden = !commentsHidden;
+            storage.set(COMMENTS_KEY, commentsHidden ? '1' : '0');
+            arenas.forEach(arena => {
+                const btn = arena.infoPanel.querySelector('.comments-btn');
+                if (btn) {
+                    btn.classList.toggle('is-off', commentsHidden);
+                    btn.title = commentsHidden ? 'Show comments' : 'Hide comments';
+                }
+                if (codeView && arena.currentPath) showCode(arena);
+            });
+        }
+
+        // Demo alignment badge: the sheet centered on grey (default) or hugging
+        // the left edge at full width on white. Global like the other view
+        // toggles and persisted; the flip itself is pure CSS — a body class
+        // restyles every arena at once (see body.demos-left) — so only the
+        // badges' tooltips need refreshing (the icon swap is CSS too).
+        const ALIGN_KEY = 'demos-left';
+        let demosLeft = storage.get(ALIGN_KEY) === '1';
+        document.body.classList.toggle('demos-left', demosLeft);
+
+        const alignTitle = () => demosLeft ? 'Center the demo' : 'Left-align the demo';
+        const alignBtnHtml = () =>
+            `<button type="button" class="badge align-btn" title="${alignTitle()}">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+                    <path d="M2 3.5h12M2 9.5h12"/>
+                    <path class="align-btn__left" d="M2 6.5h8M2 12.5h8"/>
+                    <path class="align-btn__center" d="M4 6.5h8M4 12.5h8"/>
+                </svg>
+            </button>`;
+
+        function toggleAlign() {
+            demosLeft = !demosLeft;
+            storage.set(ALIGN_KEY, demosLeft ? '1' : '0');
+            document.body.classList.toggle('demos-left', demosLeft);
+            arenas.forEach(arena => {
+                const btn = arena.infoPanel.querySelector('.align-btn');
+                if (btn) btn.title = alignTitle();
+            });
+        }
+
+        // Minimal / Full mode badge. The label shows the CURRENT mode; a click
+        // flips it. The mode is global (see fullEditors): one click relabels
+        // the badge in every arena's info panel and re-renders each arena's
+        // current editor in the new variant, in whichever view is active (code
+        // or demo); arenas on the comparison table are left alone.
+        const modeLabel = () => fullEditors ? 'Full' : 'Minimal';
+        const modeBadgeHtml = () => `<button type="button" class="badge mode-badge">${modeLabel()}</button>`;
+
+        function toggleEditorMode() {
+            fullEditors = !fullEditors;
+            storage.set('full-editors', fullEditors ? '1' : '0');
+            // Re-point every already-rendered pop-out link (info bars AND
+            // compare tables) at the new variant; fresh renders use demoUrl().
+            document.querySelectorAll('a.badge--standalone').forEach(a =>
+                a.setAttribute('href', demoUrl(a.dataset.path)));
+            arenas.forEach(arena => {
+                const btn = arena.infoPanel.querySelector('.mode-badge');
+                if (btn) btn.textContent = modeLabel();
+                if (!arena.currentPath) return;
+                if (codeView) showCode(arena); else loadEditor(arena, arena.currentPath);
+            });
+        }
+
+        // Star / unstar an editor (the info bar's star pill). The state shows in
+        // several places per arena, so re-render them all: rebuild the dropdown
+        // options (re-marking the selection also refreshes the trigger label),
+        // redraw any visible compare table (its !table guard skips arenas on a
+        // demo) and re-render the info bar of every arena showing an editor —
+        // that refreshes its star pill along with the rest of its badges.
+        function toggleStar(path) {
+            const slug = slugFromPath(path);
+            if (starredSlugs.has(slug)) starredSlugs.delete(slug); else starredSlugs.add(slug);
+            storage.set(STARRED_KEY, JSON.stringify([...starredSlugs]));
+            arenas.forEach(arena => {
+                arena.dropdown.setOptions(visibleEditors(), { withCompare: true });
+                if (arena.currentPath && !arena.dropdown.setSelected(arena.currentPath)) {
+                    // A deep-linked editor hidden from the menu — label it directly.
+                    arena.dropdown.label.innerHTML = optionRowHtml(editorsByPath.get(arena.currentPath));
+                }
+                refreshCompareTable(arena);
+                if (arena.currentPath) renderInfo(arena, arena.currentPath);
+            });
+        }
+
+        // The code/demo toggle is global, and it mirrors a #code marker on the
+        // URL so the browser's Back button exits the code view. While the view
+        // is on, the current history entry is always `<route>#code` sitting
+        // directly on top of `<route>` — turning it on pushes that entry, and
+        // every navigation leaves the mode first (see renderSelection) — so
+        // "View demo" can simply go back, identical to pressing Back; the
+        // popstate handler re-renders the demos.
+        function toggleCode() {
+            if (codeView) {
+                history.back();
+            } else {
+                history.pushState(history.state, '', location.pathname + location.search + '#code');
+                applyCodeView(true);
+            }
+        }
+
+        // Apply the global mode to every arena: relabel each visible toggle,
+        // add/remove its comments badge and swap the viewport between the demo
+        // iframe and the fetched source.
+        function applyCodeView(on, { except } = {}) {
+            codeView = on;
+            arenas.forEach(arena => {
+                if (arena === except) return;
+                const btn = arena.infoPanel.querySelector('.view-code-btn');
+                if (btn) {
+                    btn.textContent = on ? 'View demo' : 'View code';
+                    const commentsBtn = arena.infoPanel.querySelector('.comments-btn');
+                    if (on && !commentsBtn) {
+                        btn.insertAdjacentHTML('afterend', commentsBtnHtml());
+                        btn.nextElementSibling.addEventListener('click', toggleComments);
+                    } else if (!on && commentsBtn) {
+                        commentsBtn.remove();
+                    }
+                }
+                if (!arena.currentPath) return;   // arena is on the comparison table
+                if (on) showCode(arena); else loadEditor(arena, arena.currentPath);
+            });
+            syncInfoPanelHeights();   // the comments badge can change a panel's wrap
+        }
+
+        async function showCode(arena) {
+            const path = arena.currentPath;
+            const full = fullEditors;   // the source variant this fetch is for
+            try {
+                const response = await fetch(demoPath(path));
+                const htmlText = await response.text();
+                // The mode (code/demo or minimal/full) or this arena's selection
+                // may have changed while the source was in flight — don't clobber
+                // the newer view.
+                if (!codeView || arena.currentPath !== path || fullEditors !== full) return;
+
+                teardownDemo(arena);
+                const code = document.createElement('code');
+                // textContent escapes the markup
+                code.textContent = commentsHidden ? stripComments(htmlText) : htmlText;
+                const pre = document.createElement('pre');
+                pre.className = 'code-view';
+                pre.appendChild(code);
+                arena.viewport.appendChild(pre);
+                highlightCode(code);   // lazy-loads highlight.js from a CDN on first use
+            } catch (err) {
+                arena.viewport.innerHTML = `<p style="color:red;">Could not load source: ${err.message}</p>`;
+            }
+        }
+
+        // Strip the comments from a demo's source for the code view: HTML
+        // comments in markup, // and /* */ in <script>, /* */ in <style>.
+        // A scanner (not a parser) walks the text tracking just enough state
+        // to not mangle code: JS/CSS strings (URLs contain //), template
+        // literals and regex literals are copied through untouched, and
+        // <script>/<style> bodies end at their close tag exactly like HTML
+        // itself parses them. A line a removal leaves empty is dropped whole.
+        function stripComments(src) {
+            const n = src.length;
+            let out = '';
+            let i = 0;
+            let mode = 'html';   // 'html' | 'js' | 'css'
+
+            // Resume after a removed comment: if the rest of its line is blank,
+            // drop the whole line (rewind out's tail, swallow the newline).
+            const resume = (next) => {
+                let o = out.length;
+                while (o > 0 && (out[o - 1] === ' ' || out[o - 1] === '\t')) o--;
+                if ((o === 0 || out[o - 1] === '\n') && src[next] === '\n') {
+                    out = out.slice(0, o);
+                    return next + 1;
+                }
+                return next;
+            };
+            // Copy a quoted string (or template literal) through verbatim.
+            const copyString = () => {
+                const q = src[i];
+                let j = i + 1;
+                while (j < n) {
+                    if (src[j] === '\\') { j += 2; continue; }
+                    if (src[j] === q) { j++; break; }
+                    if (q !== '`' && src[j] === '\n') break;   // unterminated — bail
+                    j++;
+                }
+                out += src.slice(i, j);
+                i = j;
+            };
+            // A `/` starts a regex (not division) when what precedes it can't
+            // end an expression: an operator/punctuation, or a keyword.
+            const regexAllowed = () => {
+                const m = out.match(/(\S)\s*$/);
+                if (!m) return true;
+                if (/[\w$]/.test(m[1])) return /(^|[^\w$])(return|typeof|instanceof|in|of|new|void|delete|case|do|else|yield|await)\s*$/.test(out);
+                return !/[)\]}'"`]/.test(m[1]);
+            };
+
+            while (i < n) {
+                const c = src[i];
+                if (mode === 'html') {
+                    if (src.startsWith('<!--', i)) {
+                        const end = src.indexOf('-->', i + 4);
+                        i = resume(end === -1 ? n : end + 3);
+                        continue;
+                    }
+                    const open = /^<(script|style)[\s>]/i.exec(src.slice(i, i + 8));
+                    if (open) {
+                        mode = open[1].toLowerCase() === 'script' ? 'js' : 'css';
+                        const gt = src.indexOf('>', i);
+                        const end = gt === -1 ? n : gt + 1;
+                        out += src.slice(i, end);
+                        i = end;
+                        continue;
+                    }
+                    out += c; i++;
+                    continue;
+                }
+                // <script>/<style> bodies end at the close tag no matter the
+                // inner state — hand it back to the html branch above.
+                const close = mode === 'js' ? '<\/script' : '<\/style';
+                if (c === '<' && src.slice(i, i + close.length).toLowerCase() === close) {
+                    mode = 'html';
+                    continue;
+                }
+                if (src.startsWith('/*', i)) {
+                    const end = src.indexOf('*/', i + 2);
+                    i = resume(end === -1 ? n : end + 2);
+                    continue;
+                }
+                if (mode === 'js') {
+                    if (src.startsWith('//', i)) {
+                        const end = src.indexOf('\n', i);
+                        i = resume(end === -1 ? n : end);
+                        continue;
+                    }
+                    if (c === '"' || c === "'" || c === '`') { copyString(); continue; }
+                    if (c === '/' && regexAllowed()) {
+                        let j = i + 1, inClass = false;
+                        while (j < n && src[j] !== '\n') {
+                            if (src[j] === '\\') { j += 2; continue; }
+                            if (src[j] === '[') inClass = true;
+                            else if (src[j] === ']') inClass = false;
+                            else if (src[j] === '/' && !inClass) { j++; break; }
+                            j++;
+                        }
+                        out += src.slice(i, j);
+                        i = j;
+                        continue;
+                    }
+                } else if (c === '"' || c === "'") { copyString(); continue; }
+                out += c; i++;
+            }
+            // Trailing-comment removals leave dangling spaces — tidy line ends.
+            return out.split('\n').map(l => l.trimEnd()).join('\n');
+        }
+
+        /* ---------- Lazy syntax highlighting (code view) ---------- */
+        // highlight.js is fetched from a CDN only the FIRST time a code view is
+        // opened — never on the initial page load. The module and its theme are
+        // cached in `hljsPromise` and reused for every later code view.
+        const HLJS_VERSION = '11.11.1';
+        let hljsPromise = null;
+        function loadHighlighter() {
+            if (!hljsPromise) {
+                const theme = document.createElement('link');
+                theme.rel = 'stylesheet';
+                theme.href = `https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@${HLJS_VERSION}/build/styles/github.min.css`;
+                document.head.appendChild(theme);
+                // The "common" ES build bundles ~37 languages (incl. xml/css/js), so
+                // the demo's embedded <style>/<script> get sub-highlighted too.
+                hljsPromise = import(`https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@${HLJS_VERSION}/build/es/highlight.min.js`)
+                    .then(mod => mod.default)
+                    .catch(err => { hljsPromise = null; throw err; });   // allow a retry on the next click
+            }
+            return hljsPromise;
+        }
+
+        // Syntax-highlight an already-filled <code> element in place. The source is
+        // a whole HTML document, so we highlight with the xml grammar. Progressive
+        // enhancement: if the CDN import fails, the plain escaped source stays put.
+        async function highlightCode(codeEl) {
+            const source = codeEl.textContent;
+            try {
+                const hljs = await loadHighlighter();
+                if (!codeEl.isConnected) return;   // user already switched back to the demo
+                codeEl.classList.add('hljs', 'language-xml');
+                codeEl.innerHTML = hljs.highlight(source, { language: 'xml' }).value;
+            } catch (err) {
+                /* leave the un-highlighted (already escaped) source in place */
+            }
+        }
+
+        /* ---------- Markdown-support score ---------- */
+        // Each editor's `markdown` metadata (in editors.json) rates three abilities
+        // on a support ladder; the score is their average. The components, with
+        // links to the docs / 3rd-party libraries behind each claim, are revealed
+        // in a modal when a score is clicked.
+
+        // Support ladder: points feed the score; label/cls drive the modal pills.
+        const MD_LEVELS = {
+            'native':         { points: 100, label: 'Native',           cls: 'md-level--native' },
+            'native-partial': { points: 75,  label: 'Native (partial)', cls: 'md-level--native-partial' },
+            'library':        { points: 60,  label: '3rd Party',        cls: 'md-level--library' },
+            'paid':           { points: 60,  label: 'Paid add-on',      cls: 'md-level--paid' },
+            'custom':         { points: 30,  label: 'Custom Code',      cls: 'md-level--custom' },
+            'none':           { points: 0,   label: 'None',             cls: 'md-level--none' },
+        };
+        const MD_DIMENSIONS = [
+            { key: 'input',  label: 'Markdown → editor' },
+            { key: 'output', label: 'Editor → Markdown' },
+            { key: 'live',   label: 'Format as you type' },
+        ];
+
+        function markdownScore(editor) {
+            const md = editor.markdown;
+            if (!md) return null;
+            const points = MD_DIMENSIONS.map(d => (MD_LEVELS[md[d.key]?.level] || MD_LEVELS.none).points);
+            return Math.round(points.reduce((a, b) => a + b, 0) / points.length);
+        }
+
+        /* ----- Editor type (WYSIWYG vs Code) ----- */
+        // WYSIWYG is a "B" rendered as text (styled like the Demo pill); Code is
+        // Bootstrap's < > code icon. Both use currentColor so they tint to their context.
+        const WYSIWYG_ICON = `<span>B</span>`;
+        const CODE_ICON = `<svg viewBox="0 0 16 16" fill="currentColor"><path d="M5.854 4.854a.5.5 0 1 0-.708-.708l-3.5 3.5a.5.5 0 0 0 0 .708l3.5 3.5a.5.5 0 0 0 .708-.708L2.707 8zm4.292 0a.5.5 0 0 1 .708-.708l3.5 3.5a.5.5 0 0 1 0 .708l-3.5 3.5a.5.5 0 0 1-.708-.708L13.293 8z"/></svg>`;
+
+        const EDITOR_TYPES = [
+            { name: 'WYSIWYG', icon: WYSIWYG_ICON, blurb: 'What You See Is What You Get — the editor formats Markdown as you type: <code>**bold**</code> turns into <strong>bold</strong> text.' },
+            { name: 'Code', icon: CODE_ICON, blurb: 'A source editor — you edit the raw Markdown and it is syntax-highlighted as you type: <code>**bold**</code> stays as <code>**bold**</code>, coloured but not rendered.' },
+        ];
+        const typeInfo = (name) => EDITOR_TYPES.find(t => t.name === name);
+
+        function typeModalHtml() {
+            const rows = EDITOR_TYPES.map(t => `
+                <li class="md-row">
+                    <div class="type-head"><span class="badge badge--type">${t.icon}</span><span class="type-head__name">${t.name}</span></div>
+                    <p class="md-row__note">${t.blurb}</p>
+                </li>`).join('');
+            return `
+                <button type="button" class="md-modal__close">×</button>
+                <h2 class="md-modal__title">Editor types</h2>
+                <ul class="md-breakdown">${rows}</ul>`;
+        }
+
+        /* ----- Modal (shared by the Markdown breakdown and the editor-type help) ----- */
+        const mdModal = document.getElementById('md-modal');
+        const mdModalCard = mdModal.querySelector('.md-modal__card');
+
+        function markdownModalHtml(editor) {
+            const score = markdownScore(editor);
+            const rows = MD_DIMENSIONS.map(d => {
+                const c = editor.markdown[d.key] || { level: 'none' };
+                const lvl = MD_LEVELS[c.level] || MD_LEVELS.none;
+                const link = c.via
+                    ? (c.url
+                        ? ` <a class="compare-link" href="${c.url}" target="_blank" rel="noopener">${c.via} ↗</a>`
+                        : ` <span>${c.via}</span>`)
+                    : '';
+                return `
+                    <li class="md-row">
+                        <div class="md-row__head">
+                            <span class="md-row__dim">${d.label}</span>
+                            <span class="md-level ${lvl.cls}">${lvl.label}</span>
+                        </div>
+                        <p class="md-row__note">${c.note ? c.note + '.' : ''}${link}</p>
+                    </li>`;
+            }).join('');
+            return `
+                <button type="button" class="md-modal__close">×</button>
+                <h2 class="md-modal__title">
+                    ${editor.icon ? `<img src="${editor.icon}" alt="" />` : ''}${editor.name}
+                    <span class="md-modal__score">Markdown ${score}/100</span>
+                </h2>
+                <ul class="md-breakdown">${rows}</ul>
+                <details class="md-calc">
+                    <summary class="md-calc__summary">How is this scored?</summary>
+                    <p class="md-calc__body">The score averages the three abilities above. Support levels — Native 100 · Native (partial) 75 · 3rd party 60 · Custom code 30 · None 0. (Highlighting Markdown natively rather than rendering it still counts as full Native.)</p>
+                </details>`;
+        }
+
+        function openModal(html) {
+            mdModalCard.innerHTML = html;
+            mdModalCard.querySelector('.md-modal__close').addEventListener('click', closeModal);
+            mdModal.hidden = false;
+            mdModalCard.focus();
+        }
+        function closeModal() {
+            mdModal.hidden = true;
+            mdModalCard.innerHTML = '';
+        }
+        function openMarkdownModal(path) {
+            const editor = editorsByPath.get(path);
+            if (editor && editor.markdown) openModal(markdownModalHtml(editor));
+        }
+        function openTypeModal() { openModal(typeModalHtml()); }
+
+        // Dismiss on backdrop click or Escape.
+        mdModal.querySelector('.md-modal__backdrop').addEventListener('click', closeModal);
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && !mdModal.hidden) closeModal();
+        });
+
+        /* ---------- Comparison table (all editors at once) ---------- */
+        // Active = a release within the last 365 days, measured by `lastAnyRelease`:
+        // the core npm package's most recent ship of ANY version — including dev /
+        // nightly builds and maintenance releases on older major lines (e.g.
+        // CodeMirror's codemirror@5.65.x) — which the shown version's `lastRelease`
+        // can miss. Every editor carries this field.
+        const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000;
+        const isActive = (editor) => {
+            const released = new Date(editor.lastAnyRelease);
+            return !isNaN(released) && (Date.now() - released.getTime()) <= ONE_YEAR_MS;
+        };
+
+        // The editor set used by both the compare tables and the dropdown menus.
+        const visibleEditors = () => showInactive ? editorList : editorList.filter(isActive);
+
+        // The framework names for an editor, joined for the Frameworks column's
+        // alphabetical tie-break among editors that support the same count.
+        const frameworkNames = (editor) =>
+            Array.isArray(editor.frameworks) ? editor.frameworks.map(fw => fw.name).join(', ') : '';
+
+        /* ---------- Badges: the single shared order ---------- */
+        // ONE list drives BOTH the comparison table (a column per entry, in this
+        // order) and the per-editor info bar (the same badges, same order). To
+        // reorder either view, reorder this array. Each entry:
+        //   key     — column id: its data-col (compact toggle) and its sort key
+        //   th      — table header label (HTML; '' for the icon-only end columns)
+        //   thClass — header + cell alignment class ('is-numeric' | 'is-center')
+        //   sort    — how the column sorts, omit to make it unsortable:
+        //             { type, dir?, value(editor), tiebreak? }
+        //   make    — editor -> badge() options, an array of them (one per
+        //             framework), or null for an empty cell / no info-bar badge
+        //   textInTable — in the TABLE, render just the text (a plain link if the
+        //             badge has one, else bare) to save width; the info bar is
+        //             unaffected and still shows the full pill
+        const BADGES = [
+            {
+                key: 'downloads', th: NPM_ICON, thClass: 'is-numeric', textInTable: true,
+                sort: { type: 'number', value: e => e.npmWeeklyDownloads },
+                make: e => ({ icons: NPM_ICON, text: `${compact(e.npmWeeklyDownloads)}/wk`, link: e.npm }),
+            },
+            {
+                key: 'stars', th: `${GITHUB_ICON} ★`, thClass: 'is-numeric', textInTable: true,
+                sort: { type: 'number', value: e => e.githubStars },
+                make: e => ({ icons: GITHUB_ICON, prefix: "★ ", text: compact(e.githubStars), link: e.github }),
+            },
+            {
+                key: 'markdown', th: 'Markdown', thClass: 'is-numeric',
+                sort: { type: 'number', value: e => markdownScore(e) ?? 0 },
+                // A button, not a link: it opens the score-breakdown modal (wired
+                // by wireBadges through data-modal).
+                make: e => {
+                    const score = markdownScore(e);
+                    return score == null ? null
+                        : { text: String(score), button: true, attrs: { 'data-modal': 'markdown', 'data-path': e.path } };
+                },
+            },
+            {
+                key: 'type', th: 'Type', thClass: 'is-center',
+                sort: { type: 'number', dir: 'asc', value: e => e.type === 'WYSIWYG' ? 0 : 1 },   // ▲ B (WYSIWYG) then Code
+                make: e => {
+                    const t = typeInfo(e.type);
+                    return t ? { icons: t.icon, button: true, className: 'badge--type', attrs: { 'data-modal': 'type' } } : null;
+                },
+            },
+            {
+                key: 'maintainer', th: 'Developer', textInTable: true,
+                sort: { type: 'text', value: e => e.maintainer?.name || '' },
+                make: e => e.maintainer?.name ? { prefix: "by ", text: e.maintainer.name, link: e.maintainer.url } : null,
+            },
+            {
+                key: 'price', th: 'Price', textInTable: true,
+                sort: { type: 'text', value: e => e.paidAddons ? 'Paid' : 'Free' },
+                make: e => e.paidAddons ? { text: 'Paid add-on', link: e.paidAddonsUrl } : { text: 'Free' },
+            },
+            {
+                key: 'status', th: 'Status', textInTable: true,
+                sort: { type: 'number', dir: 'asc', value: e => isActive(e) ? 0 : 1 },   // ▲ Active then Inactive
+                make: e => e.lastRelease ? { text: isActive(e) ? 'Active' : 'Inactive', link: `${e.npm}?activeTab=versions` } : null,
+            },
+            {
+                key: 'frameworks', th: 'Frameworks', textInTable: true,
+                sort: {
+                    type: 'number', value: e => Array.isArray(e.frameworks) ? e.frameworks.length : 0,
+                    // Equal counts: order alphabetically by the framework names
+                    // shown (identical lists fall through to the downloads tie-break).
+                    tiebreak: (a, b) => frameworkNames(a).localeCompare(frameworkNames(b), 'en', { sensitivity: 'base' }),
+                },
+                // One badge per framework; an editor's own integration doc wins
+                // over the framework's generic home page (frameworkHref).
+                make: e => Array.isArray(e.frameworks)
+                    ? e.frameworks.map(fw => ({ text: fw.name, link: frameworkHref(fw), attrs: frameworkTitle(fw) ? { title: frameworkTitle(fw) } : {} }))
+                    : null,
+            },
+            {
+                key: 'math', th: 'Math', textInTable: true,
+                sort: { type: 'number', value: e => (MD_LEVELS[e.math?.level] || MD_LEVELS.none).points },
+                make: e => {
+                    const lvl = e.math && MD_LEVELS[e.math.level];
+                    return (!lvl || lvl === MD_LEVELS.none) ? null
+                        : { prefix: "Math ", text: lvl.label, link: e.math.url };
+                },
+            },
+            {
+                key: 'license', th: 'License', textInTable: true,
+                sort: { type: 'text', value: e => e.license || '' },
+                make: e => e.license ? { text: e.license, link: e.licenseUrl } : null,
+            },
+            {
+                key: 'basedOn', th: 'Based on', textInTable: true,
+                sort: { type: 'text', value: e => e.basedOn?.name || '' },
+                // The base editor is itself in our list, so link to its website.
+                make: e => {
+                    const base = e.basedOn;
+                    if (!base?.name) return null;
+                    return { prefix: 'Based on ', text: base.name, link: editorsByPath.get(base.path)?.website };
+                },
+            },
+            { key: 'website',    th: '', make: e => ({ icons: WEBSITE_ICON, link: e.website }) },
+            { key: 'docs',       th: '', make: e => ({ icons: DOCS_ICON, link: e.docs }) },
+            { key: 'playground', th: '', make: e => e.playground ? { icons: PLAYGROUND_ICON, link: e.playground } : null },
+            // Pop-out to the demo's current variant (full in Full mode, else
+            // minimal); data-path keeps the canonical path so toggleEditorMode
+            // can re-point links already rendered in the info bars and tables.
+            { key: 'standalone', th: '', make: e => ({ icons: STANDALONE_ICON, link: demoUrl(e.path), className: 'badge--standalone', attrs: { 'data-path': e.path } }) },
+        ];
+        /* ---------- Column sorting ---------- */
+        // Each sortable column declares how to read its value and its type, so the
+        // comparator sorts numbers numerically and text alphabetically. The badge
+        // columns bring their own `sort` (above); the Editor-name column is the one
+        // sortable column that isn't a badge.
+        const COMPARE_SORTS = {
+            name: { type: 'text', value: e => e.name },
+            ...Object.fromEntries(BADGES.filter(b => b.sort).map(b => [b.key, b.sort])),
+        };
+
+        // Header cells, in column order: the three leading columns (sortable Editor
+        // name, the starred ★ marker, then the Demo button) followed by one header
+        // per badge. Stays in step with compareRowsHtml(), which walks the same
+        // [Editor, Star, Demo, …BADGES].
+        const COMPARE_HEAD = [
+            { label: 'Editor', sort: 'name' },
+            { label: '<span class="sr-only">Starred</span>', cls: 'star-col' },
+            { label: '<span class="sr-only">Demo</span>' },
+            ...BADGES.map(b => ({ label: b.th, sort: b.sort ? b.key : undefined, cls: b.thClass, col: b.key })),
+        ];
+
+        // (Each arena carries its own sortState — see the arena objects.)
+        // The two toggles live only under the primary arena's table but are
+        // GLOBAL settings: they apply to every arena's compare table, current
+        // and future (a fresh trimmed table renders to the state below).
+        // Both persist in localStorage ('1' = on) so a reload keeps them.
+        // "Show inactive" toggle is off by default, so only active editors
+        // appear in every compare table AND in every dropdown menu.
+        let showInactive = storage.get('show-inactive') === '1';
+        // "Compact view" toggle state — off by default (all columns shown). When on,
+        // each table gets an `is-compact` class that hides the lower-priority columns.
+        let compactView = storage.get('compact-view') === '1';
+
+        function editorComparator(key, dir) {
+            const sort = COMPARE_SORTS[key] || COMPARE_SORTS.downloads;
+            const mul = dir === 'asc' ? 1 : -1;
+            return (a, b) => {
+                const va = sort.value(a), vb = sort.value(b);
+                let cmp;
+                if (sort.type === 'number') cmp = (Number(va) || 0) - (Number(vb) || 0);
+                else cmp = String(va).localeCompare(String(vb), 'en', { sensitivity: 'base' });
+                if (cmp) return cmp * mul;
+                // A column may define its own fixed tie-break for equal primary
+                // values (e.g. Frameworks orders equal counts alphabetically by
+                // framework name). Fixed, not flipped with dir, so tied rows keep a
+                // stable order whichever way the primary column is sorted.
+                if (sort.tiebreak) {
+                    const tb = sort.tiebreak(a, b);
+                    if (tb) return tb;
+                }
+                // Same primary value: break the tie by npm weekly downloads (most
+                // first), then A→Z by editor name as a last resort. Both are fixed
+                // (not flipped with dir) so tied rows keep the same order whichever
+                // way the primary column is sorted.
+                const dl = (Number(b.npmWeeklyDownloads) || 0) - (Number(a.npmWeeklyDownloads) || 0);
+                if (dl) return dl;
+                return a.name.localeCompare(b.name);
+            };
+        }
+
+        // Clicking a header: the same column toggles direction; a new column starts at
+        // its natural default (text A→Z, numbers/dates high→low). Each arena's
+        // table sorts independently, so this only redraws the clicked one.
+        function setSort(arena, key) {
+            if (!COMPARE_SORTS[key]) return;
+            const sortState = arena.sortState;
+            if (sortState.key === key) {
+                sortState.dir = sortState.dir === 'asc' ? 'desc' : 'asc';
+            } else {
+                sortState.key = key;
+                sortState.dir = COMPARE_SORTS[key].dir || (COMPARE_SORTS[key].type === 'text' ? 'asc' : 'desc');
+            }
+            refreshCompareTable(arena);
+        }
+
+        function compareHeadHtml(arena) {
+            const sortState = arena.sortState;
+            return COMPARE_HEAD.map(col => {
+                const sortable = !!col.sort;
+                const active = sortable && col.sort === sortState.key;
+                const classes = [col.cls, sortable ? 'is-sortable' : '', active ? 'is-sorted' : ''].filter(Boolean).join(' ');
+                const parts = ['scope="col"'];
+                if (classes) parts.push(`class="${classes}"`);
+                if (col.col) parts.push(`data-col="${col.col}"`);
+                if (sortable) parts.push(`data-sort="${col.sort}"`, 'tabindex="0"');
+                const arrow = active ? `<span class="sort-ind">${sortState.dir === 'asc' ? '▲' : '▼'}</span>` : '';
+                return `<th ${parts.join(' ')}>${col.label}${arrow}</th>`;
+            }).join('');
+        }
+
+        // Re-draw just the header + rows (whatever sits below stays put).
+        function refreshCompareTable(arena) {
+            const table = arena.viewport.querySelector('.compare-table');
+            if (!table) return;
+            table.querySelector('thead tr').innerHTML = compareHeadHtml(arena);
+            table.querySelector('tbody').innerHTML = compareRowsHtml(arena);
+            wireCompareTable(arena);
+        }
+
+        // (Re)attach the header sort handlers, then the shared badge handlers.
+        function wireCompareTable(arena) {
+            arena.viewport.querySelectorAll('.compare-table th[data-sort]').forEach(th => {
+                th.addEventListener('click', () => setSort(arena, th.dataset.sort));
+                th.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSort(arena, th.dataset.sort); }
+                });
+            });
+            wireBadges(arena.viewport, arena);
+        }
+
+        // Wire the interactive badges within a container (a table or an info
+        // bar). Which badge does what is declared by its data-* attribute in
+        // BADGES/renderInfo, so both views share one wiring pass: Demo opens the
+        // editor in the arena OWNING the container (through the router for the
+        // primary, directly for an extra arena), the score/type badges open
+        // their explanatory modal — shared, so they work the same from any arena.
+        function wireBadges(root, arena) {
+            root.querySelectorAll('[data-open]').forEach(el =>
+                el.addEventListener('click', () => arena === arenas[0]
+                    ? selectByPath(el.dataset.open)
+                    : renderExtraSelection(arena, el.dataset.open)));
+            root.querySelectorAll('[data-modal="markdown"]').forEach(el =>
+                el.addEventListener('click', () => openMarkdownModal(el.dataset.path)));
+            root.querySelectorAll('[data-modal="type"]').forEach(el =>
+                el.addEventListener('click', openTypeModal));
+            // Only the info bar's star pill carries data-star — the table's and
+            // dropdown's read-only ★ markers never get this handler.
+            root.querySelectorAll('[data-star]').forEach(el =>
+                el.addEventListener('click', () => toggleStar(el.dataset.star)));
+        }
+
+        // One row: the sticky Editor name, the starred ★ marker, the Demo button,
+        // then every badge in BADGES order — rendered through the same
+        // badge()/badgesHtml() the info bar uses, so the two views stay identical.
+        function compareRowsHtml(arena) {
+            // Show-inactive is a global setting — visibleEditors() filters every
+            // arena's rows; only the sort order is per-arena.
+            return visibleEditors().slice()
+                .sort(editorComparator(arena.sortState.key, arena.sortState.dir))
+                .map(editor => `
+                    <tr>
+                        <td><span class="compare-name">${editor.icon ? `<img src="${editor.icon}" alt="" />` : ''}${editor.name}</span></td>
+                        <td class="star-col">${starMarkHtml(editor)}</td>
+                        <td>${badge({ text: 'Demo', button: true, attrs: { 'data-open': editor.path } })}</td>
+                        ${BADGES.map(b => `<td${b.thClass ? ` class="${b.thClass}"` : ''} data-col="${b.key}">${(b.textInTable ? badgeText : badgesHtml)(b.make(editor))}</td>`).join('')}
+                    </tr>`).join('');
+        }
+
+        // Editors that exist but aren't shipped as a runnable demo here (e.g. a
+        // commercial-only core, or too new to have Markdown support). Rendered under
+        // the table; each carries its own `reason` for being left out, plus optional
+        // licence / website links. Driven by editors.json's optional `omitted` list.
+        function omittedSectionHtml() {
+            if (!omittedList.length) return '';
+            const rows = omittedList.map(e => {
+                const icon = e.icon ? `<img class="omit-icon" src="${e.icon}" alt="" />` : '';
+                const reason = { text: e.reason, link: e.reasonUrl };
+                const website = { icons: WEBSITE_ICON, link: e.website };
+                return `<li>${icon}<strong>${e.name}</strong>: ${badgeText(reason)} ${badge(website)}</li>`;
+            }).join('');
+            return `
+                    <h2 class="compare__heading">Editors omitted</h2>
+                    <p class="compare__note">Editors that are not listed here:</p>
+                    <ul class="compare__note compare__benefits">${rows}</ul>`;
+        }
+
+        // Some WYSIWYG editors also ship a plain code/Markdown source mode that these
+        // demos don't surface. Listed here (from each editor's optional `codeVersion`)
+        // so the omission is explicit. Ordered like the table (by weekly downloads).
+        function codeVersionSectionHtml() {
+            const withCode = editorList.filter(e => e.codeVersion);
+            if (!withCode.length) return '';
+            const rows = withCode.map(e => {
+                const icon = e.icon ? `<img class="omit-icon" src="${e.icon}" alt="" />` : '';
+                const label = badgeText({ text: e.codeVersion.via, link: e.codeVersion.url });
+                return `<li>${icon}<strong>${e.name}</strong>${label ? `: ${label}` : ''}</li>`;
+            }).join('');
+            return `
+                    <h2 class="compare__heading">Notes</h2>
+                    <p class="compare__note">These editors also have a code or Markdown style version, which has been omitted in the table for simplicity:</p>
+                    <ul class="compare__note compare__benefits">${rows}</ul>`;
+        }
+
+        // The comparison view. Every arena shares the top part — the caption
+        // and the sortable table, whose Demo buttons pick the owning arena's
+        // editor — but only the PRIMARY arena gets the toggles and the notes
+        // sections below it; an extra arena shows just this trimmed table.
+        function renderComparison(arena) {
+            // Tear down any editor that was previously mounted in the viewport.
+            teardownDemo(arena);
+            const isPrimary = arena === arenas[0];
+
+            // Caption + table, common to both views. The compact-view setting
+            // is global, so every arena's table honours it at build time.
+            const tableHtml = `
+                    <p class="compare__caption">Press <strong>Demo</strong> to view a live editor.</p>
+                    <div class="compare__scroll">
+                    <table class="compare-table${compactView ? ' is-compact' : ''}">
+                        <thead>
+                            <tr>${compareHeadHtml(arena)}</tr>
+                        </thead>
+                        <tbody>${compareRowsHtml(arena)}</tbody>
+                    </table>
+                    </div>`;
+
+            arena.viewport.innerHTML = `
+                <div class="compare">${tableHtml}${!isPrimary ? '' : `
+                    <div class="compare__controls">
+                        <label class="compare-toggle">
+                            <input type="checkbox" class="compare-toggle__input" id="show-inactive"${showInactive ? ' checked' : ''}>
+                            <span class="compare-toggle__track"><span class="compare-toggle__thumb"></span></span>
+                            <span class="compare-toggle__label">Show inactive</span>
+                        </label>
+                        <span class="compare__controls-hint">(Last release &gt; 1 year)</span>
+                    </div>
+                    <div class="compare__controls">
+                        <label class="compare-toggle">
+                            <input type="checkbox" class="compare-toggle__input" id="compact-view"${compactView ? ' checked' : ''}>
+                            <span class="compare-toggle__track"><span class="compare-toggle__thumb"></span></span>
+                            <span class="compare-toggle__label">Compact view</span>
+                        </label>
+                    </div>
+                    <h2 class="compare__heading">Formatting</h2>
+                    <p class="compare__note">
+                        The editors format markdown as you type: <code>**bold**</code>
+                        either turns into <strong>bold</strong> text or is highlighted as <strong>**bold**</strong>.
+                    </p>
+                    <h2 class="compare__heading">Benefits of Markdown</h2>
+                    <ul class="compare__note compare__benefits">
+                        <li><strong>Future-proof</strong>: store markdown in your database and you can switch editors later without converting any data.</li>
+                        <li><strong>Versionable</strong>: diffs and merges nicely in version control.</li>
+                        <li><strong>AI-ready</strong>: markdown is the native format LLMs read and write, so AI features just work.</li>
+                    </ul>
+                    ${omittedSectionHtml()}
+                    ${codeVersionSectionHtml()}
+                    <h2 class="compare__heading">Card game</h2>
+                    <p class="compare__note">There's also a <a class="compare-link" href="game/">card game</a>: play your deck's stats against the computer.</p>
+                    <h2 class="compare__heading">Feedback</h2>
+                    <p class="compare__note">I've created this website when I was looking for a markdown editor myself.<br>Please let me know any additional features / missing editors / other feedback.</p>
+                    <ul class="compare__note compare__benefits">
+                        <li><a class="compare-link" href="https://github.com/wilmersdorf/MarkdownArena" target="_blank" rel="noopener">Open an issue on GitHub</a></li>
+                        <li><a class="compare-link" href="mailto:info@markdownarena.com">Mail info@markdownarena.com</a></li>
+                        <li><a class="compare-link" href="https://x.com/wilmers_dorf" target="_blank" rel="noopener">Message me on X</a></li>
+                    </ul>`}
+                </div>`;
+
+            wireCompareTable(arena);
+
+            if (!isPrimary) return;   // the toggles below exist only in the full view
+
+            // The controls live outside the table, so refreshCompareTable() (which
+            // only redraws thead/tbody) leaves them intact — wire them once here.
+            // Both settings are global: a change re-applies to EVERY arena that
+            // currently shows a compare table (arenas showing a demo have no
+            // table and are skipped — they pick the state up when they return
+            // to the compare view).
+            primaryViewport.querySelector('#show-inactive').addEventListener('change', (e) => {
+                showInactive = e.target.checked;
+                storage.set('show-inactive', showInactive ? '1' : '0');
+                arenas.forEach(refreshCompareTable);   // its !table guard skips demos
+                // The dropdowns list the same filtered set — rebuild each arena's
+                // options, re-marking whatever selection the new list still contains
+                // (an arena showing a now-hidden inactive demo keeps its label; its
+                // option simply drops out of the menu).
+                arenas.forEach(a => {
+                    const selected = a.dropdown.options.find(o => o.classList.contains('is-selected'))?.dataset.value;
+                    a.dropdown.setOptions(visibleEditors(), { withCompare: true });
+                    if (selected) a.dropdown.setSelected(selected);
+                });
+            });
+
+            // Compact view is pure presentation (CSS hides the tagged columns), so we
+            // just toggle the class on each table — no need to rebuild the rows.
+            primaryViewport.querySelector('#compact-view').addEventListener('change', (e) => {
+                compactView = e.target.checked;
+                storage.set('compact-view', compactView ? '1' : '0');
+                arenas.forEach(a => {
+                    const table = a.viewport.querySelector('.compare-table');
+                    if (table) table.classList.toggle('is-compact', compactView);
+                });
+            });
+        }
+
+        /* ---------- Editor loading ---------- */
+        // Every demo runs in its own same-origin <iframe>: a separate document
+        // with its own module registry and its own <script type="importmap">,
+        // parsed before any of the demo's modules load — exactly as if the
+        // standalone page were opened directly. Demos therefore can't interfere
+        // with each other or with this page (no shared globals, no shared module
+        // cache, any import map welcome), and no import map is ever added to an
+        // already-running document — which is what used to log "an import map is
+        // added after module script load" warnings on every switch.
+        // A fresh frame is created per view (never reusing one via .src), so
+        // switching adds no iframe history entries and Back/Forward stay on the
+        // ?editor=<slug> routing above.
+        function loadEditor(arena, targetPath) {
+            teardownDemo(arena);   // removing the previous frame disposes that demo
+
+            const frame = document.createElement('iframe');
+            frame.className = 'demo-frame';
+            frame.src = demoPath(targetPath);
+            frame.addEventListener('load', () => {
+                const doc = frame.contentDocument;
+                if (!doc || !doc.documentElement) return;
+
+                // Grow the frame with the demo's content so the window scrolls
+                // as one page (the frame never gets an inner scrollbar of its
+                // own). The observer re-fits on every reflow inside the demo —
+                // editors mount asynchronously from a CDN and resize as you type.
+                const fit = () => {
+                    frame.style.height = doc.documentElement.scrollHeight + 'px';
+                };
+                arena.frameObserver = new ResizeObserver(fit);
+                arena.frameObserver.observe(doc.documentElement);
+                if (doc.body) arena.frameObserver.observe(doc.body);
+                fit();
+
+                // Keyboard shortcuts + dropdown click-away must keep working
+                // while the user is typing/clicking inside the demo document.
+                wireAppShortcuts(doc);
+                // Any arena's menu may be open while this iframe is interacted
+                // with (the outer document's click-away listeners never see
+                // clicks inside an iframe), so close whichever one is open.
+                doc.addEventListener('mousedown', closeAllMenus, true);
+            });
+            arena.viewport.appendChild(frame);
+        }
+
+        /* ---------- Share button ---------- */
+        // Use the native share sheet when available (mostly mobile); otherwise
+        // copy the page URL to the clipboard and flash a confirmation.
+        const shareBtn = document.getElementById('share-btn');
+        shareBtn.addEventListener('click', async () => {
+            const url = location.href;
+            if (navigator.share) {
+                try {
+                    await navigator.share({ title: document.title, url });
+                } catch (err) { /* user dismissed the share sheet */ }
+                return;
+            }
+            try {
+                await navigator.clipboard.writeText(url);
+            } catch (err) {
+                prompt('Copy this link:', url);
+                return;
+            }
+            shareBtn.classList.add('is-copied');
+            shareBtn.title = 'Link copied!';
+            setTimeout(() => {
+                shareBtn.classList.remove('is-copied');
+                shareBtn.title = 'Share';
+            }, 1500);
+        });
+
+        init();
+    </script>
+
+</body>
+</html>

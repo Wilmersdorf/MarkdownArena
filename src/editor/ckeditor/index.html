@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>CKEditor 5 Standalone</title>
+    <style>
+        body { margin: 0; }
+        /* No toolbar — keyboard/Markdown editing only. The toolbar config is empty,
+           but ClassicEditor still renders the (now empty) top bar, so hide it. */
+        .ck.ck-editor__top { display: none; }
+
+        /* The bordered editable sits flush to the viewport edges; give its text a
+           1rem left inset instead. The `body` prefix outweighs the widget's own
+           padding (this demo injects the vendor CSS from JS, after this block). */
+        body .ck.ck-editor__editable_inline { padding-left: 1rem; }
+
+        .md-export-title { border-top: 1px solid #d0d7de; margin: 0; padding: 0.5rem 1rem; font-size: 0.75rem; letter-spacing: 0.04em; color: #6e7781; background: #f6f8fa; }
+        .md-export-output { width: 100%; box-sizing: border-box; padding: 1rem; font-family: monospace; field-sizing: content; border: none; resize: none; }
+    </style>
+</head>
+<body>
+
+    <div id="ckeditor-target"></div>
+
+    <h2 class="md-export-title">MARKDOWN 2-WAY EDITABLE</h2>
+    <textarea class="md-export-output" id="ckeditor-markdown-output" rows="14" spellcheck="false"></textarea>
+
+    <script type="module">
+        // Load the self-contained browser build from a generic npm CDN (jsdelivr)
+        // rather than CKEditor's own cloud CDN. The free `licenseKey: 'GPL'` is
+        // only valid on the "self-hosted" distribution channel; loading from
+        // cdn.ckeditor.com marks the page as the "cloud" channel and throws
+        // `license-key-invalid-distribution-channel`. Serving the same npm bundle
+        // from jsdelivr keeps the channel at its self-hosted default, so GPL works.
+        // The bundle is self-contained (no import map needed — every class is a
+        // named export of this one file).
+        import {
+            ClassicEditor, Essentials, Paragraph, Heading,
+            Bold, Italic, Code, BlockQuote, List, CodeBlock, Link,
+            Markdown, Autoformat,
+        } from 'https://cdn.jsdelivr.net/npm/ckeditor5@48.2.0/dist/browser/ckeditor5.js';
+
+        // CKEditor ships its UI/content styles as a separate stylesheet, injected
+        // from JS so the demo's CDN references all live together beside the
+        // import above.
+        const cssLink = document.createElement('link');
+        cssLink.rel = 'stylesheet';
+        cssLink.href = 'https://cdn.jsdelivr.net/npm/ckeditor5@48.2.0/dist/browser/ckeditor5.css';
+        document.head.appendChild(cssLink);
+
+        const output = document.getElementById('ckeditor-markdown-output');
+
+        const content = [
+            '# Markdown demo',
+            '',
+            'A paragraph with **bold**, *italic*, `inline code`, and a [link](https://example.com).',
+            '',
+            '- Bullet one',
+            '- Bullet two',
+            '',
+            '1. First',
+            '2. Second',
+            '',
+            '> A blockquote.',
+            '',
+            '```js',
+            "console.log('Hello, Markdown!')",
+            '```',
+        ].join('\n');
+
+        // Guards against the editor -> markdown -> editor update echoing back.
+        let syncing = false;
+
+        const editor = await ClassicEditor.create(document.getElementById('ckeditor-target'), {
+            // Free, open-source (GPL) usage — the licenseKey is mandatory since v44.
+            licenseKey: 'GPL',
+            // The Markdown plugin swaps the data processor so getData()/setData()
+            // speak GitHub-flavoured Markdown instead of HTML. Autoformat adds the
+            // as-you-type shortcuts: **x** -> bold, `x` -> code, "# " -> heading,
+            // "- "/"1. " -> list, "> " -> quote, ``` -> code block.
+            plugins: [Essentials, Paragraph, Heading, Bold, Italic, Code, BlockQuote, List, CodeBlock, Link, Markdown, Autoformat],
+            // No toolbar (hidden via CSS as well).
+            toolbar: [],
+            // Map "# ".."### " onto real <h1>..<h3> so the Markdown round-trips with
+            // the same heading levels you type (the default maps "# " onto <h2>).
+            heading: {
+                options: [
+                    { model: 'paragraph', title: 'Paragraph', class: 'ck-heading_paragraph' },
+                    { model: 'heading1', view: 'h1', title: 'Heading 1', class: 'ck-heading_heading1' },
+                    { model: 'heading2', view: 'h2', title: 'Heading 2', class: 'ck-heading_heading2' },
+                    { model: 'heading3', view: 'h3', title: 'Heading 3', class: 'ck-heading_heading3' },
+                ],
+            },
+            initialData: content,
+        });
+
+        // CKEditor -> Markdown: with the Markdown plugin active, getData() already
+        // returns Markdown.
+        const renderMarkdown = () => {
+            if (syncing) return;
+            output.value = editor.getData();
+        };
+        editor.model.document.on('change:data', renderMarkdown);
+
+        // Markdown -> editor: re-parse the edited text back into the document.
+        output.addEventListener('input', () => {
+            syncing = true;
+            editor.setData(output.value);
+            syncing = false;
+        });
+
+        renderMarkdown();
+    </script>
+
+</body>
+</html>

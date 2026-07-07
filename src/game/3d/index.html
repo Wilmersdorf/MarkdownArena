@@ -1,0 +1,1384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Markdown Editor Card Game 3D — Markdown Arena</title>
+    <link rel="icon" href="../../icons/favicon.svg" type="image/svg+xml">
+
+    <meta name="description" content="Play the 3D WebGL version of the markdown editor card game: TipTap, ProseMirror, Lexical, CodeMirror and more battle head-to-head on GitHub stars, npm downloads, math support and markdown power.">
+    <link rel="canonical" href="https://markdownarena.com/game/3d/">
+    <meta name="theme-color" content="#04030b">
+
+    <meta property="og:site_name" content="Markdown Arena">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://markdownarena.com/game/3d/">
+    <meta property="og:title" content="Markdown Editor Card Game 3D — Markdown Arena">
+    <meta property="og:description" content="Play the 3D WebGL version of the markdown editor card game: TipTap, ProseMirror, Lexical, CodeMirror and more battle head-to-head on GitHub stars, npm downloads, math support and markdown power.">
+    <meta property="og:image" content="https://markdownarena.com/game/3d/og.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="A giant flaming NOW IN 3D title blazing over two glowing editor trading cards on a neon grid arena — the Markdown Arena card game">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Markdown Editor Card Game 3D — Markdown Arena">
+    <meta name="twitter:description" content="Play the 3D WebGL version of the markdown editor card game: TipTap, ProseMirror, Lexical, CodeMirror and more battle head-to-head on GitHub stars, npm downloads, math support and markdown power.">
+    <meta name="twitter:image" content="https://markdownarena.com/game/3d/og.png">
+    <meta name="twitter:creator" content="@wilmers_dorf">
+
+    <!-- Display face for the fight HUD — raw exact-version file from jsDelivr -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/russo-one@5.2.7/index.css">
+
+    <!-- three.js pinned to an exact version as raw build files (never /+esm) -->
+    <script type="importmap">
+    { "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.185.1/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.185.1/examples/jsm/"
+    } }
+    </script>
+
+    <style>
+        html, body { height: 100%; }
+        html { color-scheme: dark; }
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: system-ui, sans-serif;
+            background: #04030b;
+            color: #e6edf3;
+        }
+        /* The three.js canvas fills the whole viewport; the HUD floats over it. */
+        #arena { position: fixed; inset: 0; z-index: 0; display: block; }
+
+        /* HUD container is transparent to pointers so the arena stays clickable;
+           only interactive chrome (buttons, links) re-enables pointer events. */
+        .ui { position: fixed; inset: 0; z-index: 10; pointer-events: none; }
+
+        .game-header {
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.55rem 1rem;
+        }
+        .back-link {
+            pointer-events: auto;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.05rem;
+            font-weight: 700;
+            letter-spacing: -0.01em;
+            color: #e6edf3;
+            text-decoration: none;
+            text-shadow: 0 0 12px rgba(0, 0, 0, 0.9);
+        }
+        .back-link:hover { color: #8db2ff; }
+        .back-link img { width: 20px; height: 20px; border-radius: 4px; }
+        .header-spacer { margin-left: auto; }
+        .badge3d {
+            pointer-events: none;
+            font-family: 'Russo One', system-ui, sans-serif;
+            font-size: 0.85rem;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: #00e5ff;
+            text-shadow: 0 0 14px rgba(0, 229, 255, 0.8);
+        }
+
+        /* ---- Fight HUD ---- */
+        .hud {
+            position: absolute;
+            top: 2.6rem; left: 0; right: 0;
+            padding: 0.5rem 1rem 0.55rem;
+            font-family: 'Russo One', system-ui, sans-serif;
+        }
+        .hud__bars {
+            display: flex;
+            align-items: center;
+            gap: 0.7rem;
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+        .hud__n {
+            flex: none;
+            font-size: 0.95rem;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+        }
+        .hud__n--you { color: #8db2ff; text-shadow: 0 0 10px rgba(59, 130, 246, 0.8); }
+        .hud__n--cpu { color: #ff9d9d; text-shadow: 0 0 10px rgba(239, 68, 68, 0.8); }
+        .hud__n.is-bump { animation: hud-bump 0.5s ease; }
+        @keyframes hud-bump { 30% { transform: scale(1.35); } }
+        .hud__track {
+            position: relative;
+            flex: 1 1 0;
+            height: 15px;
+            background: rgba(4, 7, 15, 0.85);
+            overflow: hidden;
+        }
+        .hud__track--you {
+            transform: skewX(-18deg);
+            box-shadow: 0 0 0 1px #2d3d63, 0 0 14px rgba(37, 99, 235, 0.6), inset 0 2px 4px rgba(0, 0, 0, 0.9);
+        }
+        .hud__track--cpu {
+            transform: skewX(-18deg);
+            box-shadow: 0 0 0 1px #552931, 0 0 14px rgba(220, 38, 38, 0.6), inset 0 2px 4px rgba(0, 0, 0, 0.9);
+        }
+        .hud__fill {
+            position: absolute; top: 0; bottom: 0;
+            transition: width 0.3s ease;
+            box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.45);
+        }
+        .hud__fill--you { left: 0; background: linear-gradient(180deg, #93c5fd, #3b82f6 45%, #1d4ed8); }
+        .hud__fill--cpu { right: 0; background: linear-gradient(180deg, #fca5a5, #ef4444 45%, #b91c1c); }
+        .hud__round {
+            flex: none;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            width: 3rem; height: 3rem;
+            margin: -0.35rem 0.05rem;
+            border-radius: 50%;
+            background: radial-gradient(circle at 50% 28%, #33415e, #0d1424 72%);
+            box-shadow: 0 0 0 2px #d9c541, 0 0 18px rgba(217, 197, 65, 0.6), inset 0 0 8px rgba(0, 0, 0, 0.8);
+        }
+        .hud__round-label {
+            font-size: 0.5rem; letter-spacing: 0.22em; text-indent: 0.22em;
+            text-transform: uppercase; color: #e8d974;
+        }
+        .hud__round-n {
+            font-size: 1.25rem; line-height: 1.05; color: #fff;
+            font-variant-numeric: tabular-nums;
+            text-shadow: 0 0 10px rgba(232, 217, 116, 0.6);
+        }
+
+        /* ---- Announcer line ---- */
+        .banner {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            gap: 0.3rem 1rem;
+            margin: 0.5rem auto 0;
+            max-width: 1100px;
+            min-height: 1.9rem;
+            font-size: 0.9rem;
+            letter-spacing: 0.07em;
+            text-transform: uppercase;
+            color: #b7c1d6;
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.9);
+        }
+        .banner__msg { color: #f3f6fc; text-shadow: 0 0 12px rgba(255, 255, 255, 0.35); }
+        .banner.is-player .banner__msg { color: #57e389; text-shadow: 0 0 16px rgba(87, 227, 137, 0.8); }
+        .banner.is-cpu    .banner__msg { color: #ff7b72; text-shadow: 0 0 16px rgba(255, 123, 114, 0.8); }
+        .banner.is-tie    .banner__msg { color: #f8e255; text-shadow: 0 0 16px rgba(248, 226, 85, 0.8); }
+        .banner__detail { font-size: 0.78rem; font-variant-numeric: tabular-nums; }
+
+        /* Big centered advance prompt — the glow pulse lives on the wrapper
+           (drop-shadow follows the clipped silhouette; a box-shadow on the
+           clipped button itself would be clipped away with it). */
+        .next-cta {
+            position: absolute;
+            left: 50%;
+            top: 63%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            animation: cta-pulse 1.1s ease-in-out infinite;
+        }
+        .next-cta[hidden] { display: none; }
+        .next-cta__btn {
+            pointer-events: auto;
+            padding: 0.75rem 2.4rem;
+            border: none;
+            clip-path: polygon(0.8rem 0, 100% 0, calc(100% - 0.8rem) 100%, 0 100%);
+            background: linear-gradient(180deg, #4c8dff, #1d4ed8);
+            color: #fff;
+            font-family: 'Russo One', system-ui, sans-serif;
+            font-size: 1.15rem;
+            letter-spacing: 0.09em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: filter 0.15s ease;
+        }
+        .next-cta__btn:hover { filter: brightness(1.15); }
+        @keyframes cta-pulse {
+            0%, 100% { filter: drop-shadow(0 0 6px rgba(76, 141, 255, 0.7)); }
+            50% { filter: drop-shadow(0 0 24px rgba(76, 141, 255, 1)) brightness(1.1); }
+        }
+        /* Portrait: cards fill mid-screen — park the prompt at the bottom,
+           where the thumb already is */
+        @media (max-aspect-ratio: 1/1) {
+            .next-cta { top: auto; bottom: 1.2rem; transform: translateX(-50%); }
+        }
+
+        .key-hint {
+            display: none;
+            padding: 0 0.3rem;
+            border: 1px solid rgba(255, 255, 255, 0.45);
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.16);
+            font-family: inherit;
+            font-size: 0.78em;
+            line-height: 1.4;
+            color: #fff;
+            vertical-align: 0.08em;
+        }
+        @media (hover: hover) and (pointer: fine) { .key-hint { display: inline-block; } }
+
+        /* ---- Victory overlay ---- */
+        .overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            background: rgba(4, 8, 18, 0.55);
+            backdrop-filter: blur(2px);
+        }
+        .overlay[hidden] { display: none; }
+        .overlay__card {
+            box-sizing: border-box;
+            width: min(420px, 100%);
+            padding: 1.9rem 2rem;
+            text-align: center;
+            background: rgba(22, 31, 51, 0.92);
+            border-radius: 12px;
+            box-shadow: 0 0 0 2px #d9c541, 0 0 60px rgba(217, 197, 65, 0.35), 0 12px 40px rgba(0, 0, 0, 0.7);
+        }
+        .overlay__msg {
+            margin: 0 0 1.25rem;
+            font-family: 'Russo One', system-ui, sans-serif;
+            font-size: 1.7rem;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: #f3f6fc;
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.4);
+        }
+        .overlay__btn {
+            pointer-events: auto;
+            padding: 0.6rem 1.5rem;
+            border: none;
+            border-radius: 6px;
+            background: #1d4ed8;
+            color: #fff;
+            font: inherit;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 0 20px rgba(29, 78, 216, 0.7);
+            transition: background 0.15s ease;
+        }
+        .overlay__btn:hover { background: #2a5cf0; }
+
+        /* Phones: compact the HUD so the arena keeps the room */
+        @media (max-width: 640px) {
+            .hud { top: 2.3rem; padding: 0.4rem 0.6rem; }
+            .hud__bars { gap: 0.45rem; }
+            .hud__n { font-size: 0.72rem; }
+            .hud__track { height: 11px; }
+            .hud__round { width: 2.4rem; height: 2.4rem; margin: -0.25rem 0; }
+            .hud__round-label { font-size: 0.4rem; }
+            .hud__round-n { font-size: 0.95rem; }
+            .banner { margin-top: 0.35rem; min-height: 2.4rem; font-size: 0.72rem; gap: 0.2rem 0.6rem; }
+            .banner__detail { font-size: 0.62rem; }
+            .next-cta__btn { font-size: 1rem; padding: 0.65rem 1.9rem; }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="arena"></canvas>
+
+    <div class="ui">
+        <header class="game-header">
+            <a class="back-link" href="/"><img src="../../icons/favicon.svg" alt="">Markdown Arena</a>
+            <span class="header-spacer"></span>
+            <span class="badge3d">3D Arena</span>
+        </header>
+
+        <div class="hud">
+            <div class="hud__bars">
+                <span class="hud__n hud__n--you" id="hud-you">You 0</span>
+                <div class="hud__track hud__track--you">
+                    <div class="hud__fill hud__fill--you" id="hud-you-fill"></div>
+                </div>
+                <div class="hud__round">
+                    <span class="hud__round-label">Round</span>
+                    <span class="hud__round-n" id="score-round">1</span>
+                </div>
+                <div class="hud__track hud__track--cpu">
+                    <div class="hud__fill hud__fill--cpu" id="hud-cpu-fill"></div>
+                </div>
+                <span class="hud__n hud__n--cpu" id="hud-cpu">0 Com</span>
+            </div>
+            <div class="banner" id="banner">
+                <span class="banner__msg" id="banner-msg"></span>
+                <span class="banner__detail" id="banner-detail"></span>
+            </div>
+        </div>
+
+        <div class="next-cta" id="next-cta" hidden>
+            <button type="button" class="next-cta__btn" id="next-btn">Next round <kbd class="key-hint">Space</kbd></button>
+        </div>
+    </div>
+
+    <div class="overlay" id="overlay" hidden>
+        <div class="overlay__card">
+            <p class="overlay__msg" id="overlay-msg"></p>
+            <button type="button" class="overlay__btn" id="play-again">Rematch <kbd class="key-hint">Space</kbd></button>
+        </div>
+    </div>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+        import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+        import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+        import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+
+        /* ==================================================================
+           GAME MODEL  (ported verbatim from the 2D card game — same rules,
+           scoring, CPU logic and test hook)
+           ================================================================== */
+        const LEVEL = { native: 3, 'native-partial': 2, library: 2, custom: 1, paid: 1, none: 0 };
+        const mdPower = (e) =>
+            LEVEL[e.markdown.input.level] + LEVEL[e.markdown.output.level] + LEVEL[e.markdown.live.level];
+
+        const nf = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 });
+        const compact = (n) => nf.format(n).toLowerCase();
+
+        // Stat accents match the 2D game exactly.
+        const ACCENT = {
+            stars: '#f5e11b', npm: '#ff2e63', frameworks: '#c44dff', math: '#39ff14', power: '#00e5ff',
+        };
+        const STATS = [
+            { key: 'stars',      label: 'GitHub Stars',         accent: ACCENT.stars,      raw: (e) => e.githubStars,  text: (e) => compact(e.githubStars) },
+            { key: 'npm',        label: 'npm Downloads / Week', accent: ACCENT.npm,        raw: (e) => e.npmDownloads, text: (e) => compact(e.npmDownloads) },
+            { key: 'frameworks', label: 'Frameworks',           accent: ACCENT.frameworks, raw: (e) => e.frameworks,   text: (e) => String(e.frameworks) },
+            { key: 'math',       label: 'Math Support',         accent: ACCENT.math,       raw: (e) => e.math,         text: (e) => e.math + ' / 3' },
+            { key: 'power',      label: 'Markdown Power',       accent: ACCENT.power,      raw: (e) => e.power,        text: (e) => e.power + ' / 100' },
+        ];
+
+        const CPU_NAMES = [
+            'Uncentered Div', 'Merge Conflict', 'Blocked by CORS', 'undefined',
+            'z-index: 9999', 'Works on My Machine', '!important', 'Internet Explorer', 'Callback Hell',
+        ];
+
+        let allEditors = [];
+        const state = {
+            playerDeck: [], cpuDeck: [], cpuName: CPU_NAMES[0],
+            chooser: 'player',   // 'player' | 'cpu'
+            phase: 'choosing',   // 'choosing' | 'revealed' | 'over'
+            round: 1,
+            result: null,        // { outcome, statKey }
+        };
+        let cpuTimer = null;
+        let autoTimer = null;
+
+        const shuffle = (a) => {
+            for (let i = a.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [a[i], a[j]] = [a[j], a[i]];
+            }
+            return a;
+        };
+
+        // Weighted-random by percentile² — same beatable CPU as the 2D game.
+        function cpuPickStat(card) {
+            const weights = STATS.map((stat) => {
+                const v = stat.raw(card);
+                const pct = allEditors.filter((e) => stat.raw(e) <= v).length / allEditors.length;
+                return pct * pct;
+            });
+            const sum = weights.reduce((a, b) => a + b, 0);
+            let r = Math.random() * sum;
+            const idx = weights.findIndex((w) => (r -= w) < 0);
+            return STATS[idx < 0 ? STATS.length - 1 : idx].key;
+        }
+
+        /* ==================================================================
+           HUD (HTML overlay)  — same numbers / banner logic as the 2D game
+           ================================================================== */
+        function setHudNum(id, text) {
+            const el = document.getElementById(id);
+            if (el.textContent === text) return;
+            el.textContent = text;
+            el.classList.remove('is-bump');
+            void el.offsetWidth;
+            el.classList.add('is-bump');
+        }
+
+        function renderBanner() {
+            const banner = document.getElementById('banner');
+            const msg = document.getElementById('banner-msg');
+            const detail = document.getElementById('banner-detail');
+            const next = document.getElementById('next-cta');
+            banner.className = 'banner';
+            if (state.phase === 'choosing') {
+                msg.innerHTML = state.chooser === 'player'
+                    ? 'Your turn — pick a stat <kbd class="key-hint">1–5</kbd>'
+                    : `${state.cpuName} is choosing a stat…`;
+                detail.textContent = '';
+                next.hidden = true;
+            } else if (state.phase === 'revealed') {
+                const stat = STATS.find((s) => s.key === state.result.statKey);
+                const p = state.playerDeck[0], c = state.cpuDeck[0];
+                const o = state.result.outcome;
+                banner.classList.add('is-' + o);
+                msg.textContent = o === 'player' ? 'You take the round!'
+                    : o === 'cpu' ? `${state.cpuName} takes the round!` : 'Tie — no knockdown';
+                detail.textContent = `${stat.label}: You ${stat.text(p)} vs ${state.cpuName} ${stat.text(c)}`;
+                next.hidden = state.chooser === 'cpu';   // CPU rounds auto-advance
+            }
+        }
+
+        function renderHud() {
+            let p = state.playerDeck.length, c = state.cpuDeck.length;
+            if (state.phase === 'revealed' && state.result) {
+                if (state.result.outcome === 'player') { p++; c--; }
+                else if (state.result.outcome === 'cpu') { p--; c++; }
+            }
+            const total = p + c;
+            document.getElementById('score-round').textContent = state.round;
+            setHudNum('hud-you', `You ${p}`);
+            setHudNum('hud-cpu', `${c} Com`);
+            document.getElementById('hud-you-fill').style.width = total ? (p / total * 100) + '%' : '0%';
+            document.getElementById('hud-cpu-fill').style.width = total ? (c / total * 100) + '%' : '0%';
+            if (state.phase === 'over') { showVictory(); return; }
+            document.getElementById('overlay').hidden = true;
+            renderBanner();
+        }
+
+        function showVictory() {
+            const won = state.playerDeck.length > 0;
+            document.getElementById('overlay-msg').textContent = won ? 'K.O. — You win!' : `K.O. — ${state.cpuName} wins`;
+            document.getElementById('overlay').hidden = false;
+        }
+
+        /* ==================================================================
+           THREE.JS ARENA
+           ================================================================== */
+        const canvas = document.getElementById('arena');
+        const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));   // cap DPR at 2
+        renderer.setSize(window.innerWidth, window.innerHeight);
+
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x04030b);
+        scene.fog = new THREE.FogExp2(0x04030b, 0.026);
+
+        const camera = new THREE.PerspectiveCamera(46, window.innerWidth / window.innerHeight, 0.1, 400);
+
+        // Selective bloom: only objects on layer 1 glow, so neon edges / grid /
+        // stars bloom while the card-face text stays crisp and readable.
+        const BLOOM_LAYER = 1;
+        const bloomLayer = new THREE.Layers();
+        bloomLayer.set(BLOOM_LAYER);
+
+        const renderScene = new RenderPass(scene, camera);
+        const bloomPass = new UnrealBloomPass(
+            new THREE.Vector2(window.innerWidth, window.innerHeight), 1.15, 0.55, 0.0);
+        const bloomComposer = new EffectComposer(renderer);
+        bloomComposer.renderToScreen = false;
+        bloomComposer.addPass(renderScene);
+        bloomComposer.addPass(bloomPass);
+
+        const mixPass = new ShaderPass(new THREE.ShaderMaterial({
+            uniforms: {
+                baseTexture: { value: null },
+                bloomTexture: { value: bloomComposer.renderTarget2.texture },
+            },
+            vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
+            fragmentShader: `uniform sampler2D baseTexture; uniform sampler2D bloomTexture; varying vec2 vUv;
+                void main(){ gl_FragColor = texture2D(baseTexture, vUv) + vec4(1.0) * texture2D(bloomTexture, vUv); }`,
+        }), 'baseTexture');
+        mixPass.needsSwap = true;
+
+        const finalComposer = new EffectComposer(renderer);
+        finalComposer.addPass(renderScene);
+        finalComposer.addPass(mixPass);
+        finalComposer.addPass(new OutputPass());
+
+        // Hide non-bloom objects while the bloom pass renders (so only glowing
+        // things contribute), then restore for the lit final pass.
+        function hideForBloom(obj) {
+            if ((obj.isMesh || obj.isPoints || obj.isSprite || obj.isLine)
+                && obj.visible && !bloomLayer.test(obj.layers)) {
+                obj._hidForBloom = true;
+                obj.visible = false;
+            }
+        }
+        function restoreAfterBloom(obj) {
+            if (obj._hidForBloom) { obj.visible = true; obj._hidForBloom = false; }
+        }
+
+        /* ---- Starfield ---- */
+        (function starfield() {
+            const N = 1800;
+            const pos = new Float32Array(N * 3);
+            for (let i = 0; i < N; i++) {
+                const r = 30 + Math.random() * 90;
+                const th = Math.random() * Math.PI * 2;
+                const ph = Math.acos(2 * Math.random() - 1);
+                pos[i * 3] = r * Math.sin(ph) * Math.cos(th);
+                pos[i * 3 + 1] = r * Math.sin(ph) * Math.sin(th);
+                pos[i * 3 + 2] = r * Math.cos(ph);
+            }
+            const g = new THREE.BufferGeometry();
+            g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+            const m = new THREE.PointsMaterial({
+                color: 0x9fc7ff, size: 0.5, sizeAttenuation: true,
+                transparent: true, opacity: 0.9, depthWrite: false, blending: THREE.AdditiveBlending,
+            });
+            const stars = new THREE.Points(g, m);
+            stars.layers.enable(BLOOM_LAYER);
+            scene.add(stars);
+        })();
+
+        /* ---- Soft nebula clouds (dim, not bloomed, for depth) ---- */
+        function radialSprite(hex) {
+            const c = document.createElement('canvas'); c.width = c.height = 256;
+            const x = c.getContext('2d');
+            const grd = x.createRadialGradient(128, 128, 0, 128, 128, 128);
+            grd.addColorStop(0, hex + 'cc');
+            grd.addColorStop(0.4, hex + '44');
+            grd.addColorStop(1, hex + '00');
+            x.fillStyle = grd; x.fillRect(0, 0, 256, 256);
+            const t = new THREE.CanvasTexture(c);
+            t.colorSpace = THREE.SRGBColorSpace;
+            return t;
+        }
+        [['#3b1d6e', -22, 6, -40, 46], ['#0b3a63', 24, -8, -46, 52], ['#5c1440', -6, 14, -55, 60]]
+            .forEach(([hex, x, y, z, s]) => {
+                const sp = new THREE.Sprite(new THREE.SpriteMaterial({
+                    map: radialSprite(hex), transparent: true, opacity: 0.55,
+                    depthWrite: false, blending: THREE.AdditiveBlending,
+                }));
+                sp.position.set(x, y, z); sp.scale.setScalar(s);
+                scene.add(sp);
+            });
+
+        /* ---- Glowing grid floor ---- */
+        let gridFloor, gridBase;
+        (function floor() {
+            gridFloor = new THREE.GridHelper(160, 80, 0x00e5ff, 0x123a6e);
+            gridFloor.position.y = -3.0;
+            gridFloor.material.transparent = true;
+            gridFloor.material.opacity = 0.75;
+            gridFloor.layers.enable(BLOOM_LAYER);
+            scene.add(gridFloor);
+            gridBase = new THREE.Mesh(
+                new THREE.PlaneGeometry(300, 300),
+                new THREE.MeshBasicMaterial({ color: 0x030209 }));
+            gridBase.rotation.x = -Math.PI / 2;
+            gridBase.position.y = -3.02;
+            scene.add(gridBase);
+        })();
+
+        /* ---- VS emblem ---- */
+        let vsSprite;
+        const vsHome = new THREE.Vector3(0, 0.35, 0.9);
+        (function vsEmblem() {
+            const c = document.createElement('canvas'); c.width = c.height = 256;
+            const x = c.getContext('2d');
+            x.font = "400 118px 'Russo One', sans-serif";
+            x.textAlign = 'center'; x.textBaseline = 'middle';
+            x.lineWidth = 5; x.strokeStyle = '#7a5a12';
+            x.shadowColor = '#ffbe2e'; x.shadowBlur = 16;
+            x.fillStyle = '#ffcf5c'; x.fillText('VS', 128, 134); x.strokeText('VS', 128, 134);
+            const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
+            const sp = new THREE.Sprite(new THREE.SpriteMaterial({
+                map: t, transparent: true, opacity: 0.92, depthWrite: false }));
+            sp.position.copy(vsHome); sp.scale.setScalar(1.55);
+            sp.layers.enable(BLOOM_LAYER);
+            scene.add(sp);
+            vsSprite = sp;
+        })();
+
+        /* ==================================================================
+           CARD FACE TEXTURES
+           ================================================================== */
+        const FW = 512, FH = 768;            // logical face coordinates (draw space)
+        const TEX_SCALE = 1.5;               // backing-store multiplier — crisper text
+        const STAT_Y0 = 190;                 // top of the stat rows
+        const ROW_H = (FH - STAT_Y0) / 5;
+        const WIN_C = '#15803d', LOSE_C = '#b91c1c', TIE_C = '#eab308';
+
+        const iconCache = new Map();
+        function getIcon(url) {
+            if (iconCache.has(url)) return iconCache.get(url);
+            const rec = { img: new Image(), ok: false };
+            rec.img.onload = () => { rec.ok = true; redrawAllFaces(); };
+            rec.img.onerror = () => { rec.ok = false; };   // missing icon: skip, never throw
+            rec.img.src = url;
+            iconCache.set(url, rec);
+            return rec;
+        }
+
+        function roundRectPath(ctx, x, y, w, h, r) {
+            ctx.beginPath();
+            ctx.moveTo(x + r, y);
+            ctx.arcTo(x + w, y, x + w, y + h, r);
+            ctx.arcTo(x + w, y + h, x, y + h, r);
+            ctx.arcTo(x, y + h, x, y, r);
+            ctx.arcTo(x, y, x + w, y, r);
+            ctx.closePath();
+        }
+        function lighten(hex, k) {
+            const n = parseInt(hex.slice(1), 16);
+            const ch = (s) => Math.round(((n >> s) & 255) + (255 - ((n >> s) & 255)) * k);
+            return `rgb(${ch(16)},${ch(8)},${ch(0)})`;
+        }
+        function fitFont(ctx, text, maxW, size, weight) {
+            let s = size;
+            do {
+                ctx.font = `${weight} ${s}px 'Russo One', sans-serif`;
+                if (ctx.measureText(text).width <= maxW) break;
+                s -= 1;
+            } while (s > 9);
+            return s;
+        }
+
+        // Draws one card's front face onto its canvas from the card's current
+        // editor + opts (pickable / hoverRow / result).
+        function drawFace(card) {
+            const ctx = card.ctx, e = card.editor;
+            const isPlayer = card.side === 'player';
+            ctx.setTransform(TEX_SCALE, 0, 0, TEX_SCALE, 0, 0);
+            ctx.clearRect(0, 0, FW, FH);
+
+            // Card background
+            const bg = ctx.createLinearGradient(0, 0, 0, FH);
+            bg.addColorStop(0, '#0c1428'); bg.addColorStop(1, '#101a36');
+            ctx.fillStyle = bg; ctx.fillRect(0, 0, FW, FH);
+            ctx.strokeStyle = 'rgba(140, 170, 255, 0.18)';
+            ctx.lineWidth = 3; ctx.strokeRect(4, 4, FW - 8, FH - 8);
+
+            if (!e) { card.tex.needsUpdate = true; return; }
+
+            // Owner strip
+            const ownerGrad = ctx.createLinearGradient(0, 0, 0, 66);
+            if (isPlayer) { ownerGrad.addColorStop(0, '#2b5cf0'); ownerGrad.addColorStop(1, '#1d4ed8'); }
+            else { ownerGrad.addColorStop(0, '#d64550'); ownerGrad.addColorStop(1, '#b91c1c'); }
+            ctx.fillStyle = ownerGrad; ctx.fillRect(0, 0, FW, 66);
+            ctx.fillStyle = '#fff';
+            ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+            const ownerText = (isPlayer ? 'YOU' : state.cpuName).toUpperCase();
+            fitFont(ctx, ownerText, FW - 40, 30, '400');
+            ctx.fillText(ownerText, 22, 36);
+
+            // Head: icon + neon editor name
+            const neon = isPlayer ? '#4d7aff' : '#ff4d55';
+            const rec = getIcon(e.icon);
+            let nameX = 26;
+            if (rec.ok) {
+                try { ctx.drawImage(rec.img, 26, 92, 66, 66); nameX = 108; } catch { nameX = 26; }
+            }
+            ctx.save();
+            ctx.shadowColor = neon; ctx.shadowBlur = 22;
+            ctx.fillStyle = lighten(neon, 0.3); ctx.textBaseline = 'middle';
+            const nameSize = fitFont(ctx, e.name, FW - nameX - 20, 42, '400');
+            ctx.font = `400 ${nameSize}px 'Russo One', sans-serif`;
+            ctx.fillText(e.name, nameX, 127);
+            ctx.restore();
+
+            // Divider
+            ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+            ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.moveTo(0, STAT_Y0); ctx.lineTo(FW, STAT_Y0); ctx.stroke();
+
+            // Stat rows
+            STATS.forEach((stat, i) => {
+                const y0 = STAT_Y0 + i * ROW_H;
+                const cy = y0 + ROW_H / 2;
+                const accent = stat.accent;
+                const flagged = card.opts.result && card.opts.result.statKey === stat.key;
+
+                // Hover highlight (player, pickable rows only)
+                if (card.opts.pickable && card.hoverRow === i) {
+                    ctx.fillStyle = 'rgba(255,255,255,0.06)';
+                    ctx.fillRect(0, y0, FW, ROW_H);
+                    ctx.fillStyle = accent + '4a';
+                    ctx.fillRect(0, y0, FW, ROW_H);
+                    ctx.fillStyle = accent;   // bright leading accent bar
+                    ctx.fillRect(0, y0, 6, ROW_H);
+                }
+                if (i > 0) {
+                    ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+                    ctx.lineWidth = 1;
+                    ctx.beginPath(); ctx.moveTo(0, y0); ctx.lineTo(FW, y0); ctx.stroke();
+                }
+
+                // Number chip (doubles as the 1–5 key hint)
+                if (!flagged) {
+                    ctx.save();
+                    roundRectPath(ctx, 20, cy - 20, 40, 40, 8);
+                    ctx.fillStyle = accent + '2a'; ctx.fill();
+                    ctx.lineWidth = 2; ctx.strokeStyle = accent; ctx.stroke();
+                    ctx.fillStyle = lighten(accent, 0.3);
+                    ctx.font = "400 24px 'Russo One', sans-serif";
+                    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                    ctx.fillText(String(i + 1), 40, cy + 1);
+                    ctx.restore();
+                }
+
+                // Label
+                ctx.save();
+                ctx.shadowColor = accent; ctx.shadowBlur = 12;
+                ctx.fillStyle = lighten(accent, 0.2);
+                ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+                const labelSize = fitFont(ctx, stat.label, 260, 25, '400');
+                ctx.font = `400 ${labelSize}px 'Russo One', sans-serif`;
+                ctx.fillText(stat.label, 78, cy + 1);
+                ctx.restore();
+
+                // Value (always the real value — the front face is hidden while
+                // the card is face-down, so nothing is leaked early)
+                ctx.save();
+                ctx.shadowColor = accent; ctx.shadowBlur = 14;
+                ctx.fillStyle = '#fff';
+                ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+                ctx.font = "400 30px 'Russo One', sans-serif";
+                ctx.fillText(stat.text(e), FW - 24, cy + 1);
+                ctx.restore();
+
+                // Result stamp on the compared row
+                if (flagged) {
+                    const o = card.opts.result.outcome;
+                    const txt = o === 'tie' ? 'TIE' : o === card.side ? 'WIN' : 'LOST';
+                    const col = o === 'tie' ? TIE_C : o === card.side ? WIN_C : LOSE_C;
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.moveTo(0, y0); ctx.lineTo(150, y0);
+                    ctx.lineTo(132, y0 + ROW_H); ctx.lineTo(0, y0 + ROW_H); ctx.closePath();
+                    ctx.fillStyle = col; ctx.fill();
+                    ctx.fillStyle = '#fff';
+                    ctx.font = "400 24px 'Russo One', sans-serif";
+                    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                    if (o === 'tie') { ctx.shadowColor = 'rgba(0,0,0,0.55)'; ctx.shadowBlur = 4; }
+                    ctx.fillText(txt, 66, cy + 1);
+                    ctx.restore();
+                }
+            });
+
+            ctx.textAlign = 'left';
+            card.tex.needsUpdate = true;
+        }
+
+        function drawBack(card) {
+            const ctx = card.backCtx;
+            ctx.setTransform(TEX_SCALE, 0, 0, TEX_SCALE, 0, 0);
+            ctx.fillStyle = '#1a0c13'; ctx.fillRect(0, 0, FW, FH);
+            // Diagonal weave
+            ctx.save();
+            ctx.strokeStyle = '#2c1520'; ctx.lineWidth = 16;
+            for (let d = -FH; d < FW + FH; d += 30) {
+                ctx.beginPath(); ctx.moveTo(d, 0); ctx.lineTo(d + FH, FH); ctx.stroke();
+            }
+            ctx.restore();
+            // Neon frame
+            ctx.strokeStyle = card.side === 'player' ? '#4d7aff' : '#ff4d55';
+            ctx.lineWidth = 6; ctx.strokeRect(22, 22, FW - 44, FH - 44);
+            // Big "?"
+            ctx.save();
+            const q = card.side === 'player' ? '#7ea0ff' : '#ff7b72';
+            ctx.shadowColor = q; ctx.shadowBlur = 40;
+            ctx.fillStyle = q; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.font = "400 220px 'Russo One', sans-serif";
+            ctx.fillText('?', FW / 2, FH / 2 - 20);
+            ctx.font = "400 30px 'Russo One', sans-serif";
+            ctx.shadowBlur = 12;
+            ctx.fillText('MARKDOWN ARENA', FW / 2, FH - 90);
+            ctx.restore();
+            card.backTex.needsUpdate = true;
+        }
+
+        function redrawAllFaces() {
+            if (cards.player) drawFace(cards.player);
+            if (cards.cpu) drawFace(cards.cpu);
+        }
+
+        /* ==================================================================
+           CARD OBJECTS
+           ================================================================== */
+        const CARD_W = 2.7, CARD_H = 3.85, CARD_D = 0.09;
+        const cards = {};
+
+        function roundedRect(w, h, r) {
+            const s = new THREE.Shape();
+            const x = -w / 2, y = -h / 2;
+            s.moveTo(x + r, y);
+            s.lineTo(x + w - r, y); s.quadraticCurveTo(x + w, y, x + w, y + r);
+            s.lineTo(x + w, y + h - r); s.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+            s.lineTo(x + r, y + h); s.quadraticCurveTo(x, y + h, x, y + h - r);
+            s.lineTo(x, y + r); s.quadraticCurveTo(x, y, x + r, y);
+            return s;
+        }
+        function roundedPath(w, h, r) {
+            const p = new THREE.Path();
+            const x = -w / 2, y = -h / 2;
+            p.moveTo(x + r, y);
+            p.lineTo(x + w - r, y); p.quadraticCurveTo(x + w, y, x + w, y + r);
+            p.lineTo(x + w, y + h - r); p.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+            p.lineTo(x + r, y + h); p.quadraticCurveTo(x, y + h, x, y + h - r);
+            p.lineTo(x, y + r); p.quadraticCurveTo(x, y, x + r, y);
+            return p;
+        }
+
+        function makeCanvas() {
+            const c = document.createElement('canvas');
+            c.width = FW * TEX_SCALE; c.height = FH * TEX_SCALE;
+            return c;
+        }
+
+        function buildCard(side, home) {
+            const faceCanvas = makeCanvas();
+            const backCanvas = makeCanvas();
+            const tex = new THREE.CanvasTexture(faceCanvas); tex.colorSpace = THREE.SRGBColorSpace;
+            const backTex = new THREE.CanvasTexture(backCanvas); backTex.colorSpace = THREE.SRGBColorSpace;
+            tex.anisotropy = backTex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+
+            const geo = new THREE.BoxGeometry(CARD_W, CARD_H, CARD_D);
+            const sideMat = new THREE.MeshBasicMaterial({ color: 0x0a0f1c });
+            const frontMat = new THREE.MeshBasicMaterial({ map: tex });
+            const backMat = new THREE.MeshBasicMaterial({ map: backTex });
+            // BoxGeometry material order: [+x,-x,+y,-y,+z(front),-z(back)]
+            const box = new THREE.Mesh(geo, [sideMat, sideMat, sideMat, sideMat, frontMat, backMat]);
+
+            const neon = side === 'player' ? 0x4d7aff : 0xff4d55;
+            const ringShape = roundedRect(CARD_W + 0.2, CARD_H + 0.2, 0.24);
+            ringShape.holes.push(roundedPath(CARD_W + 0.03, CARD_H + 0.03, 0.18));
+            const frame = new THREE.Mesh(
+                new THREE.ShapeGeometry(ringShape),
+                new THREE.MeshBasicMaterial({ color: neon, side: THREE.DoubleSide, toneMapped: true }));
+            frame.layers.enable(BLOOM_LAYER);
+
+            const group = new THREE.Group();
+            group.add(box); group.add(frame);
+            group.position.set(home.px, home.py, home.pz);
+            scene.add(group);
+
+            const card = {
+                side, group, box, tex, backTex,
+                ctx: faceCanvas.getContext('2d'),
+                backCtx: backCanvas.getContext('2d'),
+                home,
+                editor: null,
+                opts: { pickable: false, result: null },
+                hoverRow: -1,
+                faceUp: side === 'player',
+                flipCur: side === 'player' ? 0 : 1,      // 0 = face-up, 1 = face-down (rot.y += flip*π)
+                flipTarget: side === 'player' ? 0 : 1,
+                fx: { px: 0, py: 0, pz: 0, rx: 0, ry: 0, rz: 0 },
+                scale: 1,
+                bobPhase: side === 'player' ? 0 : Math.PI,
+                bobSpeed: 0.9,
+                bobAmp: 0.12,
+            };
+            drawBack(card);
+            drawFace(card);
+            return card;
+        }
+
+        // Homes are mutated in place by layout() — cards re-read them per frame,
+        // so an orientation change repositions everything live.
+        const PLAYER_HOME = { px: -2.7, py: -0.35, pz: 1.5, rx: -0.02, ry: 0.19, rz: 0 };
+        const CPU_HOME    = { px: 2.7,  py: 0.2,   pz: -0.4, rx: -0.02, ry: -0.19, rz: 0 };
+
+        // Side-by-side needs width — on narrow (portrait) screens the duel
+        // stacks vertically instead: player near the bottom, CPU up top.
+        function layout() {
+            const portrait = window.innerWidth / window.innerHeight < 0.95;
+            if (portrait) {
+                Object.assign(PLAYER_HOME, { px: 0, py: -1.55, pz: 1.3, rx: 0.05, ry: 0.05, rz: 0 });
+                Object.assign(CPU_HOME,    { px: 0, py: 2.05, pz: -1.9, rx: -0.07, ry: -0.05, rz: 0 });
+                camBase.set(0, 0.05, 11.6); camClose.set(0, 0, 11.0);
+                vsHome.set(0, 0.85, 0.2);
+                if (vsSprite) vsSprite.scale.setScalar(1.0);
+            } else {
+                Object.assign(PLAYER_HOME, { px: -2.7, py: -0.35, pz: 1.5, rx: -0.02, ry: 0.19, rz: 0 });
+                Object.assign(CPU_HOME,    { px: 2.7,  py: 0.2,   pz: -0.4, rx: -0.02, ry: -0.19, rz: 0 });
+                camBase.set(0, 0.3, 9.2); camClose.set(0, 0.15, 7.4);
+                vsHome.set(0, 0.35, 0.9);
+                if (vsSprite) vsSprite.scale.setScalar(1.55);
+            }
+            // Stacked cards reach lower — drop the floor so no card dips into it.
+            const floorY = portrait ? -4.4 : -3.0;
+            gridFloor.position.y = floorY;
+            gridBase.position.y = floorY - 0.02;
+        }
+
+        /* ==================================================================
+           ANIMATION  (tweens + one-shot effects)
+           ================================================================== */
+        const timer = new THREE.Timer();
+        const tweens = [];
+        function tween(dur, update, done) { tweens.push({ e: 0, dur, update, done }); }
+        const easeOut = (k) => 1 - Math.pow(1 - k, 3);
+        const easeIn = (k) => k * k * k;
+
+        let shakeAmp = 0;
+        const camBase = new THREE.Vector3(0, 0.3, 9.2);
+        const camClose = new THREE.Vector3(0, 0.15, 7.4);
+        const camPos = camBase.clone();
+        let camTarget = camBase;
+        const lookTarget = new THREE.Vector3(0, -0.15, 0.4);
+
+        const effects = [];   // particle bursts + shockwaves
+
+        function burst(pos, colorHex) {
+            const N = 140;
+            const positions = new Float32Array(N * 3);
+            const vel = [];
+            for (let i = 0; i < N; i++) {
+                positions[i * 3] = pos.x; positions[i * 3 + 1] = pos.y; positions[i * 3 + 2] = pos.z;
+                const dir = new THREE.Vector3(
+                    (Math.random() - 0.5), (Math.random() - 0.5), (Math.random() - 0.5)).normalize();
+                vel.push(dir.multiplyScalar(3 + Math.random() * 7));
+            }
+            const g = new THREE.BufferGeometry();
+            g.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            const m = new THREE.PointsMaterial({
+                color: new THREE.Color(colorHex), size: 0.22, transparent: true,
+                depthWrite: false, blending: THREE.AdditiveBlending });
+            const pts = new THREE.Points(g, m);
+            pts.layers.enable(BLOOM_LAYER);
+            scene.add(pts);
+            effects.push({ obj: pts, vel, life: 0, ttl: 0.9, kind: 'burst', mat: m, geo: g });
+        }
+
+        function shockwave(pos, colorHex) {
+            const geo = new THREE.RingGeometry(0.2, 0.34, 48);
+            const mat = new THREE.MeshBasicMaterial({
+                color: new THREE.Color(colorHex), side: THREE.DoubleSide,
+                transparent: true, depthWrite: false, blending: THREE.AdditiveBlending });
+            const ring = new THREE.Mesh(geo, mat);
+            ring.position.copy(pos);
+            ring.layers.enable(BLOOM_LAYER);
+            scene.add(ring);
+            effects.push({ obj: ring, life: 0, ttl: 0.6, kind: 'wave', mat, geo });
+        }
+
+        function updateEffects(dt) {
+            for (let i = effects.length - 1; i >= 0; i--) {
+                const fx = effects[i];
+                fx.life += dt;
+                const k = fx.life / fx.ttl;
+                if (fx.kind === 'burst') {
+                    const p = fx.obj.geometry.attributes.position.array;
+                    for (let j = 0; j < fx.vel.length; j++) {
+                        fx.vel[j].multiplyScalar(0.92);
+                        p[j * 3] += fx.vel[j].x * dt;
+                        p[j * 3 + 1] += fx.vel[j].y * dt;
+                        p[j * 3 + 2] += fx.vel[j].z * dt;
+                    }
+                    fx.obj.geometry.attributes.position.needsUpdate = true;
+                    fx.mat.opacity = Math.max(0, 1 - k);
+                } else {
+                    const s = 1 + k * 9;
+                    fx.obj.scale.setScalar(s);
+                    fx.mat.opacity = Math.max(0, 1 - k);
+                }
+                if (k >= 1) {
+                    scene.remove(fx.obj); fx.geo.dispose(); fx.mat.dispose();
+                    effects.splice(i, 1);
+                }
+            }
+        }
+
+        // The world-space clash point between the two cards.
+        function clashPoint() {
+            return new THREE.Vector3(
+                (PLAYER_HOME.px + CPU_HOME.px) / 2,
+                (PLAYER_HOME.py + CPU_HOME.py) / 2 + 0.1,
+                (PLAYER_HOME.pz + CPU_HOME.pz) / 2 + 0.7);
+        }
+
+        // Unit vector (screen plane) from one card's home toward the other's —
+        // choreography works along whichever axis separates the cards.
+        function towards(from, to) {
+            const dx = to.home.px - from.home.px, dy = to.home.py - from.home.py;
+            const L = Math.hypot(dx, dy) || 1;
+            const nx = dx / L, ny = dy / L;
+            return { nx, ny, roll: Math.abs(nx) > Math.abs(ny) ? nx : ny };
+        }
+
+        /* ==================================================================
+           VIEW CHOREOGRAPHY
+           ================================================================== */
+        function setCardContent(card, editor, opts) {
+            card.editor = editor;
+            card.opts = opts;
+            card.hoverRow = -1;
+            drawFace(card);
+        }
+
+        // Deal / present a fresh pair: player face-up, CPU face-down, fly both in.
+        function viewDeal(playerEditor, cpuEditor, pickable, animate) {
+            const P = cards.player, C = cards.cpu;
+            setCardContent(P, playerEditor, { pickable, result: null });
+            setCardContent(C, cpuEditor, { pickable: false, result: null });
+            P.flipTarget = 0; P.faceUp = true;
+            C.flipTarget = 1; C.faceUp = false;   // face-down until reveal
+            C.flipCur = 1;
+            P.scale = C.scale = 1;
+            resetFx(P); resetFx(C);
+            camTarget = camBase;
+            if (animate) {
+                // Fly in from the card's own side: horizontally when the homes
+                // sit left/right, vertically when stacked (portrait).
+                [P, C].forEach((card) => {
+                    const H = card.home;
+                    const fx = H.px ? Math.sign(H.px) * 9 : 0;
+                    const fy = H.px ? 2.5 : Math.sign(H.py) * 7;
+                    card.fx.px = fx; card.fx.py = fy; card.scale = 0.5;
+                    tween(0.75, (k) => {
+                        const e = easeOut(k);
+                        card.fx.px = fx * (1 - e); card.fx.py = fy * (1 - e);
+                        card.scale = 0.5 + 0.5 * e;
+                    }, () => { card.fx.px = card.fx.py = 0; card.scale = 1; });
+                });
+            }
+        }
+
+        function resetFx(card) {
+            card.fx.px = card.fx.py = card.fx.pz = card.fx.rx = card.fx.ry = card.fx.rz = 0;
+        }
+
+        // Reveal: flip the CPU card up, dolly in, then slam.
+        function viewReveal(result, playerEditor, cpuEditor) {
+            const P = cards.player, C = cards.cpu;
+            P.opts = { pickable: false, result }; drawFace(P);
+            C.opts = { pickable: false, result }; drawFace(C);
+            C.flipTarget = 0; C.faceUp = true;   // dramatic flip
+            camTarget = camClose;
+            setTimeout(() => slam(result.outcome), 560);
+        }
+
+        function slam(outcome) {
+            const P = cards.player, C = cards.cpu;
+            if (outcome === 'tie') {
+                shakeAmp = 0.22;
+                [P, C].forEach((card) => tween(0.4, (k) => {
+                    card.fx.pz = 0.35 * Math.sin(k * Math.PI);
+                }, () => { card.fx.pz = 0; }));
+                shockwave(clashPoint(), '#f8e255');
+                return;
+            }
+            const winner = outcome === 'player' ? P : C;
+            const loser = outcome === 'player' ? C : P;
+            const d = towards(winner, loser);
+            const winColor = outcome === 'player' ? '#4d7aff' : '#ff4d55';
+            tween(0.42, (k) => {
+                const p = Math.sin(k * Math.PI);
+                winner.fx.px = d.nx * 1.4 * p;
+                winner.fx.py = d.ny * 1.4 * p;
+                winner.fx.pz = 1.0 * p;
+                loser.fx.px = -d.nx * 0.35 * p;
+                loser.fx.py = -d.ny * 0.35 * p;
+                loser.fx.rz = -d.roll * 0.18 * p;
+            }, () => {
+                winner.fx.px = winner.fx.py = winner.fx.pz = 0;
+                loser.fx.px = loser.fx.py = 0; loser.fx.rz = 0;
+            });
+            setTimeout(() => {
+                burst(clashPoint(), winColor);
+                burst(clashPoint(), '#ffffff');
+                shockwave(clashPoint(), winColor);
+                shakeAmp = 0.5;
+            }, 200);
+        }
+
+        // Advance start: tumble the losing card away (still showing its content).
+        function viewAdvanceTumble(outcome) {
+            if (outcome === 'tie') return 220;
+            const P = cards.player, C = cards.cpu;
+            const winner = outcome === 'player' ? P : C;
+            const loser = outcome === 'player' ? C : P;
+            const d = towards(loser, winner);   // sucked toward the winner's side
+            tween(0.5, (k) => {
+                const e = easeIn(k);
+                loser.fx.px = d.nx * 6 * e;
+                loser.fx.py = d.ny * 6 * e + 1.2 * e;
+                loser.fx.rz = d.roll * Math.PI * 2 * e;
+                loser.scale = 1 - 0.85 * e;
+            }, () => { resetFx(loser); loser.scale = 1; loser.editor = null; drawFace(loser); });
+            return 520;
+        }
+
+        function viewVictory() {
+            [cards.player, cards.cpu].forEach((card, i) => {
+                const dir = i === 0 ? -1 : 1;
+                tween(0.8, (k) => {
+                    const e = easeIn(k);
+                    card.fx.px = dir * 8 * e;
+                    card.fx.py = 3 * e;
+                    card.fx.rz = dir * Math.PI * 3 * e;
+                    card.scale = 1 - 0.7 * e;
+                }, () => {});
+            });
+            camTarget = camBase;
+        }
+
+        /* ==================================================================
+           GAME FLOW  (drives model + view; HUD via renderHud)
+           ================================================================== */
+        function chooseStat(statKey) {
+            if (state.phase !== 'choosing') return;
+            clearTimeout(cpuTimer);
+            const stat = STATS.find((s) => s.key === statKey);
+            const pv = stat.raw(state.playerDeck[0]);
+            const cv = stat.raw(state.cpuDeck[0]);
+            const outcome = pv > cv ? 'player' : cv > pv ? 'cpu' : 'tie';
+            state.result = { outcome, statKey };
+            state.phase = 'revealed';
+            renderHud();
+            viewReveal(state.result, state.playerDeck[0], state.cpuDeck[0]);
+            // CPU-chosen rounds auto-advance; longer beat so the flip + slam play.
+            if (state.chooser === 'cpu') {
+                clearTimeout(autoTimer);
+                autoTimer = setTimeout(nextRound, 1700);
+            }
+        }
+
+        function nextRound() {
+            clearTimeout(autoTimer);
+            if (state.phase !== 'revealed') return;
+            const outcome = state.result.outcome;
+            const tumbleMs = viewAdvanceTumble(outcome);
+
+            const p = state.playerDeck, c = state.cpuDeck;
+            const pc = p[0], cc = c[0];
+            if (outcome === 'player') {
+                p.shift(); c.shift(); p.push(pc, cc); state.chooser = 'player';
+            } else if (outcome === 'cpu') {
+                p.shift(); c.shift(); c.push(cc, pc); state.chooser = 'cpu';
+            } else {
+                p.push(p.shift()); c.push(c.shift());   // tie: each card to its own deck's bottom
+            }
+            state.round++;
+            state.result = null;
+            if (p.length === 0 || c.length === 0) {
+                state.phase = 'over';
+                renderHud();
+                viewVictory();
+                return;
+            }
+            state.phase = 'choosing';
+            renderHud();
+            const pickable = state.chooser === 'player';
+            setTimeout(() => {
+                if (state.phase !== 'choosing') return;
+                viewDeal(state.playerDeck[0], state.cpuDeck[0], pickable, true);
+                if (state.chooser === 'cpu') scheduleCpuPick();
+            }, tumbleMs);
+        }
+
+        function scheduleCpuPick() {
+            clearTimeout(cpuTimer);
+            cpuTimer = setTimeout(() => {
+                if (state.phase === 'choosing' && state.chooser === 'cpu') {
+                    chooseStat(cpuPickStat(state.cpuDeck[0]));
+                }
+            }, 850);   // let the deal animation land before the CPU reveals
+        }
+
+        function deal() {
+            clearTimeout(cpuTimer);
+            clearTimeout(autoTimer);
+            state.cpuName = CPU_NAMES[Math.floor(Math.random() * CPU_NAMES.length)];
+            const deck = shuffle(allEditors.slice()).slice(0, 10);
+            const half = Math.ceil(deck.length / 2);
+            state.playerDeck = deck.slice(0, half);
+            state.cpuDeck = deck.slice(half);
+            state.chooser = 'player';
+            state.phase = 'choosing';
+            state.round = 1;
+            state.result = null;
+            document.getElementById('overlay').hidden = true;
+            renderHud();
+            viewDeal(state.playerDeck[0], state.cpuDeck[0], true, true);
+        }
+
+        // Player picks are valid only once the dealt view shows the current top
+        // card — blocks a between-rounds race where mashed keys would stamp the
+        // result onto the previous round's card face.
+        const canPick = () => state.phase === 'choosing' && state.chooser === 'player'
+            && cards.player.editor === state.playerDeck[0];
+
+        function handleGameKey(e) {
+            if (e.ctrlKey || e.metaKey || e.altKey) return;
+            if (e.key >= '1' && e.key <= '5') {
+                if (canPick()) chooseStat(STATS[e.key - 1].key);
+            } else if (e.key === ' ') {
+                e.preventDefault();
+                if (state.phase === 'over') deal();
+                else if (state.phase === 'revealed') nextRound();
+            }
+        }
+
+        /* ==================================================================
+           RAYCAST — hover / click stat rows on the 3D player card
+           ================================================================== */
+        const raycaster = new THREE.Raycaster();
+        const ndc = new THREE.Vector2();
+
+        function pickRow(clientX, clientY) {
+            const P = cards.player;
+            if (!P || !P.editor) return -1;
+            const rect = canvas.getBoundingClientRect();
+            ndc.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+            ndc.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+            raycaster.setFromCamera(ndc, camera);
+            const hits = raycaster.intersectObject(P.box, false);
+            for (const h of hits) {
+                if (h.face && h.face.normal.z > 0.5 && h.uv) {   // front (+z) face only
+                    const canvasY = (1 - h.uv.y) * FH;
+                    if (canvasY < STAT_Y0) return -1;
+                    const row = Math.floor((canvasY - STAT_Y0) / ROW_H);
+                    return Math.max(0, Math.min(4, row));
+                }
+            }
+            return -1;
+        }
+
+        // Hover is re-checked per frame (see animate) — the card bobs under a
+        // stationary cursor, so a pointermove-only highlight would go stale and
+        // disagree with what a click actually hits.
+        let pointerAt = null;
+        canvas.addEventListener('pointermove', (e) => { pointerAt = { x: e.clientX, y: e.clientY }; });
+        canvas.addEventListener('pointerleave', () => { pointerAt = null; });
+        canvas.addEventListener('pointerdown', (e) => {
+            if (!canPick()) return;
+            const row = pickRow(e.clientX, e.clientY);
+            if (row >= 0) chooseStat(STATS[row].key);
+        });
+
+        document.addEventListener('keydown', handleGameKey);
+        document.getElementById('next-btn').addEventListener('click', nextRound);
+        document.getElementById('play-again').addEventListener('click', deal);
+
+        window.addEventListener('resize', () => {
+            const w = window.innerWidth, h = window.innerHeight;
+            renderer.setSize(w, h);
+            camera.aspect = w / h; camera.updateProjectionMatrix();
+            bloomComposer.setSize(w, h);
+            finalComposer.setSize(w, h);
+            layout();
+        });
+
+        /* ==================================================================
+           RENDER LOOP
+           ================================================================== */
+        function applyCardTransform(card, t, dt) {
+            card.flipCur += (card.flipTarget - card.flipCur) * Math.min(1, dt * 9);
+            const bob = Math.sin(t * card.bobSpeed + card.bobPhase) * card.bobAmp;
+            const sway = Math.sin(t * card.bobSpeed * 0.7 + card.bobPhase) * 0.02;
+            const H = card.home, fx = card.fx;
+            card.group.position.set(H.px + fx.px, H.py + bob + fx.py, H.pz + fx.pz);
+            card.group.rotation.set(
+                H.rx + fx.rx,
+                H.ry + card.flipCur * Math.PI + fx.ry + sway,
+                H.rz + fx.rz);
+            card.group.scale.setScalar(card.scale);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            timer.update();
+            const dt = Math.min(timer.getDelta(), 0.05);
+            const t = timer.getElapsed();
+
+            for (let i = tweens.length - 1; i >= 0; i--) {
+                const tw = tweens[i];
+                tw.e += dt;
+                const k = Math.min(1, tw.e / tw.dur);
+                tw.update(k);
+                if (k >= 1) { if (tw.done) tw.done(); tweens.splice(i, 1); }
+            }
+            updateEffects(dt);
+            if (cards.player) applyCardTransform(cards.player, t, dt);
+            if (cards.cpu) applyCardTransform(cards.cpu, t, dt);
+            if (vsSprite) vsSprite.position.set(vsHome.x, vsHome.y + Math.sin(t * 1.3) * 0.12, vsHome.z);
+
+            const P = cards.player;
+            if (P) {
+                const row = pointerAt && canPick() ? pickRow(pointerAt.x, pointerAt.y) : -1;
+                if (row !== P.hoverRow) {
+                    P.hoverRow = row;
+                    canvas.style.cursor = row >= 0 ? 'pointer' : 'default';
+                    drawFace(P);
+                }
+            }
+
+            camPos.lerp(camTarget, Math.min(1, dt * 3));
+            shakeAmp = Math.max(0, shakeAmp - dt * 1.6);
+            const sx = (Math.random() - 0.5) * shakeAmp;
+            const sy = (Math.random() - 0.5) * shakeAmp;
+            camera.position.set(camPos.x + sx, camPos.y + sy, camPos.z);
+            camera.lookAt(lookTarget);
+
+            scene.traverse(hideForBloom);
+            bloomComposer.render();
+            scene.traverse(restoreAfterBloom);
+            finalComposer.render();
+        }
+
+        /* ==================================================================
+           BOOT
+           ================================================================== */
+        const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000;
+        const isActive = (e) => {
+            const released = Date.parse(e.lastAnyRelease);
+            return Number.isFinite(released) && Date.now() - released <= ONE_YEAR_MS;
+        };
+
+        async function init() {
+            layout();
+            camPos.copy(camBase);
+            cards.player = buildCard('player', PLAYER_HOME);
+            cards.cpu = buildCard('cpu', CPU_HOME);
+            animate();
+
+            // Fonts must be ready before the first real face draw (canvas text).
+            try {
+                await Promise.race([
+                    Promise.all([
+                        document.fonts.load("30px 'Russo One'"),
+                        document.fonts.load("64px 'Russo One'"),
+                    ]).then(() => document.fonts.ready),
+                    new Promise((r) => setTimeout(r, 3500)),
+                ]);
+            } catch {}
+            cards.player.backCtx && drawBack(cards.player);
+            drawBack(cards.cpu);
+            redrawAllFaces();
+
+            const res = await fetch('../../editors.json');   // two levels up from game/3d/
+            const data = await res.json();
+            allEditors = data.editors.filter(isActive).map((e) => ({
+                name: e.name,
+                icon: '../../' + e.icon,
+                githubStars: e.githubStars,
+                npmDownloads: e.npmWeeklyDownloads,
+                frameworks: e.frameworks.length,
+                math: LEVEL[e.math.level],
+                power: Math.round(mdPower(e) / 9 * 100),
+            }));
+            deal();
+        }
+
+        // Redraw faces once fonts arrive (in case they landed after first draw).
+        document.fonts.ready.then(redrawAllFaces).catch(() => {});
+
+        // Test hook — same shape as the 2D game.
+        window.__game = { state, STATS, chooseStat, nextRound, deal, cpuPickStat, editors: () => allEditors };
+
+        init();
+    </script>
+</body>
+</html>

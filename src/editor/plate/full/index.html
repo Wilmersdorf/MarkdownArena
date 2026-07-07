@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plate Full</title>
+    <!-- Inter, the typeface of Plate's own demos; raw exact-version files from jsDelivr. -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5.2.8/400.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5.2.8/400-italic.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5.2.8/500.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5.2.8/700.css">
+    <!-- KaTeX CSS for the equation nodes, pinned to the same version the import map
+         resolves (fonts load relative to this URL). -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css">
+    <style>
+        html {
+            font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+        }
+        body { margin: 0; color: #111827; }
+
+        /* Toolbar — white, bottom border, compact ghost buttons, dark accent on active */
+        .toolbar {
+            position: sticky; top: 0; z-index: 10; background: #fff;
+            border-bottom: 1px solid #e5e7eb; padding: 0.5rem 1rem;
+            display: flex; flex-wrap: wrap; align-items: center; gap: 0.125rem 0.25rem;
+        }
+        .toolbar__group { display: flex; flex-wrap: wrap; gap: 0.125rem; }
+        .toolbar__group + .toolbar__group { border-left: 1px solid #e5e7eb; margin-left: 0.25rem; padding-left: 0.5rem; }
+        .toolbar button {
+            background: transparent; border: none; border-radius: 0.375rem;
+            color: #374151; cursor: pointer; font-family: inherit; font-size: 0.8125rem;
+            font-weight: 500; line-height: 1.2; padding: 0.3rem 0.5rem; white-space: nowrap;
+        }
+        .toolbar button:hover { background: #f3f4f6; color: #111827; }
+        .toolbar button:disabled { color: #9ca3af; cursor: default; background: transparent; }
+        .toolbar button.is-active { background: #111827; color: #fff; }
+
+        .plate-doc { padding: 0.5rem 1.5rem 1.5rem; }
+        .plate-content { outline: none; line-height: 1.6; }
+        .plate-content > * { margin: 0.4em 0; }
+        .plate-content h1 { font-size: 1.6rem; line-height: 1.2; margin: 1rem 0 0.5rem; }
+        .plate-content h2 { font-size: 1.3rem; line-height: 1.25; margin: 0.9rem 0 0.4rem; }
+        .plate-content h3 { font-size: 1.1rem; margin: 0.8rem 0 0.4rem; }
+        .plate-content :first-child { margin-top: 0; }
+
+        .plate-content pre, .plate-content code { background: #f6f8fa; border-radius: 4px; }
+        .plate-content code { padding: 0.15em 0.35em; font-size: 0.9em; }
+        .plate-content pre { padding: 12px; overflow: auto; tab-size: 2; }
+        .plate-content pre code { background: none; padding: 0; }
+        .plate-content blockquote { padding-left: 0.9rem; border-left: 3px solid #d1d5db; color: #4b5563; margin-left: 0; }
+        .plate-content mark { background: #fef08a; border-radius: 3px; padding: 0.05em 0.15em; }
+        .plate-content a { color: #2563eb; }
+        .plate-content hr { border: none; border-top: 1px solid #e5e7eb; margin: 1.25rem 0; }
+        .plate-content img { display: block; max-width: 100%; height: auto; border-radius: 4px; }
+        .img-selected img { outline: 3px solid #93c5fd; }
+
+        /* Todo items (official block-list pattern): no native marker; an absolutely
+           positioned checkbox sits in the item's indent gap. */
+        .todo-li { list-style: none; }
+        .todo-li.is-checked { color: #9ca3af; text-decoration: line-through; }
+        .todo-marker { position: absolute; top: 0.25rem; left: -1.5rem; margin: 0; }
+
+        .plate-content table { border-collapse: collapse; margin: 0.75rem 0; width: 100%; }
+        .plate-content td, .plate-content th {
+            border: 1px solid #d1d5db; padding: 6px 10px; min-width: 2em;
+            vertical-align: top; text-align: left;
+        }
+        .plate-content th { background: #f9fafb; font-weight: 700; }
+        .plate-content td > *, .plate-content th > * { margin: 0; }
+
+        .equation-block { text-align: center; padding: 0.5rem 0; cursor: pointer; border-radius: 4px; }
+        .equation-block:hover, .equation-inline:hover { background: #f3f4f6; }
+        .equation-inline { cursor: pointer; border-radius: 3px; padding: 0 0.1em; }
+
+        .md-export-title { border-top: 1px solid #d0d7de; margin: 0; padding: 0.5rem 1rem; font-size: 0.75rem; letter-spacing: 0.04em; color: #6e7781; background: #f6f8fa; }
+        .md-export-output { width: 100%; box-sizing: border-box; padding: 1rem; font-family: monospace; field-sizing: content; border: none; resize: none; }
+    </style>
+</head>
+<body>
+
+    <div id="plate-target"></div>
+
+    <!-- JSPM serves packages' ESM builds verbatim, and several in this graph read the
+         Node global process.env.NODE_ENV — define it. -->
+    <script>globalThis.process = { env: { NODE_ENV: 'production' } };</script>
+
+    <!-- Import map generated by @jspm/generator: JSPM modules import their deps as
+         bare specifiers, so this map pins the demo's whole dependency graph to exact
+         versions — one copy of each package. One hand edit: @platejs/math imports
+         katex's CSS as a module, which browsers reject, so that specifier is stubbed
+         to an empty module and the real CSS comes from the <link> above. -->
+    <script type="importmap">
+    {
+        "imports": {
+            "@platejs/basic-nodes": "https://ga.jspm.io/npm:@platejs/basic-nodes@53.0.0/dist/index.js",
+            "@platejs/basic-nodes/react": "https://ga.jspm.io/npm:@platejs/basic-nodes@53.0.0/dist/react/index.js",
+            "@platejs/basic-styles": "https://ga.jspm.io/npm:@platejs/basic-styles@53.0.0/dist/index.js",
+            "@platejs/basic-styles/react": "https://ga.jspm.io/npm:@platejs/basic-styles@53.0.0/dist/react/index.js",
+            "@platejs/code-block": "https://ga.jspm.io/npm:@platejs/code-block@53.0.0/dist/index.js",
+            "@platejs/code-block/react": "https://ga.jspm.io/npm:@platejs/code-block@53.0.0/dist/react/index.js",
+            "@platejs/indent": "https://ga.jspm.io/npm:@platejs/indent@53.0.0/dist/index.js",
+            "@platejs/indent/react": "https://ga.jspm.io/npm:@platejs/indent@53.0.0/dist/react/index.js",
+            "@platejs/link": "https://ga.jspm.io/npm:@platejs/link@53.0.3/dist/index.js",
+            "@platejs/link/react": "https://ga.jspm.io/npm:@platejs/link@53.0.3/dist/react/index.js",
+            "@platejs/list": "https://ga.jspm.io/npm:@platejs/list@53.1.3/dist/index.js",
+            "@platejs/list/react": "https://ga.jspm.io/npm:@platejs/list@53.1.3/dist/react/index.js",
+            "@platejs/markdown": "https://ga.jspm.io/npm:@platejs/markdown@53.2.2/dist/index.js",
+            "@platejs/math": "https://ga.jspm.io/npm:@platejs/math@53.0.0/dist/index.js",
+            "@platejs/math/react": "https://ga.jspm.io/npm:@platejs/math@53.0.0/dist/react/index.js",
+            "@platejs/media": "https://ga.jspm.io/npm:@platejs/media@53.1.4/dist/index.js",
+            "@platejs/media/react": "https://ga.jspm.io/npm:@platejs/media@53.1.4/dist/react/index.js",
+            "@platejs/table": "https://ga.jspm.io/npm:@platejs/table@53.0.9/dist/index.js",
+            "@platejs/table/react": "https://ga.jspm.io/npm:@platejs/table@53.0.9/dist/react/index.js",
+            "platejs": "https://ga.jspm.io/npm:platejs@53.2.4/dist/index.js",
+            "platejs/react": "https://ga.jspm.io/npm:platejs@53.2.4/dist/react/index.js",
+            "react": "https://ga.jspm.io/npm:react@19.1.0/index.js",
+            "react-dom/client": "https://ga.jspm.io/npm:react-dom@19.1.0/client.js",
+            "remark-gfm": "https://ga.jspm.io/npm:remark-gfm@4.0.1/index.js",
+            "remark-math": "https://ga.jspm.io/npm:remark-math@6.0.0/index.js"
+        },
+        "scopes": {
+            "https://ga.jspm.io/": {
+                "#minpath": "https://ga.jspm.io/npm:vfile@6.0.3/lib/minpath.browser.js",
+                "#minproc": "https://ga.jspm.io/npm:vfile@6.0.3/lib/minproc.browser.js",
+                "#minurl": "https://ga.jspm.io/npm:vfile@6.0.3/lib/minurl.browser.js",
+                "@floating-ui/core": "https://ga.jspm.io/npm:@floating-ui/core@1.7.5/dist/floating-ui.core.mjs",
+                "@floating-ui/dom": "https://ga.jspm.io/npm:@floating-ui/dom@1.7.6/dist/floating-ui.dom.mjs",
+                "@floating-ui/react": "https://ga.jspm.io/npm:@floating-ui/react@0.26.28/dist/floating-ui.react.mjs",
+                "@floating-ui/react-dom": "https://ga.jspm.io/npm:@floating-ui/react-dom@2.1.8/dist/floating-ui.react-dom.mjs",
+                "@floating-ui/react/utils": "https://ga.jspm.io/npm:@floating-ui/react@0.26.28/dist/floating-ui.react.utils.mjs",
+                "@floating-ui/utils": "https://ga.jspm.io/npm:@floating-ui/utils@0.2.11/dist/floating-ui.utils.mjs",
+                "@floating-ui/utils/dom": "https://ga.jspm.io/npm:@floating-ui/utils@0.2.11/dist/floating-ui.utils.dom.mjs",
+                "@juggle/resize-observer": "https://ga.jspm.io/npm:@juggle/resize-observer@3.4.0/lib/exports/resize-observer.js",
+                "@platejs/core": "https://ga.jspm.io/npm:@platejs/core@53.2.4/dist/index.js",
+                "@platejs/core/react": "https://ga.jspm.io/npm:@platejs/core@53.2.4/dist/react/index.js",
+                "@platejs/date": "https://ga.jspm.io/npm:@platejs/date@53.0.0/dist/index.js",
+                "@platejs/floating": "https://ga.jspm.io/npm:@platejs/floating@53.0.0/dist/index.js",
+                "@platejs/indent": "https://ga.jspm.io/npm:@platejs/indent@53.0.0/dist/index.js",
+                "@platejs/resizable": "https://ga.jspm.io/npm:@platejs/resizable@53.0.0/dist/index.js",
+                "@platejs/slate": "https://ga.jspm.io/npm:@platejs/slate@53.0.7/dist/index.js",
+                "@platejs/utils": "https://ga.jspm.io/npm:@platejs/utils@53.2.4/dist/index.js",
+                "@platejs/utils/react": "https://ga.jspm.io/npm:@platejs/utils@53.2.4/dist/react/index.js",
+                "@radix-ui/react-compose-refs": "https://ga.jspm.io/npm:@radix-ui/react-compose-refs@1.1.3/dist/index.mjs",
+                "@radix-ui/react-slot": "https://ga.jspm.io/npm:@radix-ui/react-slot@1.3.0/dist/index.mjs",
+                "@udecode/react-hotkeys": "https://ga.jspm.io/npm:@udecode/react-hotkeys@52.0.11/dist/index.js",
+                "@udecode/react-utils": "https://ga.jspm.io/npm:@udecode/react-utils@52.3.4/dist/index.js",
+                "@udecode/utils": "https://ga.jspm.io/npm:@udecode/utils@52.3.4/dist/index.js",
+                "acorn": "https://ga.jspm.io/npm:acorn@8.17.0/dist/acorn.mjs",
+                "acorn-jsx": "https://ga.jspm.io/npm:acorn-jsx@5.3.2/index.js",
+                "bail": "https://ga.jspm.io/npm:bail@2.0.2/index.js",
+                "ccount": "https://ga.jspm.io/npm:ccount@2.0.1/index.js",
+                "character-entities-html4": "https://ga.jspm.io/npm:character-entities-html4@2.1.0/index.js",
+                "character-entities-legacy": "https://ga.jspm.io/npm:character-entities-legacy@3.0.0/index.js",
+                "character-reference-invalid": "https://ga.jspm.io/npm:character-reference-invalid@2.0.1/index.js",
+                "clsx": "https://ga.jspm.io/npm:clsx@2.1.1/dist/clsx.mjs",
+                "compute-scroll-into-view": "https://ga.jspm.io/npm:compute-scroll-into-view@3.1.1/dist/index.js",
+                "decode-named-character-reference": "https://ga.jspm.io/npm:decode-named-character-reference@1.3.0/index.dom.js",
+                "dequal": "https://ga.jspm.io/npm:dequal@2.0.3/dist/index.mjs",
+                "devlop": "https://ga.jspm.io/npm:devlop@1.1.0/lib/default.js",
+                "direction": "https://ga.jspm.io/npm:direction@1.0.4/index.js",
+                "escape-string-regexp": "https://ga.jspm.io/npm:escape-string-regexp@5.0.0/index.js",
+                "estree-util-is-identifier-name": "https://ga.jspm.io/npm:estree-util-is-identifier-name@3.0.0/index.js",
+                "estree-util-visit": "https://ga.jspm.io/npm:estree-util-visit@2.0.0/index.js",
+                "estree-util-visit/do-not-use-color": "https://ga.jspm.io/npm:estree-util-visit@2.0.0/lib/color.default.js",
+                "extend": "https://ga.jspm.io/npm:extend@3.0.2/index.js",
+                "html-entities": "https://ga.jspm.io/npm:html-entities@2.6.0/dist/esm/index.js",
+                "immer": "https://ga.jspm.io/npm:immer@10.2.0/dist/immer.mjs",
+                "is-alphabetical": "https://ga.jspm.io/npm:is-alphabetical@2.0.1/index.js",
+                "is-alphanumerical": "https://ga.jspm.io/npm:is-alphanumerical@2.0.1/index.js",
+                "is-decimal": "https://ga.jspm.io/npm:is-decimal@2.0.1/index.js",
+                "is-hexadecimal": "https://ga.jspm.io/npm:is-hexadecimal@2.0.1/index.js",
+                "is-hotkey": "https://ga.jspm.io/npm:is-hotkey@0.2.0/lib/index.js",
+                "is-plain-obj": "https://ga.jspm.io/npm:is-plain-obj@4.1.0/index.js",
+                "is-plain-object": "https://ga.jspm.io/npm:is-plain-object@5.0.0/dist/is-plain-object.mjs",
+                "jotai": "https://ga.jspm.io/npm:jotai@2.8.4/esm/index.mjs",
+                "jotai-optics": "https://ga.jspm.io/npm:jotai-optics@0.4.0/dist/index.js",
+                "jotai-x": "https://ga.jspm.io/npm:jotai-x@2.3.4/dist/index.mjs",
+                "jotai/react": "https://ga.jspm.io/npm:jotai@2.8.4/esm/react.mjs",
+                "jotai/react/utils": "https://ga.jspm.io/npm:jotai@2.8.4/esm/react/utils.mjs",
+                "jotai/utils": "https://ga.jspm.io/npm:jotai@2.8.4/esm/utils.mjs",
+                "jotai/vanilla": "https://ga.jspm.io/npm:jotai@2.8.4/esm/vanilla.mjs",
+                "jotai/vanilla/utils": "https://ga.jspm.io/npm:jotai@2.8.4/esm/vanilla/utils.mjs",
+                "katex": "https://ga.jspm.io/npm:katex@0.16.22/dist/katex.mjs",
+                "lodash/": "https://ga.jspm.io/npm:lodash@4.18.1/",
+                "lodash/debounce": "https://ga.jspm.io/npm:lodash@4.18.1/debounce.js",
+                "lodash/throttle": "https://ga.jspm.io/npm:lodash@4.18.1/throttle.js",
+                "longest-streak": "https://ga.jspm.io/npm:longest-streak@3.1.0/index.js",
+                "markdown-table": "https://ga.jspm.io/npm:markdown-table@3.0.4/index.js",
+                "marked": "https://ga.jspm.io/npm:marked@15.0.12/lib/marked.esm.js",
+                "mdast-util-find-and-replace": "https://ga.jspm.io/npm:mdast-util-find-and-replace@3.0.2/index.js",
+                "mdast-util-from-markdown": "https://ga.jspm.io/npm:mdast-util-from-markdown@2.0.3/index.js",
+                "mdast-util-gfm": "https://ga.jspm.io/npm:mdast-util-gfm@3.1.0/index.js",
+                "mdast-util-gfm-autolink-literal": "https://ga.jspm.io/npm:mdast-util-gfm-autolink-literal@2.0.1/index.js",
+                "mdast-util-gfm-footnote": "https://ga.jspm.io/npm:mdast-util-gfm-footnote@2.1.0/index.js",
+                "mdast-util-gfm-strikethrough": "https://ga.jspm.io/npm:mdast-util-gfm-strikethrough@2.0.0/index.js",
+                "mdast-util-gfm-table": "https://ga.jspm.io/npm:mdast-util-gfm-table@2.0.0/index.js",
+                "mdast-util-gfm-task-list-item": "https://ga.jspm.io/npm:mdast-util-gfm-task-list-item@2.0.0/index.js",
+                "mdast-util-math": "https://ga.jspm.io/npm:mdast-util-math@3.0.0/index.js",
+                "mdast-util-mdx": "https://ga.jspm.io/npm:mdast-util-mdx@3.0.0/index.js",
+                "mdast-util-mdx-expression": "https://ga.jspm.io/npm:mdast-util-mdx-expression@2.0.1/index.js",
+                "mdast-util-mdx-jsx": "https://ga.jspm.io/npm:mdast-util-mdx-jsx@3.2.0/index.js",
+                "mdast-util-mdxjs-esm": "https://ga.jspm.io/npm:mdast-util-mdxjs-esm@2.0.1/index.js",
+                "mdast-util-phrasing": "https://ga.jspm.io/npm:mdast-util-phrasing@4.1.0/index.js",
+                "mdast-util-to-markdown": "https://ga.jspm.io/npm:mdast-util-to-markdown@2.1.2/index.js",
+                "mdast-util-to-string": "https://ga.jspm.io/npm:mdast-util-to-string@4.0.0/index.js",
+                "micromark": "https://ga.jspm.io/npm:micromark@4.0.2/index.js",
+                "micromark-core-commonmark": "https://ga.jspm.io/npm:micromark-core-commonmark@2.0.3/index.js",
+                "micromark-extension-gfm": "https://ga.jspm.io/npm:micromark-extension-gfm@3.0.0/index.js",
+                "micromark-extension-gfm-autolink-literal": "https://ga.jspm.io/npm:micromark-extension-gfm-autolink-literal@2.1.0/index.js",
+                "micromark-extension-gfm-footnote": "https://ga.jspm.io/npm:micromark-extension-gfm-footnote@2.1.0/index.js",
+                "micromark-extension-gfm-strikethrough": "https://ga.jspm.io/npm:micromark-extension-gfm-strikethrough@2.1.0/index.js",
+                "micromark-extension-gfm-table": "https://ga.jspm.io/npm:micromark-extension-gfm-table@2.1.1/index.js",
+                "micromark-extension-gfm-tagfilter": "https://ga.jspm.io/npm:micromark-extension-gfm-tagfilter@2.0.0/index.js",
+                "micromark-extension-gfm-task-list-item": "https://ga.jspm.io/npm:micromark-extension-gfm-task-list-item@2.1.0/index.js",
+                "micromark-extension-math": "https://ga.jspm.io/npm:micromark-extension-math@3.1.0/index.js",
+                "micromark-extension-mdx-expression": "https://ga.jspm.io/npm:micromark-extension-mdx-expression@3.0.1/index.js",
+                "micromark-extension-mdx-jsx": "https://ga.jspm.io/npm:micromark-extension-mdx-jsx@3.0.2/index.js",
+                "micromark-extension-mdx-md": "https://ga.jspm.io/npm:micromark-extension-mdx-md@2.0.0/index.js",
+                "micromark-extension-mdxjs": "https://ga.jspm.io/npm:micromark-extension-mdxjs@3.0.0/index.js",
+                "micromark-extension-mdxjs-esm": "https://ga.jspm.io/npm:micromark-extension-mdxjs-esm@3.0.0/index.js",
+                "micromark-factory-destination": "https://ga.jspm.io/npm:micromark-factory-destination@2.0.1/index.js",
+                "micromark-factory-label": "https://ga.jspm.io/npm:micromark-factory-label@2.0.1/index.js",
+                "micromark-factory-mdx-expression": "https://ga.jspm.io/npm:micromark-factory-mdx-expression@2.0.3/index.js",
+                "micromark-factory-space": "https://ga.jspm.io/npm:micromark-factory-space@2.0.1/index.js",
+                "micromark-factory-title": "https://ga.jspm.io/npm:micromark-factory-title@2.0.1/index.js",
+                "micromark-factory-whitespace": "https://ga.jspm.io/npm:micromark-factory-whitespace@2.0.1/index.js",
+                "micromark-util-character": "https://ga.jspm.io/npm:micromark-util-character@2.1.1/index.js",
+                "micromark-util-chunked": "https://ga.jspm.io/npm:micromark-util-chunked@2.0.1/index.js",
+                "micromark-util-classify-character": "https://ga.jspm.io/npm:micromark-util-classify-character@2.0.1/index.js",
+                "micromark-util-combine-extensions": "https://ga.jspm.io/npm:micromark-util-combine-extensions@2.0.1/index.js",
+                "micromark-util-decode-numeric-character-reference": "https://ga.jspm.io/npm:micromark-util-decode-numeric-character-reference@2.0.2/index.js",
+                "micromark-util-decode-string": "https://ga.jspm.io/npm:micromark-util-decode-string@2.0.1/index.js",
+                "micromark-util-encode": "https://ga.jspm.io/npm:micromark-util-encode@2.0.1/index.js",
+                "micromark-util-events-to-acorn": "https://ga.jspm.io/npm:micromark-util-events-to-acorn@2.0.3/index.js",
+                "micromark-util-html-tag-name": "https://ga.jspm.io/npm:micromark-util-html-tag-name@2.0.1/index.js",
+                "micromark-util-normalize-identifier": "https://ga.jspm.io/npm:micromark-util-normalize-identifier@2.0.1/index.js",
+                "micromark-util-resolve-all": "https://ga.jspm.io/npm:micromark-util-resolve-all@2.0.1/index.js",
+                "micromark-util-sanitize-uri": "https://ga.jspm.io/npm:micromark-util-sanitize-uri@2.0.1/index.js",
+                "micromark-util-subtokenize": "https://ga.jspm.io/npm:micromark-util-subtokenize@2.1.0/index.js",
+                "mutative": "https://ga.jspm.io/npm:mutative@1.1.0/dist/mutative.esm.mjs",
+                "nanoid": "https://ga.jspm.io/npm:nanoid@5.1.16/index.browser.js",
+                "optics-ts": "https://ga.jspm.io/npm:optics-ts@2.4.1/dist/mjs/index.js",
+                "parse-entities": "https://ga.jspm.io/npm:parse-entities@4.0.2/index.js",
+                "proxy-compare": "https://ga.jspm.io/npm:proxy-compare@2.6.0/dist/index.modern.js",
+                "react-compiler-runtime": "https://ga.jspm.io/npm:react-compiler-runtime@1.0.0/dist/index.js",
+                "react-dom": "https://ga.jspm.io/npm:react-dom@19.1.0/index.js",
+                "react-tracked": "https://ga.jspm.io/npm:react-tracked@1.7.14/dist/index.modern.mjs",
+                "remark-mdx": "https://ga.jspm.io/npm:remark-mdx@3.1.1/index.js",
+                "remark-parse": "https://ga.jspm.io/npm:remark-parse@11.0.0/index.js",
+                "remark-stringify": "https://ga.jspm.io/npm:remark-stringify@11.0.0/index.js",
+                "scheduler": "https://ga.jspm.io/npm:scheduler@0.26.0/index.js",
+                "scroll-into-view-if-needed": "https://ga.jspm.io/npm:scroll-into-view-if-needed@3.1.0/dist/index.js",
+                "slate": "https://ga.jspm.io/npm:slate@0.124.1/dist/index.es.js",
+                "slate-dom": "https://ga.jspm.io/npm:slate-dom@0.124.1/dist/index.es.js",
+                "slate-hyperscript": "https://ga.jspm.io/npm:slate-hyperscript@0.125.0/dist/index.es.js",
+                "slate-react": "https://ga.jspm.io/npm:slate-react@0.124.2/dist/index.es.js",
+                "stringify-entities": "https://ga.jspm.io/npm:stringify-entities@4.0.4/index.js",
+                "tabbable": "https://ga.jspm.io/npm:tabbable@6.5.0/dist/index.esm.js",
+                "trough": "https://ga.jspm.io/npm:trough@2.2.0/index.js",
+                "unified": "https://ga.jspm.io/npm:unified@11.0.5/index.js",
+                "unist-util-is": "https://ga.jspm.io/npm:unist-util-is@6.0.1/index.js",
+                "unist-util-position-from-estree": "https://ga.jspm.io/npm:unist-util-position-from-estree@2.0.0/index.js",
+                "unist-util-stringify-position": "https://ga.jspm.io/npm:unist-util-stringify-position@4.0.0/index.js",
+                "unist-util-visit": "https://ga.jspm.io/npm:unist-util-visit@5.0.0/index.js",
+                "unist-util-visit-parents": "https://ga.jspm.io/npm:unist-util-visit-parents@6.0.2/index.js",
+                "unist-util-visit-parents/do-not-use-color": "https://ga.jspm.io/npm:unist-util-visit-parents@6.0.2/lib/color.js",
+                "use-context-selector": "https://ga.jspm.io/npm:use-context-selector@1.4.4/dist/index.modern.mjs",
+                "use-deep-compare": "https://ga.jspm.io/npm:use-deep-compare@1.3.0/dist-web/index.js",
+                "use-sync-external-store/shim": "https://ga.jspm.io/npm:use-sync-external-store@1.6.0/shim/index.js",
+                "use-sync-external-store/shim/with-selector.js": "https://ga.jspm.io/npm:use-sync-external-store@1.6.0/shim/with-selector.js",
+                "vfile": "https://ga.jspm.io/npm:vfile@6.0.3/index.js",
+                "vfile-message": "https://ga.jspm.io/npm:vfile-message@4.0.3/index.js",
+                "zustand-x": "https://ga.jspm.io/npm:zustand-x@6.2.1/dist/index.mjs",
+                "zustand-x/vanilla": "https://ga.jspm.io/npm:zustand-x@6.2.1/dist/lib/index.mjs",
+                "zustand/middleware": "https://ga.jspm.io/npm:zustand@5.0.14/esm/middleware.mjs",
+                "zustand/traditional": "https://ga.jspm.io/npm:zustand@5.0.14/esm/traditional.mjs",
+                "zustand/vanilla": "https://ga.jspm.io/npm:zustand@5.0.14/esm/vanilla.mjs",
+                "zwitch": "https://ga.jspm.io/npm:zwitch@2.0.4/index.js",
+                "katex/": "https://ga.jspm.io/npm:katex@0.16.22/",
+                "katex/dist/katex.min.css": "data:text/javascript,"
+            },
+            "https://ga.jspm.io/npm:acorn-jsx@5.3.2/": {
+                "acorn": "https://ga.jspm.io/npm:acorn@8.17.0/dist/acorn.js"
+            }
+        }
+    }
+    </script>
+
+    <script type="module">
+        import React from 'react';
+        import { createRoot } from 'react-dom/client';
+        import { Plate, PlateContent, PlateElement, PlateLeaf, usePlateEditor, useEditorRef } from 'platejs/react';
+        import { MarkdownPlugin, remarkMdx } from '@platejs/markdown';
+        import { BasicMarksPlugin, BasicBlocksPlugin, BlockquotePlugin, HorizontalRulePlugin,
+                 H1Plugin, H2Plugin, H3Plugin, BoldPlugin, ItalicPlugin, CodePlugin,
+                 StrikethroughPlugin, HighlightPlugin } from '@platejs/basic-nodes/react';
+        import { ListPlugin, useTodoListElement, useTodoListElementState } from '@platejs/list/react';
+        import { IndentPlugin } from '@platejs/indent/react';
+        import { CodeBlockPlugin } from '@platejs/code-block/react';
+        import { LinkPlugin } from '@platejs/link/react';
+        import { TablePlugin, TableRowPlugin, TableCellPlugin, TableCellHeaderPlugin } from '@platejs/table/react';
+        import { ImagePlugin } from '@platejs/media/react';
+        import { TextAlignPlugin } from '@platejs/basic-styles/react';
+        import { EquationPlugin, InlineEquationPlugin } from '@platejs/math/react';
+        // Markdown input rules and toolbar transforms live on the base packages —
+        // the /react entries don't re-export them.
+        import { BoldRules, ItalicRules, CodeRules, StrikethroughRules, HighlightRules,
+                 HeadingRules, BlockquoteRules, HorizontalRuleRules } from '@platejs/basic-nodes';
+        import { BulletedListRules, OrderedListRules, TaskListRules, isOrderedList, toggleList } from '@platejs/list';
+        import { CodeBlockRules } from '@platejs/code-block';
+        import { upsertLink } from '@platejs/link';
+        import { setAlign } from '@platejs/basic-styles';
+        import { getEquationHtml } from '@platejs/math';
+        // remark extensions for the markdown round-trip: GFM (tables, strikethrough,
+        // task lists), math ($ / $$), and MDX (inline <u>/<sub>/<sup>/<mark> as marks).
+        import remarkGfm from 'remark-gfm';
+        import remarkMath from 'remark-math';
+
+        const { useRef, useState } = React;
+        const h = React.createElement;
+
+        // The highlight mark's default leaf is an unstyled span; render a real <mark>.
+        const HighlightLeaf = (props) => h(PlateLeaf, { ...props, as: 'mark' }, props.children);
+
+        // LinkPlugin sets isInline but ships no render component; render it inline.
+        const LinkElement = (props) => h(PlateElement, { ...props, as: 'a' }, props.children);
+
+        // @platejs/list stores items as paragraphs with listStyleType / indent props;
+        // IndentPlugin renders the indent prop as margin-left and this wrapper (the
+        // official block-list, via render.belowNodes) puts a native <ul>/<ol><li>
+        // inside each item. Todo items swap the marker for a checkbox driven by the
+        // plugin's own hooks.
+        const TodoMarker = (props) => {
+            const state = useTodoListElementState({ element: props.element });
+            const { checkboxProps } = useTodoListElement(state);
+            return h('div', { contentEditable: false },
+                h('input', {
+                    type: 'checkbox',
+                    className: 'todo-marker',
+                    checked: checkboxProps.checked,
+                    onChange: (e) => checkboxProps.onCheckedChange(e.target.checked),
+                    onMouseDown: checkboxProps.onMouseDown,
+                }),
+            );
+        };
+        const TodoLi = (props) =>
+            h('li', { className: 'todo-li' + (props.element.checked ? ' is-checked' : '') }, props.children);
+        const listConfig = { todo: { Li: TodoLi, Marker: TodoMarker } };
+        const BlockList = (props) => {
+            if (!props.element.listStyleType) return;
+            return (props) => {
+                const { listStart, listStyleType } = props.element;
+                const { Li, Marker } = listConfig[listStyleType] ?? {};
+                return h(isOrderedList(props.element) ? 'ol' : 'ul',
+                    { style: { listStyleType, margin: 0, padding: 0, position: 'relative' }, start: listStart },
+                    Marker && h(Marker, props),
+                    Li ? h(Li, props) : h('li', null, props.children),
+                );
+            };
+        };
+
+        const ImageElement = (props) => {
+            const [selected, setSelected] = useState(false);
+            return h(PlateElement, { ...props, className: selected ? 'img-selected' : undefined },
+                h('img', {
+                    src: props.element.url,
+                    alt: '',
+                    draggable: false,
+                    contentEditable: false,
+                    onClick: () => setSelected(s => !s),
+                }),
+                props.children,
+            );
+        };
+
+        const TableElement = (props) => h(PlateElement, { ...props, as: 'table' }, h('tbody', null, props.children));
+        const TableRowElement = (props) => h(PlateElement, { ...props, as: 'tr' }, props.children);
+        const TableCellElement = (props) => h(PlateElement, { ...props, as: 'td' }, props.children);
+        const TableCellHeaderElement = (props) => h(PlateElement, { ...props, as: 'th' }, props.children);
+
+        const HrElement = (props) => h(PlateElement, props,
+            h('div', { contentEditable: false }, h('hr')), props.children);
+
+        // KaTeX-rendered equations; click to edit the TeX source via prompt (the
+        // official demos edit through a popover input).
+        const editEquation = (editor, element) => {
+            const tex = window.prompt('TeX expression', element.texExpression);
+            if (tex !== null) editor.tf.setNodes({ texExpression: tex }, { at: editor.api.findPath(element) });
+        };
+        const katexHtml = (element) => ({
+            __html: getEquationHtml({ element, options: { displayMode: element.type === 'equation', throwOnError: false } }),
+        });
+        const EquationElement = (props) => {
+            const editor = useEditorRef();
+            return h(PlateElement, { ...props, className: 'equation-block' },
+                h('div', { contentEditable: false, onClick: () => editEquation(editor, props.element),
+                           dangerouslySetInnerHTML: katexHtml(props.element) }),
+                props.children);
+        };
+        const InlineEquationElement = (props) => {
+            const editor = useEditorRef();
+            return h(PlateElement, { ...props, as: 'span', className: 'equation-inline' },
+                h('span', { contentEditable: false, onClick: () => editEquation(editor, props.element),
+                            dangerouslySetInnerHTML: katexHtml(props.element) }),
+                props.children);
+        };
+
+        // The markdown serializer (remark) encodes edge-of-line whitespace as character
+        // references (&#x20; / &#x9;); that edge whitespace is meaningless here, so drop
+        // runs that carry such an entity — never list/code indentation.
+        const trimEdgeWhitespace = (md) =>
+            md.replace(/^(?:[ \t]|&#x20;|&#x9;)+|(?:[ \t]|&#x20;|&#x9;)+$/gm, (run) =>
+                /&#x(?:20|9);/.test(run) ? '' : run);
+
+        const content = [
+            '# Plate full demo',
+            '',
+            'A paragraph with **bold**, *italic*, <u>underline</u>, ~~strike~~, `inline code`, and <mark>highlight</mark>, plus H<sub>2</sub>O and x<sup>2</sup> and a [link](https://example.com).',
+            '',
+            '## Blocks',
+            '',
+            '- Bullet one',
+            '- Bullet two',
+            '',
+            '1. First',
+            '2. Second',
+            '',
+            '- [x] Write the demo',
+            '- [ ] Ship it',
+            '',
+            '| Name | Role | Age |',
+            '| --- | --- | --- |',
+            '| Ada | Engineer | 36 |',
+            '| Alan | Mathematician | 41 |',
+            '',
+            '![Placeholder image](https://markdownarena.com/600x200.png)',
+            '',
+            '> A blockquote with a point to make.',
+            '',
+            '```js',
+            "console.log('Hello, Markdown!')",
+            '```',
+            '',
+            '### Math',
+            '',
+            'The identity $e^{i\\pi} + 1 = 0$ typesets inline.',
+            '',
+            '$$',
+            '\\int_a^b x^2 \\,dx',
+            '$$',
+            '',
+            '---',
+        ].join('\n');
+
+        // Live markdown shortcuts: input rules rewrite markdown syntax as you type.
+        // Rules must sit on the concrete leaf plugin that owns the node type, so the
+        // nested leaves are reached with configurePlugin.
+        const plugins = [
+            BasicMarksPlugin
+                .configurePlugin(BoldPlugin, { inputRules: [BoldRules.markdown({ variant: '*' }), BoldRules.markdown({ variant: '_' })] })
+                .configurePlugin(ItalicPlugin, { inputRules: [ItalicRules.markdown({ variant: '*' }), ItalicRules.markdown({ variant: '_' })] })
+                .configurePlugin(CodePlugin, { inputRules: [CodeRules.markdown()] })
+                .configurePlugin(StrikethroughPlugin, { inputRules: [StrikethroughRules.markdown()] }),
+            HighlightPlugin.configure({ inputRules: [HighlightRules.markdown()], node: { component: HighlightLeaf } }),
+            BasicBlocksPlugin
+                .configurePlugin(BlockquotePlugin, { inputRules: [BlockquoteRules.markdown()] })
+                .configurePlugin(HorizontalRulePlugin, {
+                    inputRules: [HorizontalRuleRules.markdown()],
+                    render: { node: HrElement },
+                }),
+            // HeadingRules derives its "#"-prefix from the host plugin's key.
+            H1Plugin.configure({ inputRules: [HeadingRules.markdown()] }),
+            H2Plugin.configure({ inputRules: [HeadingRules.markdown()] }),
+            H3Plugin.configure({ inputRules: [HeadingRules.markdown()] }),
+            // Official ListKit pairing: IndentPlugin turns each item's indent prop into
+            // margin-left, giving the native marker (or todo checkbox) room on the left.
+            IndentPlugin,
+            ListPlugin.configure({
+                inputRules: [
+                    BulletedListRules.markdown({ variant: '-' }),
+                    BulletedListRules.markdown({ variant: '*' }),
+                    OrderedListRules.markdown({ variant: '.' }),
+                    OrderedListRules.markdown({ variant: ')' }),
+                    TaskListRules.markdown(),
+                ],
+                render: { belowNodes: BlockList },
+            }),
+            CodeBlockPlugin.configure({
+                inputRules: [CodeBlockRules.markdown({ on: 'match' })],
+                handlers: {
+                    // Enter on an empty last code line exits into a fresh paragraph.
+                    onKeyDown: ({ editor, event }) => {
+                        if (event.key !== 'Enter' || event.shiftKey || event.metaKey || event.ctrlKey || event.altKey) return;
+                        if (!editor.selection || !editor.api.isCollapsed()) return;
+                        const block = editor.api.above({ match: { type: 'code_block' } });
+                        const line = editor.api.above({ match: { type: 'code_line' } });
+                        if (!block || !line || block[0].children.length < 2) return;
+                        const linePath = line[1];
+                        const isLast = linePath[linePath.length - 1] === block[0].children.length - 1;
+                        if (!isLast || editor.api.string(linePath) !== '') return;
+                        event.preventDefault();
+                        const afterBlock = [...block[1].slice(0, -1), block[1][block[1].length - 1] + 1];
+                        editor.tf.withoutNormalizing(() => {
+                            editor.tf.removeNodes({ at: linePath });
+                            editor.tf.insertNodes({ type: 'p', children: [{ text: '' }] }, { at: afterBlock, select: true });
+                        });
+                    },
+                },
+            }),
+            LinkPlugin.withComponent(LinkElement),
+            TablePlugin.withComponent(TableElement),
+            TableRowPlugin.withComponent(TableRowElement),
+            TableCellPlugin.withComponent(TableCellElement),
+            TableCellHeaderPlugin.withComponent(TableCellHeaderElement),
+            ImagePlugin.withComponent(ImageElement),
+            TextAlignPlugin.configure({
+                inject: { targetPlugins: ['p', 'h1', 'h2', 'h3'] },
+            }),
+            EquationPlugin.withComponent(EquationElement),
+            InlineEquationPlugin.withComponent(InlineEquationElement),
+            MarkdownPlugin.configure({ options: { remarkPlugins: [remarkMath, remarkGfm, remarkMdx] } }),
+        ];
+
+        function App() {
+            const syncing = useRef(false);
+            const [, setTick] = useState(0);
+            const refresh = () => setTick(t => t + 1);
+
+            const editor = usePlateEditor({
+                plugins,
+                value: (e) => e.getApi(MarkdownPlugin).markdown.deserialize(content),
+            });
+
+            const serialize = () => trimEdgeWhitespace(editor.api.markdown.serialize());
+            const [markdown, setMarkdown] = useState(serialize);
+
+            // editor -> markdown textarea (guarded against echoing textarea edits back)
+            const handleEditorChange = () => {
+                if (!syncing.current) setMarkdown(serialize());
+                else syncing.current = false;
+                refresh();
+            };
+
+            // markdown textarea -> editor
+            const handleMarkdownInput = (event) => {
+                const text = event.target.value;
+                setMarkdown(text);
+                syncing.current = true;
+                editor.tf.setValue(editor.api.markdown.deserialize(text));
+            };
+
+            const marks = () => editor.api.marks() || {};
+            const inTable = () => !!editor.api.some({ match: { type: 'table' } });
+            const mark = (label, key) => ({
+                label,
+                run: () => editor.tf[key].toggle(),
+                active: () => !!marks()[key],
+            });
+            const block = (label, key) => ({
+                label,
+                run: () => editor.tf[key].toggle(),
+                active: () => !!editor.api.some({ match: { type: key } }),
+            });
+            const list = (label, styleType) => ({
+                label,
+                run: () => toggleList(editor, { listStyleType: styleType }),
+                active: () => !!editor.api.some({ match: { listStyleType: styleType } }),
+            });
+            const align = (label, value) => ({
+                label,
+                run: () => setAlign(editor, value),
+                active: () => !!editor.api.some({ match: { align: value } }),
+            });
+            const promptInsert = (message, fn) => () => {
+                const value = window.prompt(message);
+                if (value) fn(value);
+                editor.tf.focus();
+            };
+
+            const groups = [
+                [
+                    mark('Bold', 'bold'), mark('Italic', 'italic'), mark('Underline', 'underline'),
+                    mark('Strike', 'strikethrough'), mark('Code', 'code'), mark('Highlight', 'highlight'),
+                    mark('Sub', 'subscript'), mark('Sup', 'superscript'),
+                ],
+                [
+                    { label: 'Paragraph', run: () => editor.tf.toggleBlock('p'), active: () => !!editor.api.some({ match: { type: 'p' } }) },
+                    block('H1', 'h1'), block('H2', 'h2'), block('H3', 'h3'),
+                    block('Quote', 'blockquote'), block('Code block', 'code_block'),
+                    { label: 'HR', run: () => editor.tf.insertNodes([{ type: 'hr', children: [{ text: '' }] }, { type: 'p', children: [{ text: '' }] }]) },
+                ],
+                [
+                    list('Bullet list', 'disc'), list('Numbered list', 'decimal'), list('Task list', 'todo'),
+                ],
+                [
+                    align('Left', 'left'), align('Center', 'center'), align('Right', 'right'), align('Justify', 'justify'),
+                ],
+                [
+                    { label: 'Link', run: promptInsert('URL', (url) => upsertLink(editor, { url })), active: () => !!editor.api.some({ match: { type: 'a' } }) },
+                    { label: 'Image', run: promptInsert('Image URL', (url) => editor.tf.insertNodes({ type: 'img', url, children: [{ text: '' }] })) },
+                    { label: 'Inline math', run: promptInsert('TeX expression', (tex) => editor.tf.insertNodes({ type: 'inline_equation', texExpression: tex, children: [{ text: '' }] })) },
+                    { label: 'Block math', run: promptInsert('TeX expression', (tex) => editor.tf.insertNodes({ type: 'equation', texExpression: tex, children: [{ text: '' }] })) },
+                ],
+                [
+                    { label: 'Insert table', run: () => editor.tf.insert.table({ rowCount: 3, colCount: 3 }, { select: true }) },
+                    { label: 'Add row', run: () => editor.tf.insert.tableRow(), can: inTable },
+                    { label: 'Add column', run: () => editor.tf.insert.tableColumn(), can: inTable },
+                    { label: 'Delete row', run: () => editor.tf.remove.tableRow(), can: inTable },
+                    { label: 'Delete column', run: () => editor.tf.remove.tableColumn(), can: inTable },
+                    { label: 'Delete table', run: () => editor.tf.remove.table(), can: inTable },
+                ],
+                [
+                    { label: 'Undo', run: () => editor.tf.undo() },
+                    { label: 'Redo', run: () => editor.tf.redo() },
+                ],
+            ];
+
+            const toolbar = h('div', { className: 'toolbar' },
+                groups.map((group, i) => h('div', { className: 'toolbar__group', key: i },
+                    group.map((def) => h('button', {
+                        key: def.label,
+                        type: 'button',
+                        className: def.active && def.active() ? 'is-active' : undefined,
+                        disabled: def.can ? !def.can() : false,
+                        onMouseDown: (e) => e.preventDefault(),
+                        onClick: def.run,
+                    }, def.label)),
+                )),
+            );
+
+            return h('div', { className: 'plate' },
+                toolbar,
+                h('div', { className: 'plate-doc' },
+                    h(Plate, { editor, onChange: handleEditorChange, onSelectionChange: refresh },
+                        h(PlateContent, { className: 'plate-content', placeholder: 'Write something…' }),
+                    ),
+                ),
+                h('h2', { className: 'md-export-title' }, 'MARKDOWN 2-WAY EDITABLE'),
+                h('textarea', {
+                    className: 'md-export-output',
+                    id: 'plate-markdown-output',
+                    rows: 14,
+                    spellCheck: false,
+                    value: markdown,
+                    onChange: handleMarkdownInput,
+                }),
+            );
+        }
+
+        createRoot(document.getElementById('plate-target')).render(h(App));
+    </script>
+
+</body>
+</html>

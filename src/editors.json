@@ -1,0 +1,1396 @@
+{
+  "editors": [
+    {
+      "path": "editor/tip-tap/index.html",
+      "name": "TipTap",
+      "icon": "icons/tiptap.png",
+      "type": "WYSIWYG",
+      "frameworks": [
+        { "name": "JS" },
+        {
+          "name": "React",
+          "docs": "https://tiptap.dev/docs/editor/getting-started/install/react"
+        },
+        {
+          "name": "Vue",
+          "docs": "https://tiptap.dev/docs/editor/getting-started/install/vue3"
+        },
+        {
+          "name": "Svelte",
+          "docs": "https://tiptap.dev/docs/editor/getting-started/install/svelte"
+        }
+      ],
+      "maintainer": {
+        "name": "überdosis",
+        "url": "https://github.com/ueberdosis"
+      },
+      "basedOn": {
+        "name": "ProseMirror",
+        "path": "editor/prose-mirror/index.html"
+      },
+      "paidAddons": true,
+      "paidAddonsUrl": "https://tiptap.dev/pricing",
+      "version": "3.27.1",
+      "lastRelease": "2026-06-18",
+      "lastAnyVersion": "3.27.1",
+      "lastAnyRelease": "2026-06-18",
+      "githubStars": 37399,
+      "npmWeeklyDownloads": 12824849,
+      "website": "https://tiptap.dev",
+      "docs": "https://tiptap.dev/docs",
+      "playground": "https://tiptap.dev/docs/examples/basics/default-text-editor",
+      "github": "https://github.com/ueberdosis/tiptap",
+      "npm": "https://www.npmjs.com/package/@tiptap/core",
+      "license": "MIT",
+      "licenseUrl": "https://github.com/ueberdosis/tiptap/blob/main/LICENSE.md",
+      "markdown": {
+        "input": {
+          "level": "native",
+          "via": "@tiptap/markdown",
+          "note": "Official Markdown extension parses a Markdown string into the document (contentType: 'markdown')",
+          "url": "https://tiptap.dev/docs/editor/markdown/getting-started/installation"
+        },
+        "output": {
+          "level": "native",
+          "via": "@tiptap/markdown",
+          "note": "editor.markdown.serialize() turns the rich document back into Markdown",
+          "url": "https://tiptap.dev/docs/editor/markdown/getting-started/installation"
+        },
+        "live": {
+          "level": "native",
+          "via": "StarterKit input rules",
+          "note": "Typing '# ', '**bold**', '- ' etc. converts to rich formatting as you type — block and inline",
+          "url": "https://tiptap.dev/docs/editor/api/input-rules"
+        }
+      },
+      "math": {
+        "level": "native",
+        "via": "@tiptap/extension-mathematics",
+        "note": "Official Mathematics extension renders LaTeX with KaTeX (now free)",
+        "url": "https://tiptap.dev/docs/editor/extensions/nodes/mathematics"
+      }
+    },
+    {
+      "path": "editor/codemirror/index.html",
+      "name": "CodeMirror",
+      "icon": "icons/codemirror.svg",
+      "type": "Code",
+      "frameworks": [{ "name": "JS" }],
+      "maintainer": {
+        "name": "Marijn Haverbeke",
+        "url": "https://github.com/marijnh"
+      },
+      "paidAddons": false,
+      "version": "6.0.2",
+      "lastRelease": "2025-06-19",
+      "lastAnyVersion": "5.65.21",
+      "lastAnyRelease": "2026-02-07",
+      "githubStars": 7821,
+      "npmWeeklyDownloads": 9153601,
+      "website": "https://codemirror.net/",
+      "docs": "https://codemirror.net/docs/",
+      "playground": "https://codemirror.net/try/",
+      "github": "https://github.com/codemirror/dev",
+      "npm": "https://www.npmjs.com/package/codemirror",
+      "license": "MIT",
+      "licenseUrl": "https://github.com/codemirror/dev/blob/main/LICENSE",
+      "markdown": {
+        "input": {
+          "level": "native",
+          "via": "plain-text document",
+          "note": "A code editor holds plain text, so a Markdown string loads verbatim",
+          "url": "https://codemirror.net/docs/ref/#state.EditorStateConfig.doc"
+        },
+        "output": {
+          "level": "native",
+          "via": "state.doc.toString()",
+          "note": "The document already is Markdown — read it straight back out, lossless",
+          "url": "https://codemirror.net/docs/ref/#state.EditorState.doc"
+        },
+        "live": {
+          "level": "native",
+          "via": "@codemirror/lang-markdown",
+          "note": "The official language package highlights Markdown syntax natively as you type (it colours the source rather than rendering it)",
+          "url": "https://github.com/codemirror/lang-markdown"
+        }
+      },
+      "math": {
+        "level": "native",
+        "via": "@codemirror/language-data (LaTeX)",
+        "note": "CodeMirror's official language registry ships a LaTeX entry — backed by the legacy-modes stex parser — that natively highlights LaTeX as you type, even inside Markdown code fences via lang-markdown's codeLanguages (fences only, not inline $…$; it colours the source rather than rendering math)",
+        "url": "https://code.haverbeke.berlin/codemirror/language-data/src/tag/6.5.2/src/language-data.ts#L843-L850"
+      }
+    },
+    {
+      "path": "editor/prose-mirror/index.html",
+      "name": "ProseMirror",
+      "icon": "icons/prosemirror.svg",
+      "type": "WYSIWYG",
+      "codeVersion": {
+        "via": "Markdown example (source toggle)",
+        "url": "https://prosemirror.net/examples/markdown/"
+      },
+      "frameworks": [{ "name": "JS" }],
+      "maintainer": {
+        "name": "Marijn Haverbeke",
+        "url": "https://github.com/marijnh"
+      },
+      "paidAddons": false,
+      "version": "1.41.9",
+      "lastRelease": "2026-06-10",
+      "lastAnyVersion": "1.42.0",
+      "lastAnyRelease": "2026-07-01",
+      "githubStars": 8692,
+      "npmWeeklyDownloads": 11630744,
+      "website": "https://prosemirror.net",
+      "docs": "https://prosemirror.net/docs/guide/",
+      "playground": "https://prosemirror.net/examples/markdown/",
+      "github": "https://github.com/ProseMirror/prosemirror",
+      "npm": "https://www.npmjs.com/package/prosemirror-view",
+      "license": "MIT",
+      "licenseUrl": "https://github.com/ProseMirror/prosemirror/blob/master/LICENSE",
+      "markdown": {
+        "input": {
+          "level": "native",
+          "via": "prosemirror-markdown",
+          "note": "The official package's defaultMarkdownParser parses Markdown into a document",
+          "url": "https://github.com/ProseMirror/prosemirror-markdown"
+        },
+        "output": {
+          "level": "native",
+          "via": "prosemirror-markdown",
+          "note": "defaultMarkdownSerializer serializes the document back to Markdown",
+          "url": "https://prosemirror.net/examples/markdown/"
+        },
+        "live": {
+          "level": "native-partial",
+          "via": "prosemirror-example-setup",
+          "note": "example-setup's buildInputRules ships block shortcuts natively (headings, lists, blockquote, code fence) that format as you type; inline bold/italic/code are not covered",
+          "url": "https://github.com/ProseMirror/prosemirror-example-setup"
+        }
+      },
+      "math": {
+        "level": "library",
+        "via": "@benrbray/prosemirror-math",
+        "note": "Community prosemirror-math adds inline and display math nodes via KaTeX",
+        "url": "https://github.com/benrbray/prosemirror-math"
+      }
+    },
+    {
+      "path": "editor/quill/index.html",
+      "name": "Quill",
+      "icon": "icons/quill.svg",
+      "type": "WYSIWYG",
+      "frameworks": [{ "name": "JS" }],
+      "maintainer": { "name": "Slab", "url": "https://github.com/slab" },
+      "paidAddons": false,
+      "version": "2.0.3",
+      "lastRelease": "2024-11-30",
+      "lastAnyVersion": "2.0.3",
+      "lastAnyRelease": "2024-11-30",
+      "githubStars": 47202,
+      "npmWeeklyDownloads": 3975502,
+      "website": "https://quilljs.com",
+      "docs": "https://quilljs.com/docs/quickstart",
+      "playground": "https://quilljs.com/playground/",
+      "github": "https://github.com/slab/quill",
+      "npm": "https://www.npmjs.com/package/quill",
+      "license": "BSD-3-Clause",
+      "licenseUrl": "https://github.com/slab/quill/blob/main/LICENSE",
+      "markdown": {
+        "input": {
+          "level": "library",
+          "via": "marked",
+          "note": "Quill edits a Delta (a JSON document), not Markdown or HTML, so importing Markdown takes two hops: marked converts it to HTML, then Quill's clipboard parser turns that HTML into a Delta — the same route Quill uses when you paste HTML in",
+          "url": "https://marked.js.org/"
+        },
+        "output": {
+          "level": "library",
+          "via": "turndown",
+          "note": "The document is serialized to HTML, then to Markdown with turndown",
+          "url": "https://github.com/mixmark-io/turndown"
+        },
+        "live": {
+          "level": "library",
+          "via": "quilljs-markdown",
+          "note": "A third-party module adds as-you-type shortcuts ('**x**' -> bold, '# ' -> heading)",
+          "url": "https://github.com/cloverhearts/quilljs-markdown"
+        }
+      },
+      "math": {
+        "level": "native",
+        "via": "formula module (KaTeX)",
+        "note": "Built-in formula module renders LaTeX equations with KaTeX",
+        "url": "https://quilljs.com/docs/formats"
+      }
+    },
+    {
+      "path": "editor/plate/index.html",
+      "name": "Plate",
+      "icon": "icons/plate.svg",
+      "type": "WYSIWYG",
+      "frameworks": [
+        {
+          "name": "React",
+          "docs": "https://platejs.org/docs/installation/react"
+        }
+      ],
+      "maintainer": { "name": "udecode", "url": "https://github.com/udecode" },
+      "basedOn": { "name": "Slate", "path": "editor/slate/index.html" },
+      "paidAddons": true,
+      "paidAddonsUrl": "https://pro.platejs.org/pricing",
+      "version": "53.2.4",
+      "lastRelease": "2026-06-27",
+      "lastAnyVersion": "53.2.4",
+      "lastAnyRelease": "2026-06-27",
+      "githubStars": 16372,
+      "npmWeeklyDownloads": 312828,
+      "website": "https://platejs.org",
+      "docs": "https://platejs.org/docs",
+      "playground": "https://playground.platejs.org/",
+      "github": "https://github.com/udecode/plate",
+      "npm": "https://www.npmjs.com/package/platejs",
+      "license": "MIT",
+      "licenseUrl": "https://github.com/udecode/plate/blob/main/LICENSE",
+      "markdown": {
+        "input": {
+          "level": "native",
+          "via": "@platejs/markdown",
+          "note": "The official MarkdownPlugin deserializes Markdown into the editor (remark under the hood)",
+          "url": "https://platejs.org/docs/markdown"
+        },
+        "output": {
+          "level": "native",
+          "via": "@platejs/markdown",
+          "note": "editor.api.markdown.serialize() converts the document back to Markdown",
+          "url": "https://platejs.org/docs/markdown"
+        },
+        "live": {
+          "level": "native",
+          "via": "feature-plugin input rules",
+          "note": "Markdown input rules (HeadingRules.markdown(), BoldRules.markdown(), ...) convert block and inline syntax as you type",
+          "url": "https://platejs.org/docs/autoformat"
+        }
+      },
+      "math": {
+        "level": "paid",
+        "via": "@platejs/math",
+        "note": "Official @platejs/math plugin renders inline and block LaTeX via KaTeX (Plate Plus paid tier)",
+        "url": "https://platejs.org/docs/equation"
+      }
+    },
+    {
+      "path": "editor/lexical/index.html",
+      "name": "Lexical",
+      "icon": "icons/lexical.svg",
+      "type": "WYSIWYG",
+      "frameworks": [
+        { "name": "JS" },
+        {
+          "name": "React",
+          "docs": "https://lexical.dev/docs/getting-started/react"
+        }
+      ],
+      "maintainer": { "name": "Meta", "url": "https://github.com/facebook" },
+      "paidAddons": false,
+      "version": "0.46.0",
+      "lastRelease": "2026-06-26",
+      "lastAnyVersion": "0.46.1-nightly.20260702.0",
+      "lastAnyRelease": "2026-07-02",
+      "githubStars": 23586,
+      "npmWeeklyDownloads": 3873555,
+      "website": "https://lexical.dev",
+      "docs": "https://lexical.dev/docs/intro",
+      "playground": "https://playground.lexical.dev/",
+      "github": "https://github.com/facebook/lexical",
+      "npm": "https://www.npmjs.com/package/lexical",
+      "license": "MIT",
+      "licenseUrl": "https://github.com/facebook/lexical/blob/main/LICENSE",
+      "markdown": {
+        "input": {
+          "level": "native",
+          "via": "@lexical/markdown",
+          "note": "The official $convertFromMarkdownString parses Markdown into the editor state",
+          "url": "https://lexical.dev/docs/packages/lexical-markdown"
+        },
+        "output": {
+          "level": "native",
+          "via": "@lexical/markdown",
+          "note": "$convertToMarkdownString serializes the editor state back to Markdown",
+          "url": "https://lexical.dev/docs/packages/lexical-markdown"
+        },
+        "live": {
+          "level": "native",
+          "via": "registerMarkdownShortcuts",
+          "note": "The MarkdownShortcutPlugin converts block and inline Markdown as you type",
+          "url": "https://lexical.dev/docs/packages/lexical-markdown"
+        }
+      },
+      "math": {
+        "level": "custom",
+        "via": "playground EquationNode (KaTeX)",
+        "note": "No published package — copy the official playground KaTeX EquationNode into your app",
+        "url": "https://github.com/facebook/lexical/blob/main/packages/lexical-playground/src/nodes/EquationNode.tsx"
+      }
+    },
+    {
+      "path": "editor/monaco/index.html",
+      "name": "Monaco",
+      "icon": "icons/monaco.svg",
+      "type": "Code",
+      "frameworks": [{ "name": "JS" }],
+      "maintainer": {
+        "name": "Microsoft",
+        "url": "https://github.com/microsoft"
+      },
+      "paidAddons": false,
+      "version": "0.55.1",
+      "lastRelease": "2025-11-20",
+      "lastAnyVersion": "0.56.0-dev-20260625",
+      "lastAnyRelease": "2026-06-25",
+      "githubStars": 46258,
+      "npmWeeklyDownloads": 6914891,
+      "website": "https://microsoft.github.io/monaco-editor/",
+      "docs": "https://microsoft.github.io/monaco-editor/docs.html",
+      "playground": "https://microsoft.github.io/monaco-editor/playground.html",
+      "github": "https://github.com/microsoft/monaco-editor",
+      "npm": "https://www.npmjs.com/package/monaco-editor",
+      "license": "MIT",
+      "licenseUrl": "https://github.com/microsoft/monaco-editor/blob/main/LICENSE.txt",
+      "markdown": {
+        "input": {
+          "level": "native",
+          "via": "plain-text model",
+          "note": "Monaco edits plain text, so a Markdown string loads verbatim",
+          "url": "https://microsoft.github.io/monaco-editor/docs.html"
+        },
+        "output": {
+          "level": "native",
+          "via": "editor.getValue()",
+          "note": "The document already is Markdown — read it back out, lossless",
+          "url": "https://microsoft.github.io/monaco-editor/docs.html"
+        },
+        "live": {
+          "level": "native",
+          "via": "built-in markdown language",
+          "note": "Monaco ships a Markdown language (Monarch tokenizer) that natively highlights the source as you type (it highlights rather than rendering it)",
+          "url": "https://github.com/microsoft/monaco-editor/tree/main/src/languages/definitions/markdown"
+        }
+      },
+      "math": {
+        "level": "none",
+        "via": "",
+        "note": "VS Code source editor — edits LaTeX as plain text, no math rendering",
+        "url": ""
+      }
+    },
+    {
+      "path": "editor/slate/index.html",
+      "name": "Slate",
+      "icon": "icons/slate.svg",
+      "type": "WYSIWYG",
+      "frameworks": [
+        {
+          "name": "React",
+          "docs": "https://docs.slatejs.org/walkthroughs/01-installing-slate"
+        }
+      ],
+      "maintainer": {
+        "name": "Ian Storm Taylor",
+        "url": "https://github.com/ianstormtaylor"
+      },
+      "paidAddons": false,
+      "version": "0.124.1",
+      "lastRelease": "2026-04-11",
+      "lastAnyVersion": "0.124.1-20260411180648",
+      "lastAnyRelease": "2026-04-11",
+      "githubStars": 31709,
+      "npmWeeklyDownloads": 2696865,
+      "website": "https://www.slatejs.org",
+      "docs": "https://docs.slatejs.org",
+      "playground": "https://www.slatejs.org/examples/richtext",
+      "github": "https://github.com/ianstormtaylor/slate",
+      "npm": "https://www.npmjs.com/package/slate",
+      "license": "MIT",
+      "licenseUrl": "https://github.com/ianstormtaylor/slate/blob/main/License.md",
+      "markdown": {
+        "input": {
+          "level": "library",
+          "via": "remark-slate-transformer",
+          "note": "Slate ships no Markdown support; the community remark-slate-transformer (remark + mdast) parses Markdown into Slate nodes",
+          "url": "https://github.com/inokawa/remark-slate-transformer"
+        },
+        "output": {
+          "level": "library",
+          "via": "remark-slate-transformer",
+          "note": "remark-slate-transformer serializes the Slate document back to Markdown",
+          "url": "https://github.com/inokawa/remark-slate-transformer"
+        },
+        "live": {
+          "level": "none",
+          "via": "",
+          "note": "Slate ships no as-you-type Markdown shortcuts; typed syntax like '# ' or '**bold**' stays literal",
+          "url": ""
+        }
+      },
+      "math": {
+        "level": "none",
+        "via": "",
+        "note": "No maintained plugin — math is a DIY custom node plus react-katex",
+        "url": ""
+      }
+    },
+    {
+      "path": "editor/ckeditor/index.html",
+      "name": "CKEditor 5",
+      "icon": "icons/ckeditor.svg",
+      "type": "WYSIWYG",
+      "codeVersion": {
+        "via": "Source editing feature",
+        "url": "https://ckeditor.com/docs/ckeditor5/latest/features/source-editing/source-editing.html"
+      },
+      "frameworks": [
+        { "name": "JS" },
+        {
+          "name": "React",
+          "docs": "https://ckeditor.com/docs/ckeditor5/latest/getting-started/installation/self-hosted/react/react-default-npm.html"
+        },
+        {
+          "name": "Vue",
+          "docs": "https://ckeditor.com/docs/ckeditor5/latest/getting-started/installation/self-hosted/vuejs-v3.html"
+        },
+        {
+          "name": "Angular",
+          "docs": "https://ckeditor.com/docs/ckeditor5/latest/getting-started/installation/self-hosted/angular.html"
+        }
+      ],
+      "maintainer": {
+        "name": "CKSource",
+        "url": "https://github.com/ckeditor"
+      },
+      "paidAddons": true,
+      "paidAddonsUrl": "https://ckeditor.com/pricing/",
+      "version": "48.2.0",
+      "lastRelease": "2026-06-02",
+      "lastAnyVersion": "0.0.0-nightly-20260702.0",
+      "lastAnyRelease": "2026-07-02",
+      "githubStars": 10440,
+      "npmWeeklyDownloads": 1139592,
+      "website": "https://ckeditor.com/ckeditor-5/",
+      "docs": "https://ckeditor.com/docs/ckeditor5/latest/",
+      "playground": "https://ckeditor.com/ckeditor-5/demo/",
+      "github": "https://github.com/ckeditor/ckeditor5",
+      "npm": "https://www.npmjs.com/package/ckeditor5",
+      "license": "GPL-2.0-or-later",
+      "licenseUrl": "https://github.com/ckeditor/ckeditor5/blob/master/LICENSE.md",
+      "markdown": {
+        "input": {
+          "level": "native",
+          "via": "Markdown (GFM) plugin",
+          "note": "The official Markdown plugin swaps the data processor so setData() accepts GitHub-Flavored Markdown",
+          "url": "https://ckeditor.com/docs/ckeditor5/latest/features/markdown.html"
+        },
+        "output": {
+          "level": "native",
+          "via": "Markdown (GFM) plugin",
+          "note": "With the Markdown plugin active, getData() already returns Markdown",
+          "url": "https://ckeditor.com/docs/ckeditor5/latest/features/markdown.html"
+        },
+        "live": {
+          "level": "native",
+          "via": "Autoformat plugin",
+          "note": "The official Autoformat feature converts block and inline Markdown as you type",
+          "url": "https://ckeditor.com/docs/ckeditor5/latest/features/autoformat.html"
+        }
+      },
+      "math": {
+        "level": "paid",
+        "via": "MathType (Wiris)",
+        "note": "Official MathType feature (premium); free community ckeditor5-math also available",
+        "url": "https://ckeditor.com/docs/ckeditor5/latest/features/math-equations.html"
+      }
+    },
+    {
+      "path": "editor/ace/index.html",
+      "name": "Ace",
+      "icon": "icons/ace.svg",
+      "type": "Code",
+      "frameworks": [{ "name": "JS" }],
+      "maintainer": { "name": "Ajax.org", "url": "https://github.com/ajaxorg" },
+      "paidAddons": false,
+      "version": "1.44.0",
+      "lastRelease": "2026-05-11",
+      "lastAnyVersion": "1.44.0",
+      "lastAnyRelease": "2026-05-11",
+      "githubStars": 27134,
+      "npmWeeklyDownloads": 1326122,
+      "website": "https://ace.c9.io",
+      "docs": "https://ajaxorg.github.io/ace-api-docs/index.html",
+      "playground": "https://ace.c9.io/build/kitchen-sink.html",
+      "github": "https://github.com/ajaxorg/ace",
+      "npm": "https://www.npmjs.com/package/ace-builds",
+      "license": "BSD-3-Clause",
+      "licenseUrl": "https://github.com/ajaxorg/ace/blob/master/LICENSE",
+      "markdown": {
+        "input": {
+          "level": "native",
+          "via": "plain-text session",
+          "note": "Ace edits plain text, so a Markdown string loads verbatim (editor.setValue)",
+          "url": "https://ajaxorg.github.io/ace-api-docs/index.html"
+        },
+        "output": {
+          "level": "native",
+          "via": "editor.getValue()",
+          "note": "The document already is Markdown — read it back out, lossless",
+          "url": "https://ajaxorg.github.io/ace-api-docs/index.html"
+        },
+        "live": {
+          "level": "native",
+          "via": "mode-markdown",
+          "note": "Ace's bundled Markdown mode natively highlights the source as you type (it highlights rather than rendering it)",
+          "url": "https://github.com/ajaxorg/ace-builds/blob/master/src-noconflict/mode-markdown.js"
+        }
+      },
+      "math": {
+        "level": "none",
+        "via": "",
+        "note": "Ships a standalone mode-latex, but Ace runs one mode per session and its Markdown mode embeds no LaTeX — no LaTeX highlighting while editing Markdown without custom rules, and no math rendering",
+        "url": ""
+      }
+    },
+    {
+      "path": "editor/tinymce/index.html",
+      "name": "TinyMCE",
+      "icon": "icons/tinymce.svg",
+      "type": "WYSIWYG",
+      "codeVersion": {
+        "via": "Source code plugin",
+        "url": "https://www.tiny.cloud/docs/tinymce/latest/code/"
+      },
+      "frameworks": [
+        { "name": "JS" },
+        {
+          "name": "React",
+          "docs": "https://www.tiny.cloud/docs/tinymce/latest/react-ref/"
+        },
+        {
+          "name": "Vue",
+          "docs": "https://www.tiny.cloud/docs/tinymce/latest/vue-ref/"
+        },
+        {
+          "name": "Angular",
+          "docs": "https://www.tiny.cloud/docs/tinymce/latest/angular-ref/"
+        },
+        {
+          "name": "Svelte",
+          "docs": "https://www.tiny.cloud/docs/tinymce/latest/svelte-ref/"
+        }
+      ],
+      "maintainer": {
+        "name": "Tiny Technologies",
+        "url": "https://github.com/tinymce"
+      },
+      "paidAddons": true,
+      "paidAddonsUrl": "https://www.tiny.cloud/pricing/",
+      "version": "8.6.0",
+      "lastRelease": "2026-06-03",
+      "lastAnyVersion": "8.7.0",
+      "lastAnyRelease": "2026-07-02",
+      "githubStars": 16227,
+      "npmWeeklyDownloads": 1128675,
+      "website": "https://www.tiny.cloud",
+      "docs": "https://www.tiny.cloud/docs/tinymce/latest/",
+      "playground": "https://www.tiny.cloud/docs/tinymce/latest/full-featured-open-source-demo/",
+      "github": "https://github.com/tinymce/tinymce",
+      "npm": "https://www.npmjs.com/package/tinymce",
+      "license": "GPL-2.0-or-later",
+      "licenseUrl": "https://github.com/tinymce/tinymce/blob/main/LICENSE.md",
+      "markdown": {
+        "input": {
+          "level": "library",
+          "via": "marked",
+          "note": "TinyMCE edits HTML and has no free first-party Markdown import; marked bridges Markdown -> HTML (an official but premium markdown plugin also exists)",
+          "url": "https://marked.js.org/"
+        },
+        "output": {
+          "level": "library",
+          "via": "turndown",
+          "note": "The editor's HTML is converted back to Markdown with turndown",
+          "url": "https://github.com/mixmark-io/turndown"
+        },
+        "live": {
+          "level": "native",
+          "via": "text_patterns",
+          "note": "Built-in text_patterns convert '# ', '**bold**', '- ' etc. to formatting as you type",
+          "url": "https://www.tiny.cloud/docs/tinymce/latest/content-behavior-options/#text_patterns"
+        }
+      },
+      "math": {
+        "level": "paid",
+        "via": "Math plugin (LaTeX → MathML)",
+        "note": "First-party Math plugin is a premium paid add-on; MathType also available",
+        "url": "https://www.tiny.cloud/docs/tinymce/latest/math/"
+      }
+    },
+    {
+      "path": "editor/trix/index.html",
+      "name": "Trix",
+      "icon": "icons/trix.svg",
+      "type": "WYSIWYG",
+      "frameworks": [{ "name": "JS" }],
+      "maintainer": {
+        "name": "Basecamp",
+        "url": "https://github.com/basecamp"
+      },
+      "paidAddons": false,
+      "version": "2.1.19",
+      "lastRelease": "2026-05-09",
+      "lastAnyVersion": "2.1.19",
+      "lastAnyRelease": "2026-05-09",
+      "githubStars": 19973,
+      "npmWeeklyDownloads": 533819,
+      "website": "https://trix-editor.org",
+      "docs": "https://github.com/basecamp/trix",
+      "playground": "https://trix-editor.org",
+      "github": "https://github.com/basecamp/trix",
+      "npm": "https://www.npmjs.com/package/trix",
+      "license": "MIT",
+      "licenseUrl": "https://github.com/basecamp/trix/blob/main/LICENSE",
+      "markdown": {
+        "input": {
+          "level": "library",
+          "via": "marked",
+          "note": "Trix edits HTML, so Markdown is bridged in via marked (Markdown -> HTML -> editor.loadHTML)",
+          "url": "https://marked.js.org/"
+        },
+        "output": {
+          "level": "library",
+          "via": "turndown",
+          "note": "The editor's HTML is serialized back to Markdown with turndown",
+          "url": "https://github.com/mixmark-io/turndown"
+        },
+        "live": {
+          "level": "none",
+          "via": "",
+          "note": "Trix ships no as-you-type Markdown shortcuts, so typed syntax like '# ' or '**bold**' stays literal",
+          "url": ""
+        }
+      },
+      "math": {
+        "level": "none",
+        "via": "",
+        "note": "No maintained math plugin; only ad-hoc MathJax workarounds",
+        "url": ""
+      }
+    },
+    {
+      "path": "editor/blocknote/index.html",
+      "name": "BlockNote",
+      "icon": "icons/blocknote.svg",
+      "type": "WYSIWYG",
+      "frameworks": [
+        {
+          "name": "React",
+          "docs": "https://www.blocknotejs.org/docs/getting-started"
+        }
+      ],
+      "maintainer": {
+        "name": "TypeCell",
+        "url": "https://github.com/TypeCellOS"
+      },
+      "basedOn": { "name": "TipTap", "path": "editor/tip-tap/index.html" },
+      "paidAddons": true,
+      "paidAddonsUrl": "https://www.blocknotejs.org/pricing",
+      "version": "0.51.4",
+      "lastRelease": "2026-06-02",
+      "lastAnyVersion": "0.51.4",
+      "lastAnyRelease": "2026-06-02",
+      "githubStars": 9887,
+      "npmWeeklyDownloads": 296185,
+      "website": "https://www.blocknotejs.org",
+      "docs": "https://www.blocknotejs.org/docs",
+      "playground": "https://www.blocknotejs.org/examples",
+      "github": "https://github.com/TypeCellOS/BlockNote",
+      "npm": "https://www.npmjs.com/package/@blocknote/core",
+      "license": "MPL-2.0",
+      "licenseUrl": "https://github.com/TypeCellOS/BlockNote/blob/main/packages/core/LICENSE",
+      "markdown": {
+        "input": {
+          "level": "native",
+          "via": "@blocknote/core",
+          "note": "First-party editor.tryParseMarkdownToBlocks() parses a Markdown string into BlockNote blocks (lossy by design)",
+          "url": "https://www.blocknotejs.org/docs/converting-blocks"
+        },
+        "output": {
+          "level": "native",
+          "via": "@blocknote/core",
+          "note": "First-party editor.blocksToMarkdownLossy() serializes the block document back to Markdown",
+          "url": "https://www.blocknotejs.org/docs/converting-blocks"
+        },
+        "live": {
+          "level": "native",
+          "via": "built-in input rules",
+          "note": "Typing '# ', '- ', '**bold**' etc. converts to block and inline formatting as you type",
+          "url": "https://www.blocknotejs.org/docs/getting-started"
+        }
+      },
+      "math": {
+        "level": "none",
+        "via": "",
+        "note": "No built-in equation block or maintained math plugin; add one as a custom block",
+        "url": ""
+      }
+    },
+    {
+      "path": "editor/editorjs/index.html",
+      "name": "Editor.js",
+      "icon": "icons/editorjs.svg",
+      "type": "WYSIWYG",
+      "frameworks": [{ "name": "JS" }],
+      "maintainer": { "name": "CodeX", "url": "https://github.com/codex-team" },
+      "paidAddons": false,
+      "version": "2.31.6",
+      "lastRelease": "2026-04-07",
+      "lastAnyVersion": "2.31.6",
+      "lastAnyRelease": "2026-04-07",
+      "githubStars": 31846,
+      "npmWeeklyDownloads": 273503,
+      "website": "https://editorjs.io",
+      "docs": "https://editorjs.io/base-concepts/",
+      "playground": "https://editorjs.io/#demo",
+      "github": "https://github.com/codex-team/editor.js",
+      "npm": "https://www.npmjs.com/package/@editorjs/editorjs",
+      "license": "Apache-2.0",
+      "licenseUrl": "https://github.com/codex-team/editor.js/blob/next/LICENSE",
+      "markdown": {
+        "input": {
+          "level": "custom",
+          "via": "marked + hand-written block mapping",
+          "note": "Editor.js has no Markdown support, so custom code parses Markdown to HTML with marked then maps each element to Editor.js block data",
+          "url": "https://editorjs.io/base-concepts/"
+        },
+        "output": {
+          "level": "custom",
+          "via": "editor.save() + turndown",
+          "note": "Custom code iterates the saved JSON blocks and emits Markdown per block type, converting inline HTML back with turndown",
+          "url": "https://editorjs.io/saving-data/"
+        },
+        "live": {
+          "level": "none",
+          "via": "",
+          "note": "Editor.js has no as-you-type Markdown shortcuts — blocks come from the + toolbox and inline popover rather than typed Markdown syntax",
+          "url": ""
+        }
+      },
+      "math": {
+        "level": "library",
+        "via": "editorjs-latex (KaTeX)",
+        "note": "Third-party editorjs-latex block renders LaTeX with KaTeX",
+        "url": "https://github.com/mdgaziur/EditorJS-LaTeX"
+      }
+    },
+    {
+      "path": "editor/easymde/index.html",
+      "name": "EasyMDE",
+      "icon": "icons/easymde.svg",
+      "type": "Code",
+      "frameworks": [{ "name": "JS" }],
+      "maintainer": {
+        "name": "Jeroen Akkerman",
+        "url": "https://github.com/Ionaru"
+      },
+      "basedOn": {
+        "name": "CodeMirror",
+        "path": "editor/codemirror/index.html"
+      },
+      "paidAddons": false,
+      "version": "2.21.0",
+      "lastRelease": "2026-05-03",
+      "lastAnyVersion": "2.21.1-215.0",
+      "lastAnyRelease": "2026-05-03",
+      "githubStars": 3038,
+      "npmWeeklyDownloads": 258380,
+      "website": "https://github.com/Ionaru/easy-markdown-editor",
+      "docs": "https://github.com/Ionaru/easy-markdown-editor#readme",
+      "playground": "https://stackblitz.com/edit/easymde/",
+      "github": "https://github.com/Ionaru/easy-markdown-editor",
+      "npm": "https://www.npmjs.com/package/easymde",
+      "license": "MIT",
+      "licenseUrl": "https://github.com/Ionaru/easy-markdown-editor/blob/master/LICENSE",
+      "markdown": {
+        "input": {
+          "level": "native",
+          "via": "initialValue / value()",
+          "note": "EasyMDE is a Markdown source editor, so a Markdown string loads verbatim",
+          "url": "https://github.com/Ionaru/easy-markdown-editor#configuration"
+        },
+        "output": {
+          "level": "native",
+          "via": "easymde.value()",
+          "note": "The document already is Markdown — read it straight back out, lossless",
+          "url": "https://github.com/Ionaru/easy-markdown-editor#methods"
+        },
+        "live": {
+          "level": "native",
+          "via": "CodeMirror 5 gfm mode",
+          "note": "The bundled CodeMirror 5 GitHub-Flavored-Markdown mode highlights the source as you type (it colours the source rather than rendering it)",
+          "url": "https://github.com/Ionaru/easy-markdown-editor"
+        }
+      },
+      "math": {
+        "level": "none",
+        "via": "",
+        "note": "Markdown preview has no built-in math; needs custom MathJax or KaTeX wiring",
+        "url": ""
+      }
+    },
+    {
+      "path": "editor/toastui/index.html",
+      "name": "Toast UI Editor",
+      "icon": "icons/toastui.svg",
+      "type": "WYSIWYG",
+      "codeVersion": {
+        "via": "Markdown / WYSIWYG mode switch",
+        "url": "https://ui.toast.com/tui-editor"
+      },
+      "frameworks": [
+        { "name": "JS" },
+        {
+          "name": "React",
+          "docs": "https://github.com/nhn/tui.editor/tree/master/apps/react-editor"
+        },
+        {
+          "name": "Vue",
+          "docs": "https://github.com/nhn/tui.editor/tree/master/apps/vue-editor"
+        }
+      ],
+      "maintainer": { "name": "NHN Cloud", "url": "https://github.com/nhn" },
+      "basedOn": {
+        "name": "ProseMirror",
+        "path": "editor/prose-mirror/index.html"
+      },
+      "paidAddons": false,
+      "version": "3.2.2",
+      "lastRelease": "2023-02-17",
+      "lastAnyVersion": "3.2.2",
+      "lastAnyRelease": "2023-02-17",
+      "githubStars": 17990,
+      "npmWeeklyDownloads": 191626,
+      "website": "https://ui.toast.com/tui-editor",
+      "docs": "https://github.com/nhn/tui.editor/tree/master/docs",
+      "playground": "https://nhn.github.io/tui.editor/latest/tutorial-example01-editor-basic",
+      "github": "https://github.com/nhn/tui.editor",
+      "npm": "https://www.npmjs.com/package/@toast-ui/editor",
+      "license": "MIT",
+      "licenseUrl": "https://github.com/nhn/tui.editor/blob/master/LICENSE",
+      "markdown": {
+        "input": {
+          "level": "native",
+          "via": "editor.setMarkdown()",
+          "note": "Toast UI keeps a live Markdown model; setMarkdown() parses a Markdown string straight into the document",
+          "url": "https://nhn.github.io/tui.editor/latest/ToastUIEditorCore"
+        },
+        "output": {
+          "level": "native",
+          "via": "editor.getMarkdown()",
+          "note": "getMarkdown() serializes the WYSIWYG document back to Markdown",
+          "url": "https://nhn.github.io/tui.editor/latest/ToastUIEditorCore"
+        },
+        "live": {
+          "level": "none",
+          "via": "",
+          "note": "WYSIWYG mode has no as-you-type Markdown shortcuts — typing '# ' or '**x**' stays literal; live Markdown authoring is a separate Markdown source mode",
+          "url": ""
+        }
+      },
+      "math": {
+        "level": "none",
+        "via": "",
+        "note": "No shipped math plugin; only a DIY customHTMLRenderer recipe",
+        "url": ""
+      }
+    },
+    {
+      "path": "editor/remirror/index.html",
+      "name": "Remirror",
+      "icon": "icons/remirror.svg",
+      "type": "WYSIWYG",
+      "frameworks": [
+        {
+          "name": "React",
+          "docs": "https://remirror.io/docs/getting-started/installation"
+        }
+      ],
+      "maintainer": {
+        "name": "Remirror",
+        "url": "https://github.com/remirror"
+      },
+      "basedOn": {
+        "name": "ProseMirror",
+        "path": "editor/prose-mirror/index.html"
+      },
+      "paidAddons": false,
+      "version": "3.0.3",
+      "lastRelease": "2025-08-02",
+      "lastAnyVersion": "3.0.3",
+      "lastAnyRelease": "2025-08-02",
+      "githubStars": 3030,
+      "npmWeeklyDownloads": 63854,
+      "website": "https://remirror.io",
+      "docs": "https://remirror.io/docs",
+      "playground": "https://remirror.vercel.app",
+      "github": "https://github.com/remirror/remirror",
+      "npm": "https://www.npmjs.com/package/remirror",
+      "license": "MIT",
+      "licenseUrl": "https://github.com/remirror/remirror/blob/main/LICENSE",
+      "markdown": {
+        "input": {
+          "level": "native",
+          "via": "@remirror/extension-markdown",
+          "note": "The official MarkdownExtension registers a 'markdown' string handler that parses a Markdown string into the document (marked under the hood)",
+          "url": "https://remirror.io/docs/extensions/markdown-extension"
+        },
+        "output": {
+          "level": "native",
+          "via": "@remirror/extension-markdown",
+          "note": "The extension's getMarkdown helper serializes the document back to Markdown (turndown, configured for ATX headings and fenced code)",
+          "url": "https://remirror.io/docs/extensions/markdown-extension"
+        },
+        "live": {
+          "level": "native",
+          "via": "extension input rules",
+          "note": "Each extension (Bold, Heading, list, blockquote, code) ships an input rule so typing '# ', '**bold**', '- ' etc. formats block and inline as you type",
+          "url": "https://remirror.io/docs/extensions/bold-extension"
+        }
+      },
+      "math": {
+        "level": "none",
+        "via": "",
+        "note": "No maintained math extension; only a proposal to port prosemirror-math",
+        "url": ""
+      }
+    },
+    {
+      "path": "editor/react-md-editor/index.html",
+      "name": "React MD Editor",
+      "icon": "icons/react-md-editor.png",
+      "type": "Code",
+      "frameworks": [
+        {
+          "name": "React",
+          "docs": "https://github.com/uiwjs/react-md-editor#quick-start"
+        }
+      ],
+      "maintainer": { "name": "uiw", "url": "https://github.com/uiwjs" },
+      "paidAddons": false,
+      "version": "4.1.1",
+      "lastRelease": "2026-05-21",
+      "lastAnyVersion": "4.1.1",
+      "lastAnyRelease": "2026-05-21",
+      "githubStars": 2895,
+      "npmWeeklyDownloads": 656252,
+      "website": "https://uiwjs.github.io/react-md-editor/",
+      "docs": "https://github.com/uiwjs/react-md-editor#readme",
+      "playground": "https://uiwjs.github.io/react-md-editor/",
+      "github": "https://github.com/uiwjs/react-md-editor",
+      "npm": "https://www.npmjs.com/package/@uiw/react-md-editor",
+      "license": "MIT",
+      "licenseUrl": "https://github.com/uiwjs/react-md-editor/blob/master/LICENSE",
+      "markdown": {
+        "input": {
+          "level": "native",
+          "via": "value prop",
+          "note": "react-md-editor is a Markdown source editor, so a Markdown string loads verbatim into the value prop",
+          "url": "https://github.com/uiwjs/react-md-editor#props"
+        },
+        "output": {
+          "level": "native",
+          "via": "onChange(value)",
+          "note": "The document already is Markdown — onChange hands the source straight back out, lossless",
+          "url": "https://github.com/uiwjs/react-md-editor#props"
+        },
+        "live": {
+          "level": "native",
+          "via": "highlightEnable + live preview pane",
+          "note": "The source pane natively highlights Markdown syntax as you type (it colours the source rather than rendering it) while the built-in preview pane renders the result live alongside",
+          "url": "https://github.com/uiwjs/react-md-editor#props"
+        }
+      },
+      "math": {
+        "level": "custom",
+        "via": "documented KaTeX preview recipe",
+        "note": "No plugin package — the README's official KaTeX example hand-wires katex into previewOptions.components.code to render KaTeX fences and $$...$$ inline code",
+        "url": "https://github.com/uiwjs/react-md-editor#support-custom-katex-preview"
+      }
+    },
+    {
+      "path": "editor/mdxeditor/index.html",
+      "name": "MDXEditor",
+      "icon": "icons/mdxeditor.svg",
+      "type": "WYSIWYG",
+      "codeVersion": {
+        "via": "diffSourcePlugin source mode",
+        "url": "https://mdxeditor.dev/editor/docs/diff-source"
+      },
+      "frameworks": [
+        {
+          "name": "React",
+          "docs": "https://mdxeditor.dev/editor/docs/getting-started"
+        }
+      ],
+      "maintainer": {
+        "name": "Petyo Ivanov",
+        "url": "https://github.com/mdx-editor"
+      },
+      "basedOn": { "name": "Lexical", "path": "editor/lexical/index.html" },
+      "paidAddons": false,
+      "version": "4.0.4",
+      "lastRelease": "2026-06-18",
+      "lastAnyVersion": "4.0.4",
+      "lastAnyRelease": "2026-06-18",
+      "githubStars": 3567,
+      "npmWeeklyDownloads": 973104,
+      "website": "https://mdxeditor.dev/",
+      "docs": "https://mdxeditor.dev/editor/docs/getting-started",
+      "playground": "https://mdxeditor.dev/editor/demo",
+      "github": "https://github.com/mdx-editor/editor",
+      "npm": "https://www.npmjs.com/package/@mdxeditor/editor",
+      "license": "MIT",
+      "licenseUrl": "https://github.com/mdx-editor/editor/blob/main/LICENSE",
+      "markdown": {
+        "input": {
+          "level": "native",
+          "via": "markdown prop / setMarkdown()",
+          "note": "Markdown is the editor's native document format: the markdown prop seeds it and ref.setMarkdown() replaces it",
+          "url": "https://mdxeditor.dev/editor/docs/getting-started"
+        },
+        "output": {
+          "level": "native",
+          "via": "onChange / getMarkdown()",
+          "note": "onChange hands back the serialized Markdown string on every document change",
+          "url": "https://mdxeditor.dev/editor/docs/getting-started"
+        },
+        "live": {
+          "level": "native",
+          "via": "markdownShortcutPlugin",
+          "note": "Typing '## ', '- ', '**bold**', fences etc. converts to rich formatting as you type",
+          "url": "https://mdxeditor.dev/editor/docs/markdown-shortcuts"
+        }
+      },
+      "math": {
+        "level": "none",
+        "via": "",
+        "note": "No math/KaTeX plugin in the official docs; math needs a custom JSX/directive editor",
+        "url": ""
+      }
+    },
+    {
+      "path": "editor/milkdown/index.html",
+      "name": "Milkdown",
+      "icon": "icons/milkdown.svg",
+      "type": "WYSIWYG",
+      "frameworks": [
+        { "name": "JS" },
+        { "name": "React", "docs": "https://milkdown.dev/docs/recipes/react" },
+        { "name": "Vue", "docs": "https://milkdown.dev/docs/recipes/vue" },
+        { "name": "Svelte", "docs": "https://milkdown.dev/docs/recipes/svelte" },
+        { "name": "Angular", "docs": "https://milkdown.dev/docs/recipes/angular" }
+      ],
+      "maintainer": {
+        "name": "Milkdown",
+        "url": "https://github.com/Milkdown"
+      },
+      "basedOn": {
+        "name": "ProseMirror",
+        "path": "editor/prose-mirror/index.html"
+      },
+      "paidAddons": false,
+      "version": "7.21.2",
+      "lastRelease": "2026-06-02",
+      "lastAnyVersion": "7.21.2",
+      "lastAnyRelease": "2026-06-02",
+      "githubStars": 11677,
+      "npmWeeklyDownloads": 208405,
+      "website": "https://milkdown.dev",
+      "docs": "https://milkdown.dev/docs/guide/getting-started",
+      "playground": "https://milkdown.dev/playground",
+      "github": "https://github.com/Milkdown/milkdown",
+      "npm": "https://www.npmjs.com/package/@milkdown/kit",
+      "license": "MIT",
+      "licenseUrl": "https://github.com/Milkdown/milkdown/blob/main/LICENSE",
+      "markdown": {
+        "input": {
+          "level": "native",
+          "via": "defaultValueCtx / replaceAll()",
+          "note": "Markdown is the document format — remark parses the string into the ProseMirror doc at boot (defaultValueCtx) or any time (replaceAll macro)",
+          "url": "https://milkdown.dev/docs/guide/interacting-with-editor"
+        },
+        "output": {
+          "level": "native",
+          "via": "getMarkdown() / listener plugin",
+          "note": "The built-in serializer returns the document as Markdown on demand (getMarkdown macro) or on every change (listener plugin)",
+          "url": "https://milkdown.dev/docs/api/utils"
+        },
+        "live": {
+          "level": "native",
+          "via": "preset-commonmark input rules",
+          "note": "Typing '# ', '- ', '> ', '**bold**' etc. converts to rich formatting as you type — block and inline",
+          "url": "https://milkdown.dev/docs/api/preset-commonmark"
+        }
+      },
+      "math": {
+        "level": "native-partial",
+        "via": "Crepe LaTeX feature (KaTeX)",
+        "note": "First-party KaTeX math ships as the Crepe editor's LaTeX feature; the standalone @milkdown/plugin-math for the plain kit is stale (7.5.9, removed from the monorepo main branch)",
+        "url": "https://milkdown.dev/docs/api/crepe"
+      }
+    },
+    {
+      "path": "editor/summernote/index.html",
+      "name": "Summernote",
+      "icon": "icons/summernote.png",
+      "type": "WYSIWYG",
+      "codeVersion": {
+        "via": "Codeview (HTML source view)",
+        "url": "https://summernote.org/deep-dive/"
+      },
+      "frameworks": [{ "name": "JS" }],
+      "maintainer": {
+        "name": "Summernote",
+        "url": "https://github.com/summernote"
+      },
+      "paidAddons": false,
+      "version": "0.9.1",
+      "lastRelease": "2024-10-09",
+      "lastAnyVersion": "0.9.1",
+      "lastAnyRelease": "2024-10-09",
+      "githubStars": 11828,
+      "npmWeeklyDownloads": 128299,
+      "website": "https://summernote.org",
+      "docs": "https://summernote.org/deep-dive/",
+      "playground": "https://summernote.org/examples/",
+      "github": "https://github.com/summernote/summernote",
+      "npm": "https://www.npmjs.com/package/summernote",
+      "license": "MIT",
+      "licenseUrl": "https://github.com/summernote/summernote/blob/main/LICENSE",
+      "markdown": {
+        "input": {
+          "level": "library",
+          "via": "marked",
+          "note": "Summernote edits HTML and has no Markdown support of its own, so marked bridges Markdown -> HTML into summernote('code', ...)",
+          "url": "https://marked.js.org/"
+        },
+        "output": {
+          "level": "library",
+          "via": "turndown",
+          "note": "The editor's HTML is converted back to Markdown with turndown",
+          "url": "https://github.com/mixmark-io/turndown"
+        },
+        "live": {
+          "level": "none",
+          "via": "",
+          "note": "Summernote ships no as-you-type Markdown shortcuts, so typed syntax like '**bold**' stays literal",
+          "url": ""
+        }
+      },
+      "math": {
+        "level": "none",
+        "via": "",
+        "note": "No maintained math plugin — the community summernote-math (KaTeX) has been untouched since 2022 and was never published to npm",
+        "url": ""
+      }
+    },
+    {
+      "path": "editor/bytemd/index.html",
+      "name": "ByteMD",
+      "icon": "icons/bytemd.svg",
+      "type": "Code",
+      "frameworks": [
+        { "name": "JS" },
+        { "name": "React", "docs": "https://github.com/pd4d10/bytemd#react" },
+        { "name": "Vue", "docs": "https://github.com/pd4d10/bytemd#vue" },
+        { "name": "Svelte", "docs": "https://github.com/pd4d10/bytemd#svelte" }
+      ],
+      "maintainer": {
+        "name": "Rongjian Zhang",
+        "url": "https://github.com/pd4d10"
+      },
+      "basedOn": {
+        "name": "CodeMirror",
+        "path": "editor/codemirror/index.html"
+      },
+      "paidAddons": false,
+      "version": "1.22.0",
+      "lastRelease": "2025-02-12",
+      "lastAnyVersion": "1.22.0",
+      "lastAnyRelease": "2025-02-12",
+      "githubStars": 1350,
+      "npmWeeklyDownloads": 6486,
+      "website": "https://bytemd.js.org",
+      "docs": "https://github.com/pd4d10/bytemd#readme",
+      "playground": "https://bytemd.js.org/playground/",
+      "github": "https://github.com/pd4d10/bytemd",
+      "npm": "https://www.npmjs.com/package/bytemd",
+      "license": "MIT",
+      "licenseUrl": "https://github.com/pd4d10/bytemd/blob/main/LICENSE",
+      "markdown": {
+        "input": {
+          "level": "native",
+          "via": "value prop",
+          "note": "ByteMD is a Markdown source editor, so a Markdown string loads verbatim as the editor's value",
+          "url": "https://github.com/pd4d10/bytemd#editor"
+        },
+        "output": {
+          "level": "native",
+          "via": "change event",
+          "note": "The document already is Markdown — read it straight back out of the change event, lossless",
+          "url": "https://github.com/pd4d10/bytemd#editor"
+        },
+        "live": {
+          "level": "native",
+          "via": "CodeMirror 5 gfm mode + split preview",
+          "note": "The bundled CodeMirror 5 GitHub-Flavored-Markdown mode highlights the source as you type (it colours the source rather than rendering it), while the split preview pane renders it live",
+          "url": "https://github.com/pd4d10/bytemd"
+        }
+      },
+      "math": {
+        "level": "native",
+        "via": "@bytemd/plugin-math",
+        "note": "Official first-party plugin (remark-math + KaTeX) renders inline and block formulas in the preview pane",
+        "url": "https://github.com/pd4d10/bytemd/tree/main/packages/plugin-math"
+      }
+    },
+    {
+      "path": "editor/novel/index.html",
+      "name": "Novel",
+      "icon": "icons/novel.png",
+      "type": "WYSIWYG",
+      "frameworks": [
+        { "name": "React", "docs": "https://novel.sh/docs/quickstart" }
+      ],
+      "maintainer": {
+        "name": "Steven Tey",
+        "url": "https://github.com/steven-tey"
+      },
+      "basedOn": { "name": "TipTap", "path": "editor/tip-tap/index.html" },
+      "paidAddons": false,
+      "version": "1.0.2",
+      "lastRelease": "2025-01-18",
+      "lastAnyVersion": "1.0.2",
+      "lastAnyRelease": "2025-01-18",
+      "githubStars": 16345,
+      "npmWeeklyDownloads": 48549,
+      "website": "https://novel.sh",
+      "docs": "https://novel.sh/docs/introduction",
+      "playground": "https://novel.sh",
+      "github": "https://github.com/steven-tey/novel",
+      "npm": "https://www.npmjs.com/package/novel",
+      "license": "Apache-2.0",
+      "licenseUrl": "https://github.com/steven-tey/novel/blob/main/LICENSE",
+      "markdown": {
+        "input": {
+          "level": "library",
+          "via": "tiptap-markdown",
+          "note": "Novel exports no Markdown parser; the community tiptap-markdown extension parses a Markdown string into the document (initial content and setContent)",
+          "url": "https://github.com/aguingand/tiptap-markdown"
+        },
+        "output": {
+          "level": "library",
+          "via": "tiptap-markdown",
+          "note": "editor.storage.markdown.getMarkdown() serializes the rich document back to Markdown",
+          "url": "https://github.com/aguingand/tiptap-markdown"
+        },
+        "live": {
+          "level": "native",
+          "via": "StarterKit input rules",
+          "note": "Typing '# ', '- ', '**bold**' etc. converts to rich formatting as you type — novel re-exports @tiptap/starter-kit as part of its own API",
+          "url": "https://github.com/steven-tey/novel/blob/main/packages/headless/src/extensions/index.ts"
+        }
+      },
+      "math": {
+        "level": "native",
+        "via": "Mathematics extension (KaTeX)",
+        "note": "First-party Mathematics node ships in the novel package — setLatex/unsetLatex commands render LaTeX via KaTeX",
+        "url": "https://github.com/steven-tey/novel/blob/main/packages/headless/src/extensions/mathematics.ts"
+      }
+    },
+    {
+      "path": "editor/vditor/index.html",
+      "name": "Vditor",
+      "icon": "icons/vditor.png",
+      "type": "WYSIWYG",
+      "codeVersion": {
+        "via": "sv (split view) / ir mode switch",
+        "url": "https://github.com/Vanessa219/vditor/blob/master/README_en_US.md#-editing-modes"
+      },
+      "frameworks": [{ "name": "JS" }],
+      "maintainer": {
+        "name": "Vanessa",
+        "url": "https://github.com/Vanessa219"
+      },
+      "paidAddons": false,
+      "version": "3.11.2",
+      "lastRelease": "2025-09-02",
+      "lastAnyVersion": "3.11.2",
+      "lastAnyRelease": "2025-09-02",
+      "githubStars": 11103,
+      "npmWeeklyDownloads": 29236,
+      "website": "https://b3log.org/vditor/",
+      "docs": "https://github.com/Vanessa219/vditor/blob/master/README_en_US.md",
+      "playground": "https://b3log.org/vditor/demo/index.html",
+      "github": "https://github.com/Vanessa219/vditor",
+      "npm": "https://www.npmjs.com/package/vditor",
+      "license": "MIT",
+      "licenseUrl": "https://github.com/Vanessa219/vditor/blob/master/LICENSE",
+      "markdown": {
+        "input": {
+          "level": "native",
+          "via": "value option / setValue()",
+          "note": "Vditor speaks Markdown directly — a Markdown string loads straight into the wysiwyg/ir/sv document via the bundled Lute engine",
+          "url": "https://github.com/Vanessa219/vditor/blob/master/README_en_US.md#api"
+        },
+        "output": {
+          "level": "native",
+          "via": "getValue()",
+          "note": "getValue() serializes the document back to Markdown, lossless for common constructs",
+          "url": "https://github.com/Vanessa219/vditor/blob/master/README_en_US.md#methods"
+        },
+        "live": {
+          "level": "native",
+          "via": "wysiwyg / ir modes",
+          "note": "Typing '# ', '**bold**', '- ' etc. renders as you type; ir mode gives Typora-style instant rendering",
+          "url": "https://github.com/Vanessa219/vditor/blob/master/README_en_US.md#-editing-modes"
+        }
+      },
+      "math": {
+        "level": "native",
+        "via": "preview.math (KaTeX/MathJax)",
+        "note": "Built-in math blocks and inline formulas rendered by KaTeX or MathJax, engine configurable",
+        "url": "https://github.com/Vanessa219/vditor/blob/master/README_en_US.md#optionspreviewmath"
+      }
+    }
+  ],
+  "omitted": [
+    {
+      "name": "Draft.js",
+      "icon": "icons/draftjs.svg",
+      "website": "https://draftjs.org",
+      "reasonUrl": "https://github.com/facebookarchive/draft-js",
+      "reason": "Deprecated, archived in favor of Lexical"
+    },
+    {
+      "name": "Froala",
+      "icon": "icons/froala.svg",
+      "website": "https://froala.com/wysiwyg-editor/",
+      "reasonUrl": "https://github.com/froala/wysiwyg-editor/blob/master/License.txt",
+      "reason": "Commercial license only"
+    },
+    {
+      "name": "Wordgard",
+      "icon": "icons/wordgard.svg",
+      "website": "https://wordgard.net",
+      "reasonUrl": "https://marijnhaverbeke.nl/blog/wordgard-0.1.html",
+      "reason": "Brand new, no Markdown support yet"
+    }
+  ]
+}

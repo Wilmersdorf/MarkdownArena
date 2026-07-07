@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Monaco Standalone</title>
+    <style>
+        body { margin: 0; }
+        /* Monaco measures its parent rather than growing with its content, so its
+           height is driven from JS (see below) to fit the content. Its line-number
+           gutter supplies the left whitespace. */
+        #monaco-target { height: 0; }
+
+        .md-export-title { border-top: 1px solid #d0d7de; margin: 0; padding: 0.5rem 1rem; font-size: 0.75rem; letter-spacing: 0.04em; color: #6e7781; background: #f6f8fa; }
+        .md-export-output { width: 100%; box-sizing: border-box; padding: 1rem; font-family: monospace; field-sizing: content; border: none; resize: none; }
+    </style>
+</head>
+<body>
+
+    <!-- Monaco's complete prebuilt stylesheet. The AMD entry appends a <link>
+         to this same file at runtime; declaring it here starts the fetch early
+         and the two dedupe in cache. It embeds the codicon icon font (folding
+         arrows, the find widget) inline, so no relative `./codicon.ttf` fetch
+         against *this page* is ever needed. -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/monaco-editor@0.55.1/min/vs/editor/editor.main.css">
+
+    <div id="monaco-target"></div>
+
+    <h2 class="md-export-title">MARKDOWN 2-WAY EDITABLE</h2>
+    <textarea class="md-export-output" id="monaco-markdown-output" rows="14" spellcheck="false"></textarea>
+
+    <script type="module">
+        // Monaco loads from its official prebuilt AMD distribution (min/vs) as
+        // raw exact-version files — immutable bytes straight from the published
+        // npm tarball. Its ESM source can't run unbundled in a browser: it
+        // relies on a bundler to resolve its plain `.css` imports.
+        const MONACO = 'https://cdn.jsdelivr.net/npm/monaco-editor@0.55.1';
+
+        // The AMD loader is a classic script; append it, then point `vs` at the
+        // CDN. No MonacoEnvironment setup is needed: this build's entry installs
+        // its own worker factory, booting Monaco's language-services worker from
+        // min/vs/assets/ through a same-origin blob (workers can't be created
+        // cross-origin directly, so the blob importScripts the real file).
+        await new Promise((resolve, reject) => {
+            const s = document.createElement('script');
+            s.src = `${MONACO}/min/vs/loader.js`;
+            s.onload = resolve;
+            s.onerror = () => reject(new Error('Failed to load ' + s.src));
+            document.head.appendChild(s);
+        });
+        require.config({ paths: { vs: `${MONACO}/min/vs` } });
+
+        const monaco = await new Promise((resolve) => {
+            require(['vs/editor/editor.main'], () => resolve(self.monaco));
+        });
+
+        const output = document.getElementById('monaco-markdown-output');
+
+        const content = [
+            '# Markdown demo',
+            '',
+            'A paragraph with **bold**, *italic*, `inline code`, and a [link](https://example.com).',
+            '',
+            '- Bullet one',
+            '- Bullet two',
+            '',
+            '1. First',
+            '2. Second',
+            '',
+            '> A blockquote.',
+            '',
+            '```js',
+            "console.log('Hello, Markdown!')",
+            '```',
+        ].join('\n');
+
+        // Guards against the editor -> markdown -> editor update echoing back.
+        let syncing = false;
+
+        // Monaco's built-in browser clipboard service eagerly hooks
+        // click/keydown on <body> (on WebKit-flagged browsers) and calls
+        // navigator.clipboard.write on every interaction — permission
+        // requests plus "Canceled"/"NotAllowedError" console noise that
+        // outlives the editor. Overriding the service keeps Monaco off
+        // the async Clipboard API entirely; copy/cut/paste still work,
+        // natively, through the textarea input configured below.
+        const inertClipboardService = {
+            _serviceBrand: undefined,
+            async writeText() {}, async readText() { return ''; },
+            async readImage() { return new Uint8Array(); },
+            async readFindText() { return ''; }, async writeFindText() {},
+            async writeResources() {}, async readResources() { return []; },
+            async hasResources() { return false; },
+            async triggerPaste() {}, clearInternalState() {},
+        };
+
+        const target = document.getElementById('monaco-target');
+        const editor = monaco.editor.create(target, {
+            value: content,
+            language: 'markdown',
+            theme: 'vs',
+            wordWrap: 'on',
+            minimap: { enabled: false },
+            automaticLayout: true,
+            scrollBeyondLastLine: false,
+            occurrencesHighlight: 'off',
+            selectionHighlight: false,
+            // The classic textarea input handles copy/cut/paste through
+            // native clipboard events; the default EditContext input
+            // routes them through the async Clipboard API (permission
+            // prompts, and inert here — see the service override).
+            // Monaco's context menu is off for the same reason: its
+            // Copy/Paste items need the async clipboard too.
+            editContext: false,
+            contextmenu: false,
+        }, {
+            clipboardService: inertClipboardService,
+        });
+
+        // Grow the container to match Monaco's content height so there's no
+        // empty editor space below the text. automaticLayout picks up the
+        // resize; we re-layout explicitly to keep the width in sync.
+        const fitToContent = () => {
+            target.style.height = `${editor.getContentHeight()}px`;
+            editor.layout();
+        };
+        editor.onDidContentSizeChange(fitToContent);
+        fitToContent();
+
+        // Monaco edits plain text, so the document *is* the Markdown export.
+        const renderMarkdown = () => {
+            if (syncing) return;
+            output.value = editor.getValue();
+        };
+
+        editor.onDidChangeModelContent(renderMarkdown);
+
+        // Markdown -> editor: replace the whole document with the edited text.
+        output.addEventListener('input', () => {
+            syncing = true;
+            editor.setValue(output.value);
+            syncing = false;
+        });
+
+        renderMarkdown();
+    </script>
+
+</body>
+</html>

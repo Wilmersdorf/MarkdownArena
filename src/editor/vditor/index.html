@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Vditor Standalone</title>
+    <style>
+        body { margin: 0; }
+        /* Keyboard/Markdown editing only — Vditor still renders an (empty) bar
+           for toolbar: [], so hide it outright. */
+        #vditor-target .vditor-toolbar { display: none; }
+        /* Clicking a block (heading/list/blockquote/code/table/image/link)
+           makes Vditor pop up a floating bubble of formatting buttons; it sets
+           `display: block` on the element via inline style, so beat that with
+           !important rather than removing the buttons one by one. */
+        #vditor-target .vditor-panel { display: none !important; }
+        /* Vditor tints the editing surface on focus (pre.vditor-reset:focus swaps
+           the background from --panel-background-color to --textarea-background-color,
+           #fff -> #fafbfc); alias the variable so focused looks like unfocused. */
+        #vditor-target { --textarea-background-color: var(--panel-background-color); }
+        /* Vditor centers the writing surface by giving the content element
+           (pre.vditor-reset) a large horizontal padding inline from JS; override that
+           padding so the content is left-aligned. Its native bordered box stays and
+           sits flush at the viewport edges; the left inset keeps the block-type hints
+           (H1, </>) in the left gutter visible. */
+        #vditor-target .vditor-reset { padding-left: 3rem !important; padding-right: 1rem !important; }
+        .md-export-title { border-top: 1px solid #d0d7de; margin: 0; padding: 0.5rem 1rem; font-size: 0.75rem; letter-spacing: 0.04em; color: #6e7781; background: #f6f8fa; }
+        .md-export-output { width: 100%; box-sizing: border-box; padding: 1rem; font-family: monospace; field-sizing: content; border: none; resize: none; }
+    </style>
+</head>
+<body>
+
+    <div id="vditor-target"></div>
+
+    <h2 class="md-export-title">MARKDOWN 2-WAY EDITABLE</h2>
+    <textarea class="md-export-output" id="vditor-markdown-output" rows="14" spellcheck="false"></textarea>
+
+    <script type="module">
+        // Vditor ships as a classic global-`Vditor` script (official
+        // self-contained build, loaded as a raw exact-version file). Its UMD
+        // wrapper assigns the global via `this`, which is undefined inside a
+        // module, so inject it as a classic script and await it before mounting.
+        // Vditor also lazy-loads its Lute engine, i18n strings and content CSS
+        // at runtime from a base URL — every asset comes from this same pinned
+        // path via the `cdn` option below (the default would be unpkg, unpinned).
+        const CDN = 'https://cdn.jsdelivr.net/npm/vditor@3.11.2';
+
+        const loadScript = (src) => new Promise((resolve, reject) => {
+            const s = document.createElement('script');
+            s.src = src;
+            s.onload = resolve;
+            s.onerror = () => reject(new Error('Failed to load ' + src));
+            document.head.appendChild(s);
+        });
+        await loadScript(CDN + '/dist/index.min.js');
+        const Vditor = window.Vditor;
+
+        // Vditor ships its stylesheet as a separate CSS file, injected from JS
+        // so the demo's CDN references all live together beside the load above.
+        const cssLink = document.createElement('link');
+        cssLink.rel = 'stylesheet';
+        cssLink.href = CDN + '/dist/index.css';
+        document.head.appendChild(cssLink);
+
+        const output = document.getElementById('vditor-markdown-output');
+
+        const content = [
+            '# Markdown demo',
+            '',
+            'A paragraph with **bold**, *italic*, `inline code`, and a [link](https://example.com).',
+            '',
+            '- Bullet one',
+            '- Bullet two',
+            '',
+            '1. First',
+            '2. Second',
+            '',
+            '> A blockquote.',
+            '',
+            '```js',
+            "console.log('Hello, Markdown!')",
+            '```',
+        ].join('\n');
+
+        // Guards against the editor -> markdown -> editor update echoing back.
+        let syncing = false;
+        // Vditor mounts asynchronously (the Lute engine loads first); block the
+        // markdown -> editor direction until `after` says it is ready.
+        let ready = false;
+
+        // Vditor holds Markdown natively: in wysiwyg mode it renders the
+        // document as you type ('# ' + text becomes a live heading) while
+        // getValue()/setValue() speak Markdown directly. No toolbar, counter,
+        // outline or resize grip — keyboard/Markdown editing only — and no
+        // localStorage cache, so the demo always starts from `content`.
+        // English UI strings (lang) since the default locale is zh_CN.
+        const vditor = new Vditor('vditor-target', {
+            cdn: CDN,
+            mode: 'wysiwyg',
+            lang: 'en_US',
+            toolbar: [],
+            // `customWysiwygToolbar` lets you inject extra buttons into the
+            // per-block formatting bubble on click; wysiwyg mode calls it
+            // unconditionally (it's documented as optional but the click
+            // handler never checks before invoking it), so without a no-op
+            // here clicking any block throws instead of just doing nothing.
+            customWysiwygToolbar: () => {},
+            cache: { enable: false },
+            counter: { enable: false },
+            outline: { enable: false },
+            resize: { enable: false },
+            minHeight: 360,
+            value: content,
+            // Vditor -> Markdown: fires with the Markdown text on every edit.
+            input: (markdown) => {
+                if (syncing) return;
+                output.value = markdown;
+            },
+            after: () => {
+                ready = true;
+                output.value = vditor.getValue();
+            },
+        });
+
+        // Markdown -> editor: replace the whole document with the edited text
+        // (setValue does not fire `input`, so nothing echoes back).
+        output.addEventListener('input', () => {
+            if (!ready) return;
+            syncing = true;
+            vditor.setValue(output.value);
+            syncing = false;
+        });
+    </script>
+
+</body>
+</html>

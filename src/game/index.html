@@ -1,0 +1,1075 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Markdown Editor Card Game — Markdown Arena</title>
+    <link rel="icon" href="../icons/favicon.svg" type="image/svg+xml">
+
+    <meta name="description" content="Play the markdown editor card game: TipTap, ProseMirror, Lexical, CodeMirror and more battle head-to-head on GitHub stars, npm downloads, math support and markdown power.">
+    <link rel="canonical" href="https://markdownarena.com/game/">
+    <meta name="theme-color" content="#0f1626">
+
+    <meta property="og:site_name" content="Markdown Arena">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://markdownarena.com/game/">
+    <meta property="og:title" content="Markdown Editor Card Game — Markdown Arena">
+    <meta property="og:description" content="Play the markdown editor card game: TipTap, ProseMirror, Lexical, CodeMirror and more battle head-to-head on GitHub stars, npm downloads, math support and markdown power.">
+    <meta property="og:image" content="https://markdownarena.com/game/og.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Two glowing trading cards facing off across a neon grid arena — the Markdown Arena editor card game">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Markdown Editor Card Game — Markdown Arena">
+    <meta name="twitter:description" content="Play the markdown editor card game: TipTap, ProseMirror, Lexical, CodeMirror and more battle head-to-head on GitHub stars, npm downloads, math support and markdown power.">
+    <meta name="twitter:image" content="https://markdownarena.com/game/og.png">
+    <meta name="twitter:creator" content="@wilmers_dorf">
+
+    <!-- Display face for the fight HUD — raw exact-version files from jsDelivr -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/russo-one@5.2.7/index.css">
+    <style>
+        html { height: 100%; color-scheme: dark; }
+        body {
+            margin: 0;
+            font-family: system-ui, sans-serif;
+            background: #0f1626;
+            color: #e6edf3;
+            min-height: 100%;
+        }
+
+        /* ---- Header ---- */
+        .game-header {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.6rem 1rem;
+            padding: 0.6rem 1rem;
+            background: #0d1424;
+            border-bottom: 1px solid #26314e;
+        }
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-right: auto;
+            font-size: 1.1rem;
+            font-weight: 700;
+            letter-spacing: -0.01em;
+            color: #e6edf3;
+            text-decoration: none;
+        }
+        .back-link:hover { color: #8db2ff; }
+        .back-link img { width: 20px; height: 20px; border-radius: 4px; }
+        .mode-toggle {
+            display: inline-flex;
+            flex: none;
+            border: 1px solid #26314e;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        .mode-toggle__btn {
+            padding: 0.35rem 0.9rem;
+            border: none;
+            background: #0d1424;
+            color: #9aa6bf;
+            font: inherit;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: background 0.15s ease;
+        }
+        .mode-toggle__btn + .mode-toggle__btn { border-left: 1px solid #26314e; }
+        .mode-toggle__btn:hover:not(.is-selected) { background: #1e2a44; }
+        .mode-toggle__btn.is-selected { background: #1d4ed8; color: #fff; }
+
+        /* ---- Fight HUD: mirrored health bars draining toward a central round
+           badge (a full bar = you hold every card), announcer line below ---- */
+        .hud {
+            padding: 0.6rem 1rem 0.5rem;
+            background: linear-gradient(180deg, #212b42, #0d1424 60%, #0a0f1c);
+            border-bottom: 2px solid #26314e;
+            font-family: 'Russo One', system-ui, sans-serif;
+        }
+        .hud__bars {
+            display: flex;
+            align-items: center;
+            gap: 0.7rem;
+        }
+        .hud__n {
+            flex: none;
+            font-size: 0.95rem;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+        }
+        .hud__n--you { color: #8db2ff; text-shadow: 0 0 10px rgba(59, 130, 246, 0.55); }
+        .hud__n--cpu { color: #ff9d9d; text-shadow: 0 0 10px rgba(239, 68, 68, 0.55); }
+        /* Bump when a count changes so won cards are unmissable */
+        .hud__n.is-bump { animation: hud-bump 0.5s ease; }
+        @keyframes hud-bump {
+            30% { transform: scale(1.35); }
+        }
+        .hud__track {
+            position: relative;
+            flex: 1 1 0;
+            height: 16px;
+            background: #04070f;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.9);
+            overflow: hidden;
+        }
+        .hud__track--you {
+            transform: skewX(-18deg);
+            box-shadow: 0 0 0 1px #2d3d63, 0 0 12px rgba(37, 99, 235, 0.35), inset 0 2px 4px rgba(0, 0, 0, 0.9);
+        }
+        .hud__track--cpu {
+            transform: skewX(-18deg);
+            box-shadow: 0 0 0 1px #552931, 0 0 12px rgba(220, 38, 38, 0.35), inset 0 2px 4px rgba(0, 0, 0, 0.9);
+        }
+        .hud__fill {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            transition: width 0.3s ease;
+            box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.45);
+        }
+        .hud__fill--you { left: 0; background: linear-gradient(180deg, #93c5fd, #3b82f6 45%, #1d4ed8); }
+        .hud__fill--cpu { right: 0; background: linear-gradient(180deg, #fca5a5, #ef4444 45%, #b91c1c); }
+        .hud__round {
+            flex: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 3rem;
+            height: 3rem;
+            margin: -0.35rem 0.05rem;   /* bigger than the bars without adding strip height */
+            border-radius: 50%;
+            background: radial-gradient(circle at 50% 28%, #33415e, #0d1424 72%);
+            box-shadow: 0 0 0 2px #d9c541, 0 0 16px rgba(217, 197, 65, 0.45), inset 0 0 8px rgba(0, 0, 0, 0.8);
+        }
+        .hud__round-label {
+            font-size: 0.5rem;
+            letter-spacing: 0.22em;
+            text-indent: 0.22em;   /* recenters the spaced caps */
+            text-transform: uppercase;
+            color: #e8d974;
+        }
+        .hud__round-n {
+            font-size: 1.25rem;
+            line-height: 1.05;
+            color: #fff;
+            font-variant-numeric: tabular-nums;
+            text-shadow: 0 0 10px rgba(232, 217, 116, 0.6);
+        }
+
+        /* ---- Announcer line: turn prompt / round result ---- */
+        .banner {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            gap: 0.3rem 1rem;
+            margin-top: 0.5rem;
+            min-height: 1.75rem;   /* tall enough for the Next button — no shift on reveal */
+            font-size: 0.9rem;
+            letter-spacing: 0.07em;
+            text-transform: uppercase;
+            color: #8b96ad;
+        }
+        .banner__msg { color: #f3f6fc; text-shadow: 0 0 12px rgba(255, 255, 255, 0.25); }
+        .banner.is-player .banner__msg { color: #57e389; text-shadow: 0 0 14px rgba(87, 227, 137, 0.6); }
+        .banner.is-cpu    .banner__msg { color: #ff7b72; text-shadow: 0 0 14px rgba(255, 123, 114, 0.6); }
+        .banner.is-tie    .banner__msg { color: #f8e255; text-shadow: 0 0 14px rgba(248, 226, 85, 0.6); }
+        .banner__detail { font-size: 0.78rem; font-variant-numeric: tabular-nums; }
+        .banner__next {
+            padding: 0.3rem 1.3rem;
+            border: none;
+            clip-path: polygon(0.55rem 0, 100% 0, calc(100% - 0.55rem) 100%, 0 100%);
+            background: linear-gradient(180deg, #4c8dff, #1d4ed8);
+            color: #fff;
+            font: inherit;
+            font-size: 0.85rem;
+            letter-spacing: 0.07em;
+            cursor: pointer;
+            transition: filter 0.15s ease;
+        }
+        .banner__next:hover { filter: brightness(1.15); }
+        /* Phone-only advance: a full-width Next bar under the cards, so
+           advancing doesn't need a reach back up to the banner. Toggled in
+           lockstep with the banner's Next button, but on phones only its
+           visibility changes (media query below) — the bar's slot is always
+           laid out, so a reveal never shifts the cards. */
+        .next-fab {
+            display: none;
+            width: 100%;   /* buttons shrink-to-fit even as block-level boxes */
+            height: 3rem;
+            margin: 0;
+            padding: 0;
+            border: none;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(180deg, #4c8dff, #1d4ed8);
+            color: #fff;
+            cursor: pointer;
+            transition: filter 0.15s ease;
+        }
+        .next-fab:active { filter: brightness(1.2); }
+        .next-fab svg { width: 1.3rem; height: 1.3rem; }
+
+        /* ---- Card table: cards run edge to edge, the only space between
+           them is the clash seam ---- */
+        .table {
+            display: flex;
+            align-items: stretch;
+        }
+        /* Clash seam: no panel of its own — the page background runs through.
+           The YOU / COMPUTER strips carry straight on across the gap and meet
+           head-to-head at a slanted seam. */
+        .vs {
+            position: relative;
+            flex: none;
+            align-self: stretch;
+            width: 3.6rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+        }
+        /* Same text metrics as .card__owner (via a zero-width space) so the
+           bar lines up with the strips it continues */
+        .vs__bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1;
+            padding: 0.4rem 0;
+            font-size: 0.8rem;
+            overflow: hidden;
+            background: linear-gradient(#d64550, #b91c1c);
+        }
+        /* Blue half over the red base, its trailing edge skewed to the same
+           angle as the HUD tracks so the colours meet at a / seam */
+        .vs__bar::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: -0.5rem;
+            right: 50%;
+            background: linear-gradient(#2b5cf0, #1d4ed8);
+            transform: skewX(-18deg);
+        }
+        .vs__text {
+            position: relative;
+            font-family: 'Russo One', system-ui, sans-serif;
+            font-size: 1.5rem;
+            color: #fff;
+        }
+        .vs__v, .vs__s { display: inline-block; }
+        .vs__v { transform: translateY(-0.14em); }
+        .vs__s { transform: translateY(0.14em); }
+        /* Near-black card faces — each side's identity carries in its owner
+           strip and neon editor name */
+        .card {
+            flex: 1 1 0;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background: #04070f;
+        }
+        .card__owner {
+            padding: 0.4rem 0.9rem;
+            font-size: 0.8rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: #fff;
+            /* One line always — the VS seam bar mirrors this strip's height,
+               so a long computer name truncates rather than wraps */
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .card--player .card__owner { background: linear-gradient(#2b5cf0, #1d4ed8); }
+        .card--cpu    .card__owner { background: linear-gradient(#d64550, #b91c1c); }
+        .card__body {
+            position: relative;
+            flex: 1 1 auto;
+            display: flex;
+            flex-direction: column;
+        }
+        .card__head {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.75rem 1rem;
+            min-height: 30px;
+        }
+        .card__icon { width: 30px; height: 30px; object-fit: contain; flex: none; }
+        .card__name { font-size: 1.1rem; font-weight: 700; }
+        /* Neon takes on the owner strips' own hues */
+        .card--player .card__name { color: #4d7aff; text-shadow: 0 0 12px rgba(77, 122, 255, 0.6); }
+        .card--cpu    .card__name { color: #ff4d55; text-shadow: 0 0 12px rgba(255, 77, 85, 0.6); }
+
+        .card__frame {
+            position: relative;
+            height: 300px;
+            border-top: 1px solid;
+            border-bottom: 1px solid;
+            overflow: hidden;
+            background: #fff;
+            touch-action: none;   /* touch drags scroll the demo, not the page */
+        }
+        .card--player .card__frame { border-color: #2d3d63; }
+        .card--cpu    .card__frame { border-color: #552931; }
+        .card__loading {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #697386;
+            font-size: 0.85rem;
+            font-style: italic;
+        }
+        .card__iframe {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            border: 0;
+            background: #fff;
+            pointer-events: none;   /* demos are a preview, not a playground */
+        }
+
+        /* Stat rows: full-bleed strips on one dark panel — no boxes, no gaps.
+           The panel grows to the card's bottom edge so no light card face
+           peeks out when the other card's rows wrap taller. */
+        .card__stats {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            flex: 1 1 auto;
+            background: #0a0f1c;
+        }
+        .stat {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+            padding: 0.7rem 1.25rem 0.7rem 4.6rem;
+            background: #0a0f1c;
+            transition: background 0.12s ease;
+        }
+        .stat + .stat { border-top: 1px solid rgba(255, 255, 255, 0.08); }
+        /* All rows share one dark strip; each row's neon accent carries its
+           identity — glowing ink, ringed icon chip */
+        .stat[data-stat="stars"]      { --stat-accent: #f5e11b; }
+        .stat[data-stat="npm"]        { --stat-accent: #ff2e63; }
+        .stat[data-stat="frameworks"] { --stat-accent: #c44dff; }
+        .stat[data-stat="math"]       { --stat-accent: #39ff14; }
+        .stat[data-stat="power"]      { --stat-accent: #00e5ff; }
+        .stat__label {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.55rem;
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--stat-accent);
+            text-shadow: 0 0 10px color-mix(in srgb, var(--stat-accent) 45%, transparent);
+        }
+        .stat__icon {
+            width: 1.4em;
+            height: 1.4em;
+            flex: none;
+            color: var(--stat-accent);
+        }
+        .stat__val {
+            font-weight: 800;
+            font-variant-numeric: tabular-nums;
+            color: var(--stat-accent);
+        }
+        /* Number-key hint chips: keyboard devices only (same gate as the main
+           app's kbd hints). Always laid out on the player card — just dimmed
+           while the rows aren't pickable — so picking never shifts the row. */
+        .stat__key {
+            display: none;
+            flex: none;
+            padding: 0 0.3rem;
+            border: 1px solid rgba(255, 255, 255, 0.35);
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.12);
+            font-family: inherit;
+            font-size: 0.72em;
+            font-weight: 600;
+            line-height: 1.4;
+            color: rgba(255, 255, 255, 0.8);
+            transition: opacity 0.15s ease;
+        }
+        .stat:not(.is-pickable) .stat__key { opacity: 0.4; }
+        /* Shortcut hint chips in the banner and action buttons, same
+           keyboard-device gate as the stat-row chips. Both sit on dark/blue
+           surfaces, so the base chip is translucent white. */
+        .key-hint {
+            display: none;
+            padding: 0 0.3rem;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.14);
+            font-family: inherit;
+            font-size: 0.78em;
+            line-height: 1.4;
+            color: #fff;
+            vertical-align: 0.08em;
+        }
+        .key-hint--onblue {
+            border-color: rgba(255, 255, 255, 0.45);
+            background: rgba(255, 255, 255, 0.16);
+            color: #fff;
+        }
+        @media (hover: hover) and (pointer: fine) {
+            .card--player .stat__key { display: inline-block; }
+            .key-hint { display: inline-block; }
+        }
+        .stat.is-pickable { cursor: pointer; }
+        .stat.is-pickable:hover { background: color-mix(in srgb, var(--stat-accent) 16%, #0a0f1c); }
+        /* Round result: rows keep their colour — the compared row gets a
+           WIN / LOST / TIE stamp filling the row's leading edge. One stamp
+           treatment for all outcomes: white type on a colour block (the
+           bright yellow TIE gets a faint shadow so the white keeps reading).
+           The stamp is a full-height block at the row start; its space is
+           always reserved (fixed row padding) — empty until the reveal fills
+           it, so nothing ever shifts */
+        .stat__flag {
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3.8rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            clip-path: polygon(0 0, 100% 0, calc(100% - 0.55rem) 100%, 0 100%);
+            font-family: 'Russo One', system-ui, sans-serif;
+            font-size: 0.78rem;
+            letter-spacing: 0.08em;
+            color: #fff;
+        }
+        .stat.is-win  .stat__flag { background: #15803d; }
+        .stat.is-lose .stat__flag { background: #b91c1c; }
+        .stat.is-tie  .stat__flag { background: #eab308; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.55); }
+
+        /* Face-down back, covering the card body */
+        .card__back {
+            position: absolute;
+            inset: 0;
+            z-index: 3;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            background: repeating-linear-gradient(45deg, #221019, #221019 12px, #2c1520 12px, #2c1520 24px);
+        }
+        .card.is-facedown .card__back { opacity: 1; pointer-events: auto; }
+        .card__back-q { font-size: 4rem; font-weight: 800; line-height: 1; color: #ff7b72; }
+        .card__back-label { font-size: 0.9rem; color: #b08a92; }
+
+        /* ---- Victory overlay ---- */
+        .overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            background: rgba(4, 8, 18, 0.65);
+        }
+        .overlay[hidden] { display: none; }
+        .overlay__card {
+            box-sizing: border-box;
+            width: min(400px, 100%);
+            padding: 1.75rem 2rem;
+            text-align: center;
+            background: #161f33;
+            border-radius: 12px;
+            box-shadow: 0 0 0 2px #d9c541, 0 12px 40px rgba(0, 0, 0, 0.6);
+        }
+        .overlay__msg {
+            margin: 0 0 1.25rem;
+            font-family: 'Russo One', system-ui, sans-serif;
+            font-size: 1.6rem;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: #f3f6fc;
+            text-shadow: 0 0 16px rgba(255, 255, 255, 0.3);
+        }
+        .overlay__sub {
+            margin: -0.75rem 0 1.25rem;
+            font-size: 0.95rem;
+            color: #a7b0c4;
+        }
+        .overlay__sub[hidden] { display: none; }
+        .overlay__btn {
+            padding: 0.55rem 1.4rem;
+            border: none;
+            border-radius: 6px;
+            background: #1d4ed8;
+            color: #fff;
+            font: inherit;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.15s ease;
+        }
+        .overlay__btn:hover { background: #1a43be; }
+
+        /* Cards stay side by side at every width; below ~640px the row is kept
+           readable by compacting: label-above-value stat rows, smaller type,
+           shorter demo frame. (Last in source so it wins over the base rules.) */
+        @media (max-width: 640px) {
+            .vs { width: 2.2rem; }
+            .vs__bar { padding: 0.3rem 0; font-size: 0.68rem; }
+            .vs__text { font-size: 1rem; }
+            .hud { padding: 0.45rem 0.6rem 0.4rem; }
+            .hud__bars { gap: 0.45rem; }
+            .hud__n { font-size: 0.72rem; }
+            .hud__track { height: 11px; }
+            .hud__round { width: 2.4rem; height: 2.4rem; margin: -0.25rem 0; }
+            .hud__round-label { font-size: 0.4rem; }
+            .hud__round-n { font-size: 0.95rem; }
+            /* Revealed rounds wrap to two lines on phones — reserve them so
+               the cards below never jump when a result comes in. */
+            .banner { margin-top: 0.35rem; min-height: 2.6rem; font-size: 0.72rem; gap: 0.25rem 0.6rem; }
+            .banner__detail { font-size: 0.62rem; order: 1; }   /* last: msg + button share line 1 */
+            .banner__next { padding: 0.25rem 1rem; font-size: 0.72rem; }
+            .card__owner { padding: 0.3rem 0.6rem; font-size: 0.68rem; }
+            .card__head { padding: 0.5rem 0.6rem; min-height: 22px; }
+            .card__icon { width: 22px; height: 22px; }
+            .card__name { font-size: 0.95rem; }
+            .card__frame { height: 200px; }
+            .stat {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.2rem;
+                padding: 0.5rem 0.7rem 0.5rem 3.1rem;
+            }
+            .stat__flag { width: 2.5rem; font-size: 0.62rem; }
+            .stat__label { font-size: 0.7rem; }
+            .stat__val { font-size: 0.85rem; }
+            .next-fab { display: flex; }
+            .next-fab[hidden] { visibility: hidden; }
+        }
+    </style>
+
+    <script type="application/ld+json">
+    {"@context":"https://schema.org","@type":"VideoGame","name":"Markdown Editor Card Game","url":"https://markdownarena.com/game/","image":"https://markdownarena.com/game/og.png","description":"Play the markdown editor card game: TipTap, ProseMirror, Lexical, CodeMirror and more battle head-to-head on GitHub stars, npm downloads, math support and markdown power.","gamePlatform":"Web browser","playMode":"SinglePlayer","isPartOf":{"@type":"WebSite","name":"Markdown Arena","url":"https://markdownarena.com/"}}
+    </script>
+</head>
+<body>
+    <header class="game-header">
+        <a class="back-link" href="/"><img src="../icons/favicon.svg" alt="">Markdown Arena</a>
+        <div class="mode-toggle" id="mode-toggle">
+            <button type="button" class="mode-toggle__btn is-selected" data-mode="basic">Basic</button>
+            <button type="button" class="mode-toggle__btn" data-mode="full">Full</button>
+        </div>
+    </header>
+
+    <div class="hud">
+        <div class="hud__bars">
+            <span class="hud__n hud__n--you" id="hud-you">You 0</span>
+            <div class="hud__track hud__track--you">
+                <div class="hud__fill hud__fill--you" id="hud-you-fill"></div>
+            </div>
+            <div class="hud__round">
+                <span class="hud__round-label">Round</span>
+                <span class="hud__round-n" id="score-round">1</span>
+            </div>
+            <div class="hud__track hud__track--cpu">
+                <div class="hud__fill hud__fill--cpu" id="hud-cpu-fill"></div>
+            </div>
+            <span class="hud__n hud__n--cpu" id="hud-cpu">0 Com</span>
+        </div>
+        <div class="banner" id="banner">
+            <span class="banner__msg" id="banner-msg"></span>
+            <span class="banner__detail" id="banner-detail"></span>
+            <button type="button" class="banner__next" id="next-btn" hidden>Next round <kbd class="key-hint key-hint--onblue">Space</kbd></button>
+        </div>
+    </div>
+
+    <main class="table" id="table"></main>
+    <button type="button" class="next-fab" id="next-fab" hidden><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 3.5 8 8l-4.5 4.5M8.5 3.5 13 8l-4.5 4.5"/></svg></button>
+
+    <div class="overlay" id="overlay" hidden>
+        <div class="overlay__card">
+            <p class="overlay__msg" id="overlay-msg"></p>
+            <p class="overlay__sub" id="overlay-sub" hidden>Now play the 3D version</p>
+            <button type="button" class="overlay__btn" id="play-again"><span id="play-again-label">Rematch</span> <kbd class="key-hint key-hint--onblue">Space</kbd></button>
+        </div>
+    </div>
+
+    <script>
+        // ---- Stat scoring ----
+        const LEVEL = { native: 3, 'native-partial': 2, library: 2, custom: 1, paid: 1, none: 0 };
+        const mdPower = (e) =>
+            LEVEL[e.markdown.input.level] + LEVEL[e.markdown.output.level] + LEVEL[e.markdown.live.level];
+
+        const nf = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 });
+        const compact = (n) => nf.format(n).toLowerCase();
+
+        // Stat icons — the GitHub / npm / code ones are the main app's, the
+        // math and markdown marks are drawn in the same 16×16 style.
+        const ICONS = {
+            stars: `<svg class="stat__icon" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.6 7.6 0 0 1 2-.27c.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>`,
+            npm: `<svg class="stat__icon" viewBox="0 0 16 16" fill="currentColor"><path d="M0 0v16h16V0H0Zm13 13h-2V5H8v8H3V3h10v10Z"/></svg>`,
+            frameworks: `<svg class="stat__icon" viewBox="0 0 16 16" fill="currentColor"><path d="M5.854 4.854a.5.5 0 1 0-.708-.708l-3.5 3.5a.5.5 0 0 0 0 .708l3.5 3.5a.5.5 0 0 0 .708-.708L2.707 8zm4.292 0a.5.5 0 0 1 .708-.708l3.5 3.5a.5.5 0 0 1 0 .708l-3.5 3.5a.5.5 0 0 1-.708-.708L13.293 8z"/></svg>`,
+            math: `<svg class="stat__icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M12.5 3.5h-9l5.5 4.5-5.5 4.5h9"/></svg>`,
+            power: `<svg class="stat__icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="14" height="10" rx="1.5"/><path d="M3.5 10V6l2 2 2-2v4"/><path d="M11.5 6v4m0 0-1.5-1.5m1.5 1.5L13 8.5"/></svg>`,
+        };
+
+        // Each stat: numeric `raw` for comparison (higher wins), `text` for display.
+        const STATS = [
+            { key: 'stars',      label: 'GitHub Stars',          icon: ICONS.stars,      raw: (e) => e.githubStars,  text: (e) => compact(e.githubStars) },
+            { key: 'npm',        label: 'npm Downloads / Week',  icon: ICONS.npm,        raw: (e) => e.npmDownloads, text: (e) => compact(e.npmDownloads) },
+            { key: 'frameworks', label: 'Frameworks',            icon: ICONS.frameworks, raw: (e) => e.frameworks,   text: (e) => String(e.frameworks) },
+            { key: 'math',       label: 'Math Support',          icon: ICONS.math,       raw: (e) => e.math,         text: (e) => e.math + ' / 3' },
+            { key: 'power',      label: 'Markdown Power',        icon: ICONS.power,      raw: (e) => e.power,        text: (e) => e.power + ' / 100' },
+        ];
+
+        // The computer fights under a stage name — a classic web-dev nemesis,
+        // drawn fresh each match. The HUD keeps the short "Com".
+        const CPU_NAMES = [
+            'Uncentered Div',
+            'Merge Conflict',
+            'Blocked by CORS',
+            // s
+            'undefined',
+            'z-index: 9999',
+            'Works on My Machine',
+            '!important',
+            'Internet Explorer',
+            'Callback Hell',
+        ];
+
+        // ---- Game state ----
+        let allEditors = [];
+        const state = {
+            playerDeck: [],
+            cpuDeck: [],
+            cpuName: CPU_NAMES[0],
+            chooser: 'player',   // 'player' | 'cpu'
+            phase: 'choosing',   // 'choosing' | 'revealed' | 'over'
+            round: 1,            // completed rounds + 1
+            result: null,        // { outcome, statKey } — outcome is 'player' | 'cpu' | 'tie'
+            full: false,
+        };
+        let cpuTimer = null;
+        let autoTimer = null;   // pending auto-advance after a CPU-chosen reveal
+
+        const demoUrl = (e) => state.full ? e.fullUrl : e.url;
+
+        const shuffle = (a) => {
+            for (let i = a.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [a[i], a[j]] = [a[j], a[i]];
+            }
+            return a;
+        };
+
+        // Computer stat choice: weighted random by percentile² — strong stats
+        // are favoured but not certain, so the computer is beatable.
+        function cpuPickStat(card) {
+            const weights = STATS.map((stat) => {
+                const v = stat.raw(card);
+                const pct = allEditors.filter((e) => stat.raw(e) <= v).length / allEditors.length;
+                return pct * pct;
+            });
+            const sum = weights.reduce((a, b) => a + b, 0);
+            let r = Math.random() * sum;
+            const idx = weights.findIndex((w) => (r -= w) < 0);
+            return STATS[idx < 0 ? STATS.length - 1 : idx].key;   // idx -1: float rounding
+        }
+
+        // ---- DOM refs (built once, updated in place so on-table iframes persist) ----
+        const ui = { cards: {} };
+
+        function buildCard(side) {
+            const section = document.createElement('section');
+            section.className = 'card card--' + side;
+            section.innerHTML = `
+                <div class="card__owner">${side === 'player' ? 'You' : 'Computer'}</div>
+                <div class="card__body">
+                    <div class="card__head"><img class="card__icon" alt="" hidden><span class="card__name"></span></div>
+                    <div class="card__frame"><div class="card__loading">Loading demo…</div></div>
+                    <ul class="card__stats"></ul>
+                    <div class="card__back"><span class="card__back-q">?</span><span class="card__back-label">Face-down card</span></div>
+                </div>`;
+            const refs = {
+                section,
+                owner: section.querySelector('.card__owner'),
+                icon: section.querySelector('.card__icon'),
+                name: section.querySelector('.card__name'),
+                frame: section.querySelector('.card__frame'),
+                statsUl: section.querySelector('.card__stats'),
+            };
+            ui.cards[side] = refs;
+            wireFrameScroll(refs.frame);
+            document.getElementById('table').appendChild(section);
+            return refs;
+        }
+
+        // The demo is scrollable but otherwise untouchable: the iframe ignores
+        // pointer events, so wheel / touch drags land on the wrapper and are
+        // forwarded to the same-origin demo document's scroller.
+        function wireFrameScroll(wrap) {
+            const scroller = () => {
+                const f = wrap.querySelector('iframe');
+                return f && f.contentDocument && f.contentDocument.scrollingElement;
+            };
+            wrap.addEventListener('wheel', (e) => {
+                e.preventDefault();   // never scrolls the outer page
+                const s = scroller();
+                if (s) s.scrollBy(e.deltaX, e.deltaY);
+            }, { passive: false });
+            let last = null;
+            wrap.addEventListener('pointerdown', (e) => {
+                if (e.pointerType === 'mouse') return;   // mouse uses the wheel
+                try { wrap.setPointerCapture(e.pointerId); } catch {}
+                last = { x: e.clientX, y: e.clientY };
+            });
+            wrap.addEventListener('pointermove', (e) => {
+                if (!last) return;
+                const s = scroller();
+                if (s) s.scrollBy(last.x - e.clientX, last.y - e.clientY);
+                last = { x: e.clientX, y: e.clientY };
+            });
+            const endDrag = () => { last = null; };
+            wrap.addEventListener('pointerup', endDrag);
+            wrap.addEventListener('pointercancel', endDrag);
+        }
+
+        // Create / drop the demo iframe without reparenting (which would reload it).
+        function setFrame(side, editor) {
+            const wrap = ui.cards[side].frame;
+            let iframe = wrap.querySelector('iframe');
+            if (!editor) { if (iframe) iframe.remove(); return; }
+            const url = demoUrl(editor);
+            if (iframe && iframe.dataset.url === url) return;  // already the right demo
+            if (iframe) iframe.remove();
+            iframe = document.createElement('iframe');
+            iframe.className = 'card__iframe';
+            iframe.tabIndex = -1;   // preview only — never takes keyboard focus
+            iframe.dataset.url = url;
+            iframe.src = url;
+            // The demo must never hold focus or see keys. It may focus its
+            // editor whenever its modules finish mounting, so blur on every
+            // focusin; if a key still lands inside during a focus race, swallow
+            // it and forward it to the game (same-origin, so scriptable).
+            iframe.addEventListener('load', () => {
+                const doc = iframe.contentDocument;
+                if (!doc) return;
+                const el = doc.activeElement;
+                if (el && el !== doc.body && el.blur) el.blur();
+                doc.addEventListener('focusin', (e) => {
+                    if (e.target.blur) e.target.blur();
+                }, true);
+                doc.addEventListener('keydown', (e) => {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    handleGameKey(e);
+                }, true);
+            });
+            wrap.appendChild(iframe);
+        }
+
+        function renderStats(side, editor, faceUp) {
+            const ul = ui.cards[side].statsUl;
+            const pickable = side === 'player' && state.phase === 'choosing' && state.chooser === 'player';
+            ul.innerHTML = '';
+            STATS.forEach((stat, i) => {
+                const li = document.createElement('li');
+                li.className = 'stat';
+                li.dataset.stat = stat.key;
+                const flag = document.createElement('span');   // empty slot until revealed
+                flag.className = 'stat__flag';
+                if (state.phase === 'revealed' && state.result && state.result.statKey === stat.key) {
+                    const o = state.result.outcome;
+                    li.classList.add(o === 'tie' ? 'is-tie' : o === side ? 'is-win' : 'is-lose');
+                    flag.textContent = o === 'tie' ? 'TIE' : o === side ? 'WIN' : 'LOST';
+                }
+                if (pickable) li.classList.add('is-pickable');
+                const label = document.createElement('span');
+                label.className = 'stat__label';
+                label.innerHTML = stat.icon;
+                const key = document.createElement('kbd');
+                key.className = 'stat__key';
+                key.textContent = i + 1;
+                label.prepend(key);
+                label.append(stat.label);
+                const val = document.createElement('span');
+                val.className = 'stat__val';
+                val.textContent = faceUp ? stat.text(editor) : '?';
+                li.append(flag, label, val);
+                ul.append(li);
+            });
+        }
+
+        function renderCard(side, editor, faceUp) {
+            const refs = ui.cards[side];
+            refs.section.classList.toggle('is-facedown', !faceUp);
+            if (faceUp) {
+                refs.icon.src = editor.icon;
+                refs.icon.hidden = false;
+                refs.name.textContent = editor.name;
+            } else {
+                refs.icon.hidden = true;
+                refs.name.textContent = '';
+            }
+            renderStats(side, editor, faceUp);
+            setFrame(side, faceUp ? editor : null);
+        }
+
+        function renderBanner() {
+            const banner = document.getElementById('banner');
+            const msg = document.getElementById('banner-msg');
+            const detail = document.getElementById('banner-detail');
+            const next = document.getElementById('next-btn');
+            const fab = document.getElementById('next-fab');
+            banner.className = 'banner';
+            if (state.phase === 'choosing') {
+                msg.innerHTML = state.chooser === 'player'
+                    ? 'Your turn — pick a stat <kbd class="key-hint">1–5</kbd>'
+                    : `${state.cpuName} is choosing a stat…`;
+                detail.textContent = '';
+                next.hidden = fab.hidden = true;
+            } else if (state.phase === 'revealed') {
+                const stat = STATS.find((s) => s.key === state.result.statKey);
+                const p = state.playerDeck[0], c = state.cpuDeck[0];
+                const o = state.result.outcome;
+                banner.classList.add('is-' + o);
+                msg.textContent = o === 'player' ? 'You take the round!'
+                    : o === 'cpu' ? `${state.cpuName} takes the round!` : 'Tie — no knockdown';
+                detail.textContent = `${stat.label}: You ${stat.text(p)} vs ${state.cpuName} ${stat.text(c)}`;
+                next.hidden = fab.hidden = state.chooser === 'cpu';   // CPU rounds auto-advance
+            }
+        }
+
+        // Update a HUD numeral, bumping it whenever the value changes.
+        function setHudNum(id, text) {
+            const el = document.getElementById(id);
+            if (el.textContent === text) return;
+            el.textContent = text;
+            el.classList.remove('is-bump');
+            void el.offsetWidth;   // restart the animation
+            el.classList.add('is-bump');
+        }
+
+        function render() {
+            // The HUD shows the round's result the moment it is revealed —
+            // the decks themselves only move on advance (nextRound).
+            let p = state.playerDeck.length, c = state.cpuDeck.length;
+            if (state.phase === 'revealed' && state.result) {
+                if (state.result.outcome === 'player') { p++; c--; }
+                else if (state.result.outcome === 'cpu') { p--; c++; }
+            }
+            const total = p + c;
+            document.getElementById('score-round').textContent = state.round;
+            setHudNum('hud-you', `You ${p}`);
+            setHudNum('hud-cpu', `${c} Com`);
+            document.getElementById('hud-you-fill').style.width = total ? (p / total * 100) + '%' : '0%';
+            document.getElementById('hud-cpu-fill').style.width = total ? (c / total * 100) + '%' : '0%';
+            if (state.phase === 'over') { showVictory(); return; }
+            document.getElementById('overlay').hidden = true;
+            renderBanner();
+            renderCard('player', state.playerDeck[0], true);
+            renderCard('cpu', state.cpuDeck[0], state.phase === 'revealed');
+        }
+
+        function showVictory() {
+            setFrame('player', null);
+            setFrame('cpu', null);
+            const won = state.playerDeck.length > 0;
+            document.getElementById('overlay-msg').textContent = won ? 'K.O. — You win!' : `K.O. — ${state.cpuName} wins`;
+            document.getElementById('overlay-sub').hidden = !won;
+            document.getElementById('play-again-label').textContent = won ? 'Continue' : 'Rematch';
+            document.getElementById('overlay').hidden = false;
+        }
+
+        // Overlay button / Space at game over: winner goes to the 3D game, loser rematches.
+        function overlayAction() {
+            if (state.phase === 'over' && state.playerDeck.length > 0) location.href = '3d/';
+            else deal();
+        }
+
+        // ---- Game flow ----
+        function chooseStat(statKey) {
+            if (state.phase !== 'choosing') return;
+            clearTimeout(cpuTimer);
+            const stat = STATS.find((s) => s.key === statKey);
+            const pv = stat.raw(state.playerDeck[0]);
+            const cv = stat.raw(state.cpuDeck[0]);
+            const outcome = pv > cv ? 'player' : cv > pv ? 'cpu' : 'tie';
+            state.result = { outcome, statKey };
+            state.phase = 'revealed';
+            render();
+            // CPU-chosen rounds flow by themselves, quick-fire: brief beat to
+            // show the result, then advance (Space still skips early).
+            if (state.chooser === 'cpu') {
+                clearTimeout(autoTimer);
+                autoTimer = setTimeout(nextRound, 300);
+            }
+        }
+
+        function nextRound() {
+            clearTimeout(autoTimer);                  // pending auto-advance must never double-fire
+            if (state.phase !== 'revealed') return;   // guards double-advance
+            const p = state.playerDeck, c = state.cpuDeck;
+            const pc = p[0], cc = c[0];
+            if (state.result.outcome === 'player') {
+                p.shift(); c.shift(); p.push(pc, cc); state.chooser = 'player';
+            } else if (state.result.outcome === 'cpu') {
+                p.shift(); c.shift(); c.push(cc, pc); state.chooser = 'cpu';
+            } else {
+                p.push(p.shift()); c.push(c.shift());   // tie: each card to its own deck's bottom
+            }
+            state.round++;
+            state.result = null;
+            if (p.length === 0 || c.length === 0) { state.phase = 'over'; render(); return; }
+            state.phase = 'choosing';
+            render();
+            if (state.chooser === 'cpu') scheduleCpuPick();
+        }
+
+        // Keyboard: 1–5 picks a stat, Space advances (Next round / overlay action).
+        // One shared handler — used by the page and forwarded from demo iframes.
+        function handleGameKey(e) {
+            if (e.ctrlKey || e.metaKey || e.altKey) return;
+            if (e.key >= '1' && e.key <= '5') {
+                if (state.phase === 'choosing' && state.chooser === 'player') {
+                    chooseStat(STATS[e.key - 1].key);
+                }
+            } else if (e.key === ' ') {
+                // preventDefault stops page scroll AND a focused button's
+                // space-activation (its keyup click) — no double advance.
+                e.preventDefault();
+                if (state.phase === 'over') overlayAction();
+                else if (state.phase === 'revealed') nextRound();
+            }
+        }
+
+        function scheduleCpuPick() {
+            clearTimeout(cpuTimer);
+            cpuTimer = setTimeout(() => {
+                if (state.phase === 'choosing' && state.chooser === 'cpu') {
+                    chooseStat(cpuPickStat(state.cpuDeck[0]));
+                }
+            }, 100);
+        }
+
+        function deal() {
+            clearTimeout(cpuTimer);
+            clearTimeout(autoTimer);
+            state.cpuName = CPU_NAMES[Math.floor(Math.random() * CPU_NAMES.length)];
+            ui.cards.cpu.owner.textContent = state.cpuName;
+            // Each match: a fresh random 10 of the active editors, dealt 5/5.
+            const deck = shuffle(allEditors.slice()).slice(0, 10);
+            const half = Math.ceil(deck.length / 2);
+            state.playerDeck = deck.slice(0, half);
+            state.cpuDeck = deck.slice(half);
+            state.chooser = 'player';
+            state.phase = 'choosing';
+            state.round = 1;
+            state.result = null;
+            setFrame('player', null);
+            setFrame('cpu', null);
+            render();
+        }
+
+        // ---- Wiring ----
+        function syncModeToggle() {
+            document.querySelectorAll('.mode-toggle__btn')
+                .forEach((b) => b.classList.toggle('is-selected', (b.dataset.mode === 'full') === state.full));
+        }
+
+        function wire() {
+            ui.cards.player.statsUl.addEventListener('click', (e) => {
+                const li = e.target.closest('.stat');
+                if (!li) return;
+                if (state.phase === 'choosing' && state.chooser === 'player') chooseStat(li.dataset.stat);
+            });
+            document.getElementById('next-btn').addEventListener('click', nextRound);
+            document.getElementById('next-fab').addEventListener('click', nextRound);
+            document.getElementById('play-again').addEventListener('click', overlayAction);
+            document.getElementById('mode-toggle').addEventListener('click', (e) => {
+                const btn = e.target.closest('.mode-toggle__btn');
+                if (!btn) return;
+                const full = btn.dataset.mode === 'full';
+                if (full === state.full) return;
+                state.full = full;
+                localStorage.setItem('full-editors', full ? '1' : '0');   // shared with the main app
+                syncModeToggle();
+                render();   // reload any on-table iframes at the new URLs
+            });
+            document.addEventListener('keydown', handleGameKey);
+            // Belt-and-braces: if focus still lands on a demo iframe, kick it out.
+            window.addEventListener('blur', () => {
+                setTimeout(() => {
+                    const el = document.activeElement;
+                    if (el && el.tagName === 'IFRAME') el.blur();
+                }, 0);
+            });
+        }
+
+        // Only active editors are dealt — the main app's rule: any release
+        // within the last 365 days.
+        const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000;
+        const isActive = (e) => {
+            const released = Date.parse(e.lastAnyRelease);
+            return Number.isFinite(released) && Date.now() - released <= ONE_YEAR_MS;
+        };
+
+        async function init() {
+            buildCard('player');
+            const vs = document.createElement('div');
+            vs.className = 'vs';
+            vs.innerHTML = '<span class="vs__bar">\u200B</span>'
+                + '<span class="vs__text"><span class="vs__v">V</span><span class="vs__s">S</span></span>';
+            document.getElementById('table').appendChild(vs);
+            buildCard('cpu');
+            wire();
+            // Basic/Full is the main app's setting — read and share its key
+            // (Full unless the user explicitly picked minimal there).
+            state.full = localStorage.getItem('full-editors') !== '0';
+            syncModeToggle();
+            const res = await fetch('../editors.json');
+            const data = await res.json();
+            allEditors = data.editors.filter(isActive).map((e) => ({
+                name: e.name,
+                icon: '../' + e.icon,
+                url: '../' + e.path,
+                fullUrl: '../' + e.path.replace(/\/index\.html$/, '/full/index.html'),
+                githubStars: e.githubStars,
+                npmDownloads: e.npmWeeklyDownloads,
+                frameworks: e.frameworks.length,
+                math: LEVEL[e.math.level],
+                power: Math.round(mdPower(e) / 9 * 100),   // 0–100 scale
+            }));
+            deal();
+        }
+
+        // Test hook (drives headless verification; forcing scenarios, e.g. ties).
+        window.__game = { state, STATS, chooseStat, nextRound, deal, cpuPickStat, editors: () => allEditors };
+
+        init();
+    </script>
+</body>
+</html>

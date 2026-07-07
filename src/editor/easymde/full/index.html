@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EasyMDE Full</title>
+    <!-- EasyMDE's toolbar renders Font Awesome 4 glyphs (fa fa-bold, fa-picture-o,
+         fa-check-square-o, …); its own autoDownloadFontAwesome would pull FA 4.7 from
+         bootstrapcdn, so instead load the same version as raw exact-version jsDelivr
+         files (the webfonts resolve relative to this CSS URL). -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css">
+    <!-- EasyMDE's stylesheet (also bundles the CodeMirror 5 theme it ships with). -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/easymde@2.21.0/dist/easymde.min.css">
+    <!-- highlight.js theme for fenced code inside the built-in preview. -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@highlightjs/cdn-assets@11.11.1/styles/github.min.css">
+    <style>
+        body { margin: 0; }
+
+        /* EasyMDE already sets `.CodeMirror { height: auto }`, so the editor grows
+           with its content and the page scrolls as a whole — no inner scrollbar. */
+
+        .md-export-title { border-top: 1px solid #d0d7de; margin: 0; padding: 0.5rem 1rem; font-size: 0.75rem; letter-spacing: 0.04em; color: #6e7781; background: #f6f8fa; }
+        .md-export-output { width: 100%; box-sizing: border-box; padding: 1rem; font-family: monospace; field-sizing: content; border: none; resize: none; }
+    </style>
+</head>
+<body>
+
+    <textarea id="easymde-target"></textarea>
+
+    <h2 class="md-export-title">MARKDOWN 2-WAY EDITABLE</h2>
+    <textarea class="md-export-output" id="easymde-markdown-output" rows="14" spellcheck="false"></textarea>
+
+    <script type="module">
+        // EasyMDE ships a self-contained dist bundle (one CodeMirror 5 inside); load
+        // it — not jsDelivr's /+esm build, which inlines a private CodeMirror copy per
+        // subpath so the gfm mode registers on a copy the editor never sees. Its UMD
+        // wrapper assigns window.EasyMDE, so a module import is enough.
+        import 'https://cdn.jsdelivr.net/npm/easymde@2.21.0/dist/easymde.min.js';
+
+        // highlight.js prebuilt browser bundle (raw exact-version file) for the
+        // preview's fenced-code syntax highlighting. It exposes hljs via a top-level
+        // `var`, which only becomes window.hljs when run as a classic <script> (in an
+        // ES module the var would be module-scoped), so load it with a script tag.
+        const loadScript = (src) => new Promise((resolve, reject) => {
+            const s = document.createElement('script');
+            s.src = src;
+            s.onload = resolve;
+            s.onerror = () => reject(new Error('Failed to load ' + src));
+            document.head.appendChild(s);
+        });
+        await loadScript('https://cdn.jsdelivr.net/npm/@highlightjs/cdn-assets@11.11.1/highlight.min.js');
+        const EasyMDE = window.EasyMDE;
+        const hljs = window.hljs;
+
+        const output = document.getElementById('easymde-markdown-output');
+
+        const content = [
+            '# EasyMDE — full feature demo',
+            '',
+            'A paragraph with **bold**, *italic*, ~~strikethrough~~, `inline code`,',
+            'and a [link](https://example.com).',
+            '',
+            '## Headings, quote and rule',
+            '',
+            '### Third-level heading',
+            '',
+            '> A blockquote with a point to make.',
+            '',
+            '---',
+            '',
+            '## Lists',
+            '',
+            '- Bullet one',
+            '- Bullet two',
+            '  - Nested bullet',
+            '',
+            '1. First',
+            '2. Second',
+            '3. Third',
+            '',
+            '- [x] Write the demo',
+            '- [ ] Ship it',
+            '',
+            '## Table',
+            '',
+            '| Name | Role          | Age |',
+            '| ---- | ------------- | --- |',
+            '| Ada  | Engineer      | 36  |',
+            '| Alan | Mathematician | 41  |',
+            '',
+            '## Image',
+            '',
+            '![Placeholder image](https://markdownarena.com/600x200.png)',
+            '',
+            '## Fenced code',
+            '',
+            '```js',
+            'const greet = (name) => `Hello, ${name}!`;',
+            "console.log(greet('Markdown'));",
+            '```',
+            '',
+            '```python',
+            'def greet(name):',
+            '    return f"Hello, {name}!"',
+            '```',
+        ].join('\n');
+
+        // Full toolbar: every documented built-in button, in EasyMDE's own order,
+        // minus `upload-image` (needs an upload backend). Side-by-side, fullscreen and
+        // preview are the "no-disable" view toggles; guide opens the Markdown guide.
+        const toolbar = [
+            'bold', 'italic', 'strikethrough', '|',
+            'heading', 'heading-smaller', 'heading-bigger', 'heading-1', 'heading-2', 'heading-3', '|',
+            'code', 'quote', 'unordered-list', 'ordered-list', 'check-list', 'clean-block', '|',
+            'link', 'image', 'table', 'horizontal-rule', '|',
+            'preview', 'side-by-side', 'fullscreen', '|',
+            'guide', '|',
+            'undo', 'redo',
+        ];
+
+        // Modeled on EasyMDE's README "Configuration" full example. spellChecker is
+        // off because the bundled codemirror-spell-checker fetches Typo dictionaries
+        // from a CDN path that 404s (no toolbar button maps to it). sideBySideFullscreen
+        // false keeps side-by-side a flex split inside the container instead of a
+        // position:fixed overlay. Preview code is highlighted with highlight.js.
+        const easymde = new EasyMDE({
+            element: document.getElementById('easymde-target'),
+            initialValue: content,
+            autoDownloadFontAwesome: false,
+            autofocus: false,
+            lineWrapping: true,
+            spellChecker: false,
+            toolbar,
+            status: ['autosave', 'lines', 'words', 'cursor'],
+            autosave: {
+                enabled: true,
+                uniqueId: 'easymde-full-demo',
+                delay: 1000,
+                text: 'Autosaved: ',
+            },
+            sideBySideFullscreen: false,
+            renderingConfig: {
+                singleLineBreaks: false,
+                codeSyntaxHighlighting: true,
+                hljs: hljs,
+            },
+        });
+
+        // Guards against the editor -> markdown -> editor update echoing back
+        // (setting value fires CodeMirror's 'change').
+        let syncing = false;
+
+        // EasyMDE edits plain Markdown text, so the document *is* the export.
+        const renderMarkdown = () => {
+            if (syncing) return;
+            output.value = easymde.value();
+        };
+        easymde.codemirror.on('change', renderMarkdown);
+
+        // Markdown -> editor: replace the whole document with the edited text.
+        output.addEventListener('input', () => {
+            syncing = true;
+            easymde.value(output.value);
+            syncing = false;
+        });
+
+        renderMarkdown();
+    </script>
+
+</body>
+</html>

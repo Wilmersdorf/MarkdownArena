@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ace Full</title>
+    <style>
+        body { margin: 0; }
+        /* Ace grows to fit its content (`maxLines: Infinity` in JS) so the page
+           scrolls as a whole. Its gutter + text inset supply the left whitespace. */
+        #ace-target { width: 100%; }
+
+        .md-export-title { border-top: 1px solid #d0d7de; margin: 0; padding: 0.5rem 1rem; font-size: 0.75rem; letter-spacing: 0.04em; color: #6e7781; background: #f6f8fa; }
+        .md-export-output { width: 100%; box-sizing: border-box; padding: 1rem; font-family: monospace; field-sizing: content; border: none; resize: none; }
+    </style>
+</head>
+<body>
+
+    <div id="ace-target"></div>
+
+    <h2 class="md-export-title">MARKDOWN 2-WAY EDITABLE</h2>
+    <textarea class="md-export-output" id="ace-markdown-output" rows="14" spellcheck="false"></textarea>
+
+    <script type="module">
+        // Ace ships as a classic global-`ace` script (not an ES module). Load the
+        // core build, the markdown mode, the light default theme and the two
+        // extensions the official kitchen-sink demo enables — the searchbox
+        // (Ctrl-F find/replace) and language_tools (Ctrl-Space autocomplete +
+        // snippets) — by injecting <script> tags and awaiting them before mounting.
+        const ACE = 'https://cdn.jsdelivr.net/npm/ace-builds@1.44.0/src-min-noconflict';
+        const loadScript = (src) => new Promise((resolve, reject) => {
+            const s = document.createElement('script');
+            s.src = src;
+            s.onload = resolve;
+            s.onerror = () => reject(new Error('Failed to load ' + src));
+            document.head.appendChild(s);
+        });
+        await loadScript(`${ACE}/ace.js`);
+        // The mode/theme/extensions register themselves on the global `ace`, so
+        // they must come after ace.js but can load together.
+        await Promise.all([
+            loadScript(`${ACE}/mode-markdown.js`),
+            loadScript(`${ACE}/theme-textmate.js`),
+            loadScript(`${ACE}/ext-searchbox.js`),
+            loadScript(`${ACE}/ext-language_tools.js`),
+        ]);
+        const ace = window.ace;
+        // Trigger the extension so its completers and options are registered.
+        ace.require('ace/ext/language_tools');
+
+        const output = document.getElementById('ace-markdown-output');
+
+        const content = [
+            '# Ace — full Markdown demo',
+            '',
+            'A paragraph with **bold**, *italic*, `inline code`, ~~strikethrough~~,',
+            'and a [link](https://example.com).',
+            '',
+            '## Lists',
+            '',
+            '- Bullet one',
+            '- Bullet two',
+            '  - Nested bullet',
+            '',
+            '1. First',
+            '2. Second',
+            '',
+            '- [x] Write the demo',
+            '- [ ] Ship it',
+            '',
+            '## Table',
+            '',
+            '| Name | Role          | Age |',
+            '| ---- | ------------- | --- |',
+            '| Ada  | Engineer      | 36  |',
+            '| Alan | Mathematician | 41  |',
+            '',
+            '## Blockquote and image',
+            '',
+            '> A blockquote with a point to make.',
+            '',
+            '![Placeholder image](https://markdownarena.com/600x200.png)',
+            '',
+            '## Math (plain source)',
+            '',
+            'The identity $e^{i\\pi} + 1 = 0$ is famous, and $\\sqrt{2}$ stays inline.',
+            '',
+            '$$\\int_a^b x^2 \\,dx$$',
+            '',
+            '## Fenced code',
+            '',
+            '```js',
+            'const greet = (name) => `Hello, ${name}!`;',
+            "console.log(greet('Markdown'));",
+            '```',
+            '',
+            '```python',
+            'def greet(name):',
+            '    return f"Hello, {name}!"',
+            '',
+            'print(greet("Markdown"))',
+            '```',
+            '',
+            '---',
+        ].join('\n');
+
+        // Guards against the editor -> markdown -> editor update echoing back
+        // (ace fires 'change' on setValue too).
+        let syncing = false;
+
+        const editor = ace.edit('ace-target', {
+            mode: 'ace/mode/markdown',
+            theme: 'ace/theme/textmate',
+            // Soft wrap on, wrapped rows kept indented (both documented in the how-to).
+            wrap: true,
+            indentedSoftWrap: true,
+            showPrintMargin: false,
+            // markdown's worker only does link checking; skip it to avoid the
+            // cross-origin worker path breaking when loaded from a CDN.
+            useWorker: false,
+            // Grow to fit the content instead of being a fixed-height scroll box.
+            minLines: 14,
+            maxLines: Infinity,
+            fontSize: '14px',
+            tabSize: 2,
+            // Kitchen-sink autocomplete: Ctrl-Space keyword/text/snippet completion
+            // plus tab-triggered snippets (live popup off, as the official wiki shows).
+            enableBasicAutocompletion: true,
+            enableSnippets: true,
+            enableLiveAutocompletion: false,
+        });
+        // -1 drops the caret at the start rather than selecting the whole document.
+        editor.setValue(content, -1);
+
+        // Ace edits plain text, so the document *is* the Markdown export.
+        const renderMarkdown = () => {
+            if (syncing) return;
+            output.value = editor.getValue();
+        };
+        editor.session.on('change', renderMarkdown);
+
+        // Markdown -> editor: replace the whole document with the edited text.
+        output.addEventListener('input', () => {
+            syncing = true;
+            editor.session.setValue(output.value);
+            syncing = false;
+        });
+
+        renderMarkdown();
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TipTap Full</title>
+    <!-- Inter is the typeface of TipTap's official demos; raw exact-version files from jsDelivr. -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5.2.8/400.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5.2.8/400-italic.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5.2.8/500.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5.2.8/700.css">
+    <!-- KaTeX typesets the math nodes; raw exact-version CSS from jsDelivr (fonts load relative to this URL). -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.47/dist/katex.min.css">
+    <style>
+        /* Palette and menu-bar styles match TipTap's official demo shell. */
+        :root {
+            --white: #fff;
+            --black: #2e2b29;
+            --black-contrast: #110f0e;
+            --gray-1: rgba(61, 37, 20, 0.05);
+            --gray-2: rgba(61, 37, 20, 0.08);
+            --gray-3: rgba(61, 37, 20, 0.12);
+            --gray-4: rgba(53, 38, 28, 0.3);
+            --gray-5: rgba(28, 25, 23, 0.6);
+            --purple: #6a00f5;
+            --purple-contrast: #5800cc;
+            --purple-light: rgba(88, 5, 255, 0.05);
+            --red: #ff5c33;
+            --red-light: #ffebe5;
+        }
+
+        html {
+            font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+                'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
+            line-height: 1.5;
+            -moz-osx-font-smoothing: grayscale;
+            -webkit-font-smoothing: antialiased;
+        }
+        body { margin: 0; }
+
+        .control-group {
+            align-items: flex-start; background-color: var(--white);
+            border-bottom: 1px solid #d0d7de; display: flex; flex-direction: column;
+            gap: 1rem; padding: 1.5rem;
+        }
+        .button-group { display: flex; flex-wrap: wrap; gap: 0.25rem; }
+        .button-group button {
+            background: var(--gray-2); border: none; border-radius: 0.5rem;
+            color: var(--black); font-family: inherit; font-size: 0.875rem;
+            font-weight: 500; line-height: 1.15; padding: 0.375rem 0.625rem;
+            transition: all 0.2s cubic-bezier(0.65, 0.05, 0.36, 1);
+        }
+        .button-group button:not(:disabled) { cursor: pointer; }
+        .button-group button:hover { background-color: var(--gray-3); color: var(--black-contrast); }
+        .button-group button:disabled { background: var(--gray-1); color: var(--gray-4); }
+        .button-group button.is-active { background: var(--purple); color: var(--white); }
+        .button-group button.is-active:hover { background-color: var(--purple-contrast); }
+
+        /* Editor content — grows with the page, no inner scroll */
+        .ProseMirror { caret-color: var(--purple); outline: none; padding: 1.5rem; }
+        .ProseMirror :first-child { margin-top: 0; }
+
+        .ProseMirror ul,
+        .ProseMirror ol { padding: 0 1rem; margin: 1.25rem 1rem 1.25rem 0.4rem; }
+        .ProseMirror li p { margin-top: 0.25em; margin-bottom: 0.25em; }
+
+        .ProseMirror h1,
+        .ProseMirror h2,
+        .ProseMirror h3,
+        .ProseMirror h4,
+        .ProseMirror h5,
+        .ProseMirror h6 { line-height: 1.1; margin-top: 2.5rem; text-wrap: pretty; }
+        .ProseMirror h1,
+        .ProseMirror h2 { margin-top: 3.5rem; margin-bottom: 1.5rem; }
+        .ProseMirror h1 { font-size: 1.4rem; }
+        .ProseMirror h2 { font-size: 1.2rem; }
+        .ProseMirror h3 { font-size: 1.1rem; }
+        .ProseMirror h4,
+        .ProseMirror h5,
+        .ProseMirror h6 { font-size: 1rem; }
+
+        .ProseMirror code {
+            background-color: var(--purple-light); border-radius: 0.4rem; color: var(--black);
+            font-size: 0.85rem; padding: 0.25em 0.3em;
+        }
+        .ProseMirror pre {
+            background: var(--black); border-radius: 0.5rem; color: var(--white);
+            font-family: monospace; margin: 1.5rem 0; padding: 0.75rem 1rem;
+        }
+        .ProseMirror pre code { background: none; color: inherit; font-size: 0.8rem; padding: 0; }
+
+        .ProseMirror mark {
+            background-color: #faf594; border-radius: 0.4rem;
+            box-decoration-break: clone; padding: 0.1rem 0.3rem;
+        }
+        .ProseMirror blockquote { border-left: 3px solid var(--gray-3); margin: 1.5rem 0; padding-left: 1rem; }
+        .ProseMirror hr { border: none; border-top: 1px solid var(--gray-2); margin: 2rem 0; }
+
+        .ProseMirror img { display: block; height: auto; margin: 1.5rem 0; max-width: 100%; }
+        .ProseMirror img.ProseMirror-selectednode { outline: 3px solid var(--purple); }
+
+        /* Task lists */
+        .ProseMirror ul[data-type='taskList'] { list-style: none; padding: 0; }
+        .ProseMirror ul[data-type='taskList'] ul[data-type='taskList'] { padding-left: 1.5rem; }
+        .ProseMirror ul[data-type='taskList'] li { align-items: flex-start; display: flex; gap: 0.25rem; }
+        .ProseMirror ul[data-type='taskList'] [data-checked='true'] > div > p:first-child {
+            color: var(--gray-4); text-decoration: line-through;
+        }
+        .ProseMirror ul[data-type='taskList'] input[type='checkbox'] { accent-color: var(--purple); cursor: pointer; }
+
+        /* Tables */
+        .ProseMirror table {
+            border-collapse: collapse; margin: 0; overflow: hidden;
+            table-layout: fixed; width: 100%;
+        }
+        .ProseMirror table td,
+        .ProseMirror table th {
+            border: 1px solid var(--gray-3); box-sizing: border-box; min-width: 1em;
+            padding: 6px 8px; position: relative; vertical-align: top;
+        }
+        .ProseMirror table td > *,
+        .ProseMirror table th > * { margin-bottom: 0; }
+        .ProseMirror table th { background-color: var(--gray-1); font-weight: bold; text-align: left; }
+        .ProseMirror table .selectedCell:after {
+            background: var(--gray-2); content: ''; left: 0; right: 0; top: 0; bottom: 0;
+            pointer-events: none; position: absolute; z-index: 2;
+        }
+        .ProseMirror table .column-resize-handle {
+            background-color: var(--purple); bottom: -2px; pointer-events: none;
+            position: absolute; right: -2px; top: 0; width: 4px;
+        }
+        .ProseMirror .tableWrapper { margin: 1.5rem 0; overflow-x: auto; }
+        .ProseMirror.resize-cursor { cursor: ew-resize; cursor: col-resize; }
+
+        /* Mathematics (KaTeX) */
+        .ProseMirror .tiptap-mathematics-render { border-radius: 0.25rem; padding: 0 0.25rem; }
+        .ProseMirror .tiptap-mathematics-render--editable { cursor: pointer; transition: background 0.2s; }
+        .ProseMirror .tiptap-mathematics-render--editable:hover { background: #eee; }
+        .ProseMirror .tiptap-mathematics-render[data-type='inline-math'] { display: inline-block; }
+        .ProseMirror .tiptap-mathematics-render[data-type='block-math'] {
+            display: block; margin: 1rem 0; padding: 1rem; text-align: center;
+        }
+        .ProseMirror .tiptap-mathematics-render.inline-math-error,
+        .ProseMirror .tiptap-mathematics-render.block-math-error {
+            background: var(--red-light); border: 1px solid #cc2900; border-radius: 0.25rem;
+            color: var(--red); padding: 0.5rem;
+        }
+
+        /* Markdown round-trip panel */
+        .md-export-title { border-top: 1px solid #d0d7de; margin: 0; padding: 0.5rem 1rem; font-size: 0.75rem; letter-spacing: 0.04em; color: #6e7781; background: #f6f8fa; }
+        .md-export-output { width: 100%; box-sizing: border-box; padding: 1rem; font-family: monospace; field-sizing: content; border: none; resize: none; }
+    </style>
+</head>
+<body>
+
+    <div id="menu-bar"></div>
+
+    <div id="tiptap-target" class="prose"></div>
+
+    <h2 class="md-export-title">MARKDOWN 2-WAY EDITABLE</h2>
+    <textarea class="md-export-output" id="tiptap-markdown-output" rows="14" spellcheck="false"></textarea>
+
+    <!-- Import map generated by @jspm/generator: JSPM modules import their deps as
+         bare specifiers, so this map pins the demo's whole dependency graph to
+         exact versions — one copy of each package. -->
+    <script type="importmap">
+    {
+        "imports": {
+            "@tiptap/core": "https://ga.jspm.io/npm:@tiptap/core@3.27.1/dist/index.js",
+            "@tiptap/extension-highlight": "https://ga.jspm.io/npm:@tiptap/extension-highlight@3.27.1/dist/index.js",
+            "@tiptap/extension-image": "https://ga.jspm.io/npm:@tiptap/extension-image@3.27.1/dist/index.js",
+            "@tiptap/extension-list": "https://ga.jspm.io/npm:@tiptap/extension-list@3.27.1/dist/index.js",
+            "@tiptap/extension-mathematics": "https://ga.jspm.io/npm:@tiptap/extension-mathematics@3.27.1/dist/index.js",
+            "@tiptap/extension-subscript": "https://ga.jspm.io/npm:@tiptap/extension-subscript@3.27.1/dist/index.js",
+            "@tiptap/extension-superscript": "https://ga.jspm.io/npm:@tiptap/extension-superscript@3.27.1/dist/index.js",
+            "@tiptap/extension-table": "https://ga.jspm.io/npm:@tiptap/extension-table@3.27.1/dist/index.js",
+            "@tiptap/extension-text-align": "https://ga.jspm.io/npm:@tiptap/extension-text-align@3.27.1/dist/index.js",
+            "@tiptap/extension-text-style": "https://ga.jspm.io/npm:@tiptap/extension-text-style@3.27.1/dist/index.js",
+            "@tiptap/markdown": "https://ga.jspm.io/npm:@tiptap/markdown@3.27.1/dist/index.js",
+            "@tiptap/starter-kit": "https://ga.jspm.io/npm:@tiptap/starter-kit@3.27.1/dist/index.js"
+        },
+        "scopes": {
+            "https://ga.jspm.io/": {
+                "@tiptap/core/jsx-runtime": "https://ga.jspm.io/npm:@tiptap/core@3.27.1/jsx-runtime/index.js",
+                "@tiptap/extension-blockquote": "https://ga.jspm.io/npm:@tiptap/extension-blockquote@3.27.1/dist/index.js",
+                "@tiptap/extension-bold": "https://ga.jspm.io/npm:@tiptap/extension-bold@3.27.1/dist/index.js",
+                "@tiptap/extension-code": "https://ga.jspm.io/npm:@tiptap/extension-code@3.27.1/dist/index.js",
+                "@tiptap/extension-code-block": "https://ga.jspm.io/npm:@tiptap/extension-code-block@3.27.1/dist/index.js",
+                "@tiptap/extension-document": "https://ga.jspm.io/npm:@tiptap/extension-document@3.27.1/dist/index.js",
+                "@tiptap/extension-hard-break": "https://ga.jspm.io/npm:@tiptap/extension-hard-break@3.27.1/dist/index.js",
+                "@tiptap/extension-heading": "https://ga.jspm.io/npm:@tiptap/extension-heading@3.27.1/dist/index.js",
+                "@tiptap/extension-horizontal-rule": "https://ga.jspm.io/npm:@tiptap/extension-horizontal-rule@3.27.1/dist/index.js",
+                "@tiptap/extension-italic": "https://ga.jspm.io/npm:@tiptap/extension-italic@3.27.1/dist/index.js",
+                "@tiptap/extension-link": "https://ga.jspm.io/npm:@tiptap/extension-link@3.27.1/dist/index.js",
+                "@tiptap/extension-paragraph": "https://ga.jspm.io/npm:@tiptap/extension-paragraph@3.27.1/dist/index.js",
+                "@tiptap/extension-strike": "https://ga.jspm.io/npm:@tiptap/extension-strike@3.27.1/dist/index.js",
+                "@tiptap/extension-text": "https://ga.jspm.io/npm:@tiptap/extension-text@3.27.1/dist/index.js",
+                "@tiptap/extension-underline": "https://ga.jspm.io/npm:@tiptap/extension-underline@3.27.1/dist/index.js",
+                "@tiptap/extensions": "https://ga.jspm.io/npm:@tiptap/extensions@3.27.1/dist/index.js",
+                "@tiptap/pm/commands": "https://ga.jspm.io/npm:@tiptap/pm@3.27.1/dist/commands/index.js",
+                "@tiptap/pm/dropcursor": "https://ga.jspm.io/npm:@tiptap/pm@3.27.1/dist/dropcursor/index.js",
+                "@tiptap/pm/gapcursor": "https://ga.jspm.io/npm:@tiptap/pm@3.27.1/dist/gapcursor/index.js",
+                "@tiptap/pm/history": "https://ga.jspm.io/npm:@tiptap/pm@3.27.1/dist/history/index.js",
+                "@tiptap/pm/keymap": "https://ga.jspm.io/npm:@tiptap/pm@3.27.1/dist/keymap/index.js",
+                "@tiptap/pm/model": "https://ga.jspm.io/npm:@tiptap/pm@3.27.1/dist/model/index.js",
+                "@tiptap/pm/schema-list": "https://ga.jspm.io/npm:@tiptap/pm@3.27.1/dist/schema-list/index.js",
+                "@tiptap/pm/state": "https://ga.jspm.io/npm:@tiptap/pm@3.27.1/dist/state/index.js",
+                "@tiptap/pm/tables": "https://ga.jspm.io/npm:@tiptap/pm@3.27.1/dist/tables/index.js",
+                "@tiptap/pm/transform": "https://ga.jspm.io/npm:@tiptap/pm@3.27.1/dist/transform/index.js",
+                "@tiptap/pm/view": "https://ga.jspm.io/npm:@tiptap/pm@3.27.1/dist/view/index.js",
+                "katex": "https://ga.jspm.io/npm:katex@0.16.47/dist/katex.mjs",
+                "linkifyjs": "https://ga.jspm.io/npm:linkifyjs@4.3.3/dist/linkify.mjs",
+                "marked": "https://ga.jspm.io/npm:marked@17.0.6/lib/marked.esm.js",
+                "orderedmap": "https://ga.jspm.io/npm:orderedmap@2.1.1/dist/index.js",
+                "prosemirror-commands": "https://ga.jspm.io/npm:prosemirror-commands@1.7.1/dist/index.js",
+                "prosemirror-dropcursor": "https://ga.jspm.io/npm:prosemirror-dropcursor@1.8.2/dist/index.js",
+                "prosemirror-gapcursor": "https://ga.jspm.io/npm:prosemirror-gapcursor@1.4.1/dist/index.js",
+                "prosemirror-history": "https://ga.jspm.io/npm:prosemirror-history@1.5.0/dist/index.js",
+                "prosemirror-keymap": "https://ga.jspm.io/npm:prosemirror-keymap@1.2.3/dist/index.js",
+                "prosemirror-model": "https://ga.jspm.io/npm:prosemirror-model@1.25.9/dist/index.js",
+                "prosemirror-schema-list": "https://ga.jspm.io/npm:prosemirror-schema-list@1.5.1/dist/index.js",
+                "prosemirror-state": "https://ga.jspm.io/npm:prosemirror-state@1.4.4/dist/index.js",
+                "prosemirror-tables": "https://ga.jspm.io/npm:prosemirror-tables@1.8.5/dist/index.js",
+                "prosemirror-transform": "https://ga.jspm.io/npm:prosemirror-transform@1.12.0/dist/index.js",
+                "prosemirror-view": "https://ga.jspm.io/npm:prosemirror-view@1.42.0/dist/index.js",
+                "rope-sequence": "https://ga.jspm.io/npm:rope-sequence@1.3.4/dist/index.js",
+                "w3c-keyname": "https://ga.jspm.io/npm:w3c-keyname@2.2.8/index.js"
+            }
+        }
+    }
+    </script>
+
+    <script type="module">
+        import { Editor } from '@tiptap/core';
+        import StarterKit from '@tiptap/starter-kit';
+        import { TextStyleKit } from '@tiptap/extension-text-style';
+        import TextAlign from '@tiptap/extension-text-align';
+        import Highlight from '@tiptap/extension-highlight';
+        import Subscript from '@tiptap/extension-subscript';
+        import Superscript from '@tiptap/extension-superscript';
+        import Image from '@tiptap/extension-image';
+        import { TaskList, TaskItem } from '@tiptap/extension-list';
+        import { TableKit } from '@tiptap/extension-table';
+        import { Markdown } from '@tiptap/markdown';
+        import Math, { migrateMathStrings } from '@tiptap/extension-mathematics';
+
+        const output = document.getElementById('tiptap-markdown-output');
+        const menuBar = document.getElementById('menu-bar');
+
+        const content = [
+            '# Full feature demo',
+            '',
+            'A paragraph with **bold**, *italic*, <u>underline</u>, ~~strike~~, `inline code`,',
+            'and <mark>highlight</mark>, plus H<sub>2</sub>O and x<sup>2</sup> and a [link](https://example.com).',
+            '',
+            '- Bullet one',
+            '- Bullet two',
+            '',
+            '1. First',
+            '2. Second',
+            '',
+            '- [x] Write the demo',
+            '- [ ] Ship it',
+            '',
+            '| Name | Role | Age |',
+            '| --- | --- | --- |',
+            '| Ada | Engineer | 36 |',
+            '| Alan | Mathematician | 41 |',
+            '',
+            '![Placeholder image](https://markdownarena.com/600x200.png)',
+            '',
+            '> A blockquote with a point to make.',
+            '',
+            '```js',
+            "console.log('Hello, Markdown!')",
+            '```',
+            '',
+            'The identity $e^{i\\pi} + 1 = 0$ is famous, and inline $\\sqrt{2}$ typesets live.',
+            '',
+            '$$\\int_a^b x^2 \\,dx$$',
+            '',
+            '---',
+        ].join('\n');
+
+        // TipTap's own serializer turns the rich document into Markdown.
+        const renderMarkdown = (editor) => {
+            output.value = editor.markdown.serialize(editor.getJSON());
+        };
+
+        // Link/image prompts mirror TipTap's official docs examples.
+        const promptLink = (editor) => {
+            const previousUrl = editor.getAttributes('link').href;
+            const url = window.prompt('URL', previousUrl);
+            if (url === null) return;
+            if (url === '') {
+                editor.chain().focus().extendMarkRange('link').unsetLink().run();
+                return;
+            }
+            editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
+        };
+        const promptImage = (editor) => {
+            const url = window.prompt('URL');
+            if (url) editor.chain().focus().setImage({ src: url }).run();
+        };
+
+        const editor = new Editor({
+            element: document.getElementById('tiptap-target'),
+            extensions: [
+                StarterKit.configure({ trailingNode: false }),
+                TextStyleKit,
+                TextAlign.configure({ types: ['heading', 'paragraph'] }),
+                Highlight,
+                Subscript,
+                Superscript,
+                Image,
+                TaskList,
+                TaskItem.configure({ nested: true }),
+                TableKit.configure({ table: { resizable: true } }),
+                Math.configure({
+                    blockOptions: {
+                        onClick: (node, pos) => {
+                            const newCalculation = prompt('Enter new calculation:', node.attrs.latex);
+                            if (newCalculation) {
+                                editor.chain().setNodeSelection(pos).updateBlockMath({ latex: newCalculation }).focus().run();
+                            }
+                        },
+                    },
+                    inlineOptions: {
+                        onClick: (node) => {
+                            const newCalculation = prompt('Enter new calculation:', node.attrs.latex);
+                            if (newCalculation) {
+                                editor.chain().setNodeSelection(node.pos).updateInlineMath({ latex: newCalculation }).focus().run();
+                            }
+                        },
+                    },
+                }),
+                Markdown,
+            ],
+            content,
+            contentType: 'markdown',
+            onCreate: ({ editor }) => {
+                migrateMathStrings(editor);
+                renderMarkdown(editor);
+            },
+            onUpdate: ({ editor }) => renderMarkdown(editor),
+        });
+
+        // Declarative menu bar: each button carries its command plus optional
+        // active/enabled predicates, re-evaluated on every editor transaction.
+        const heading = (level) => ({
+            label: `H${level}`,
+            run: () => editor.chain().focus().toggleHeading({ level }).run(),
+            active: () => editor.isActive('heading', { level }),
+        });
+        const groups = [
+            [
+                { label: 'Bold', run: () => editor.chain().focus().toggleBold().run(), active: () => editor.isActive('bold'), can: () => editor.can().chain().toggleBold().run() },
+                { label: 'Italic', run: () => editor.chain().focus().toggleItalic().run(), active: () => editor.isActive('italic'), can: () => editor.can().chain().toggleItalic().run() },
+                { label: 'Underline', run: () => editor.chain().focus().toggleUnderline().run(), active: () => editor.isActive('underline'), can: () => editor.can().chain().toggleUnderline().run() },
+                { label: 'Strike', run: () => editor.chain().focus().toggleStrike().run(), active: () => editor.isActive('strike'), can: () => editor.can().chain().toggleStrike().run() },
+                { label: 'Code', run: () => editor.chain().focus().toggleCode().run(), active: () => editor.isActive('code'), can: () => editor.can().chain().toggleCode().run() },
+                { label: 'Highlight', run: () => editor.chain().focus().toggleHighlight().run(), active: () => editor.isActive('highlight'), can: () => editor.can().chain().toggleHighlight().run() },
+                { label: 'Subscript', run: () => editor.chain().focus().toggleSubscript().run(), active: () => editor.isActive('subscript'), can: () => editor.can().chain().toggleSubscript().run() },
+                { label: 'Superscript', run: () => editor.chain().focus().toggleSuperscript().run(), active: () => editor.isActive('superscript'), can: () => editor.can().chain().toggleSuperscript().run() },
+                { label: 'Clear marks', run: () => editor.chain().focus().unsetAllMarks().run() },
+            ],
+            [
+                { label: 'Paragraph', run: () => editor.chain().focus().setParagraph().run(), active: () => editor.isActive('paragraph') },
+                heading(1), heading(2), heading(3), heading(4), heading(5), heading(6),
+                { label: 'Bullet list', run: () => editor.chain().focus().toggleBulletList().run(), active: () => editor.isActive('bulletList') },
+                { label: 'Ordered list', run: () => editor.chain().focus().toggleOrderedList().run(), active: () => editor.isActive('orderedList') },
+                { label: 'Task list', run: () => editor.chain().focus().toggleTaskList().run(), active: () => editor.isActive('taskList') },
+                { label: 'Code block', run: () => editor.chain().focus().toggleCodeBlock().run(), active: () => editor.isActive('codeBlock') },
+                { label: 'Blockquote', run: () => editor.chain().focus().toggleBlockquote().run(), active: () => editor.isActive('blockquote') },
+                { label: 'Horizontal rule', run: () => editor.chain().focus().setHorizontalRule().run() },
+                { label: 'Hard break', run: () => editor.chain().focus().setHardBreak().run() },
+                { label: 'Clear nodes', run: () => editor.chain().focus().clearNodes().run() },
+            ],
+            [
+                { label: 'Left', run: () => editor.chain().focus().setTextAlign('left').run(), active: () => editor.isActive({ textAlign: 'left' }) },
+                { label: 'Center', run: () => editor.chain().focus().setTextAlign('center').run(), active: () => editor.isActive({ textAlign: 'center' }) },
+                { label: 'Right', run: () => editor.chain().focus().setTextAlign('right').run(), active: () => editor.isActive({ textAlign: 'right' }) },
+                { label: 'Justify', run: () => editor.chain().focus().setTextAlign('justify').run(), active: () => editor.isActive({ textAlign: 'justify' }) },
+            ],
+            [
+                { label: 'Set link', run: () => promptLink(editor), active: () => editor.isActive('link') },
+                { label: 'Unset link', run: () => editor.chain().focus().unsetLink().run(), can: () => editor.isActive('link') },
+                { label: 'Add image from URL', run: () => promptImage(editor) },
+            ],
+            [
+                { label: 'Insert table', run: () => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run() },
+                { label: 'Add column before', run: () => editor.chain().focus().addColumnBefore().run(), can: () => editor.can().addColumnBefore() },
+                { label: 'Add column after', run: () => editor.chain().focus().addColumnAfter().run(), can: () => editor.can().addColumnAfter() },
+                { label: 'Delete column', run: () => editor.chain().focus().deleteColumn().run(), can: () => editor.can().deleteColumn() },
+                { label: 'Add row before', run: () => editor.chain().focus().addRowBefore().run(), can: () => editor.can().addRowBefore() },
+                { label: 'Add row after', run: () => editor.chain().focus().addRowAfter().run(), can: () => editor.can().addRowAfter() },
+                { label: 'Delete row', run: () => editor.chain().focus().deleteRow().run(), can: () => editor.can().deleteRow() },
+                { label: 'Toggle header row', run: () => editor.chain().focus().toggleHeaderRow().run(), can: () => editor.can().toggleHeaderRow() },
+                { label: 'Merge or split', run: () => editor.chain().focus().mergeOrSplit().run(), can: () => editor.can().mergeOrSplit() },
+                { label: 'Delete table', run: () => editor.chain().focus().deleteTable().run(), can: () => editor.can().deleteTable() },
+            ],
+            [
+                { label: 'Insert inline math', run: () => {
+                    if (!editor.state.selection.empty) return editor.chain().setInlineMath().focus().run();
+                    const latex = prompt('Enter inline math expression:', '');
+                    editor.chain().insertInlineMath({ latex }).focus().run();
+                } },
+                { label: 'Remove inline math', run: () => editor.chain().deleteInlineMath().focus().run() },
+                { label: 'Insert block math', run: () => {
+                    if (!editor.state.selection.empty) return editor.chain().setBlockMath().focus().run();
+                    const latex = prompt('Enter block math expression:', '');
+                    editor.chain().insertBlockMath({ latex }).focus().run();
+                } },
+                { label: 'Remove block math', run: () => editor.chain().deleteBlockMath().focus().run() },
+            ],
+            [
+                { label: 'Undo', run: () => editor.chain().focus().undo().run(), can: () => editor.can().chain().undo().run() },
+                { label: 'Redo', run: () => editor.chain().focus().redo().run(), can: () => editor.can().chain().redo().run() },
+            ],
+        ];
+
+        const controlGroup = document.createElement('div');
+        controlGroup.className = 'control-group';
+        const buttonRefs = [];
+        for (const group of groups) {
+            const groupEl = document.createElement('div');
+            groupEl.className = 'button-group';
+            for (const def of group) {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.textContent = def.label;
+                btn.addEventListener('click', () => def.run());
+                groupEl.appendChild(btn);
+                buttonRefs.push({ btn, def });
+            }
+            controlGroup.appendChild(groupEl);
+        }
+        menuBar.appendChild(controlGroup);
+
+        const updateButtons = () => {
+            for (const { btn, def } of buttonRefs) {
+                if (def.active) btn.classList.toggle('is-active', def.active());
+                if (def.can) btn.disabled = !def.can();
+            }
+        };
+        editor.on('transaction', updateButtons);
+        updateButtons();
+
+        // Markdown -> editor: re-parse the edited text back into the document.
+        // emitUpdate:false keeps onUpdate from firing, so nothing echoes back into
+        // the textarea (which would clobber the caret mid-typing).
+        output.addEventListener('input', () => {
+            editor.commands.setContent(output.value, { contentType: 'markdown', emitUpdate: false });
+        });
+    </script>
+
+</body>
+</html>

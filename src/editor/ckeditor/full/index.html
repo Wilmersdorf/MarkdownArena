@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CKEditor 5 Full</title>
+    <!-- CKEditor's Lark UI + content theme, raw exact-version file from jsDelivr. -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ckeditor5@48.2.0/dist/browser/ckeditor5.css">
+    <!-- Lato is CKEditor's brand typeface; raw exact-version files from jsDelivr. -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/lato@5.2.7/400.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/lato@5.2.7/400-italic.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/lato@5.2.7/700.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/lato@5.2.7/700-italic.css">
+    <style>
+        :root {
+            --ck-font-face: 'Lato', -apple-system, BlinkMacSystemFont, 'Segoe UI',
+                Roboto, Helvetica, Arial, sans-serif;
+        }
+        body { margin: 0; }
+
+        /* The editor's chrome (menu bar, toolbars, editable border) sits flush to
+           the viewport edges; only the content is inset. It grows with the page
+           with no inner scroll, and the compound .ck.ck-content outweighs the
+           vendor editable padding so the text keeps its left inset. */
+        .ck.ck-editor__editable_inline { min-height: 320px; overflow: visible; }
+        .ck.ck-content { padding: 1em 1.5em; }
+
+        /* Content font sizes and vertical rhythm, matching CKEditor's demo shell. */
+        .ck-content h1 { font-size: 2.3em; }
+        .ck-content h2 { font-size: 1.84em; }
+        .ck-content h3 { font-size: 1.48em; }
+        .ck-content h4 { font-size: 1.22em; }
+        .ck-content h5 { font-size: 1.06em; }
+        .ck-content h6 { font-size: 1em; }
+        .ck-content h1, .ck-content h2, .ck-content h3,
+        .ck-content h4, .ck-content h5, .ck-content h6 { padding-top: 0.8em; margin-bottom: 0.4em; }
+        .ck-content blockquote, .ck-content ol,
+        .ck-content p, .ck-content ul { padding-top: 0.2em; margin-bottom: var(--ck-spacing-large); }
+
+        /* Style-feature content styles, matching CKEditor's demo shell. */
+        .ck-content { --ck-georgia-serif-font-stack: Georgia, Times, 'Times New Roman', serif; }
+        .ck-content h1.document-title { font-family: var(--ck-georgia-serif-font-stack); font-size: 50px; font-weight: bold; border: 0; }
+        .ck-content h2.document-subtitle { font-family: var(--ck-georgia-serif-font-stack); font-size: 20px; font-weight: bold; color: #d1d1d1; letter-spacing: 10px; }
+        .ck-content p.callout {
+            --border-color: #e91e1e; padding: 1.2em 2em; border: 1px solid var(--border-color);
+            border-left: 10px solid var(--border-color); background: #fff9fb; border-radius: 5px;
+            margin: 1.5em 2em; box-shadow: 5px 5px 0 #ffe6ef;
+        }
+        .ck-content blockquote.side-quote {
+            font-family: var(--ck-georgia-serif-font-stack); font-style: normal; float: right; width: 35%;
+            position: relative; border: 0; overflow: visible; z-index: 1; margin-left: 1em;
+        }
+        .ck-content blockquote.side-quote::before {
+            content: "\201C"; position: absolute; top: -37px; left: -10px; display: block;
+            font-size: 200px; color: #e7e7e7; z-index: -1; line-height: 1;
+        }
+        .ck-content blockquote.side-quote p { font-size: 2em; line-height: 1; }
+        .ck-content blockquote.side-quote p:last-child:not(:first-child) { font-size: 1.3em; text-align: right; color: #555; }
+        .ck-content span.needs-clarification { outline: 1px dashed #c8a24b; background: #ffe19c; border-radius: 2px; position: relative; }
+        .ck-content span.needs-clarification::after {
+            content: "?"; display: inline-block; color: #fff; background: #3b3b3b; font-size: 12px;
+            vertical-align: super; width: 12px; height: 12px; line-height: 12px; border-radius: 10px;
+            text-align: center; position: absolute; right: -6px; top: -6px; font-weight: bold; letter-spacing: initial;
+        }
+        .ck-content span.wide-spacing { letter-spacing: 0.3em; }
+        .ck-content span.small-caps { font-variant: small-caps; }
+        .ck-content pre.stylish-code { border-color: transparent; margin-left: 2em; margin-right: 2em; border-radius: 10px; }
+        .ck-content pre.stylish-code-dark, .ck-content pre.stylish-code-bright { padding: 1em; }
+        .ck-content pre.stylish-code-dark { background: #272822; box-shadow: 5px 5px 0 rgba(0, 0, 0, 0.12); color: white; }
+        .ck-content pre.stylish-code-dark code { color: white; }
+        .ck-content pre.stylish-code-bright { background: #dddfe0; color: #000; box-shadow: 5px 5px 0 #b3b3b3; }
+        .ck-content pre.stylish-code-bright code { color: #222; }
+
+        /* Word-count footer inside the editor frame. */
+        .ck.ck-word-count { padding: 0.5rem 1.5rem; color: #6e7781; font-size: 0.75rem; border-top: 1px solid var(--ck-color-toolbar-border); }
+
+        /* Markdown round-trip panel */
+        .md-export-title { border-top: 1px solid #d0d7de; margin: 0; padding: 0.5rem 1rem; font-size: 0.75rem; letter-spacing: 0.04em; color: #6e7781; background: #f6f8fa; }
+        .md-export-output { width: 100%; box-sizing: border-box; padding: 1rem; font-family: monospace; field-sizing: content; border: none; resize: none; }
+    </style>
+</head>
+<body>
+
+    <div id="editor"></div>
+
+    <h2 class="md-export-title">MARKDOWN 2-WAY EDITABLE</h2>
+    <textarea class="md-export-output" id="markdown-output" rows="18" spellcheck="false"></textarea>
+
+    <script type="module">
+        // Self-contained browser build loaded from jsDelivr as raw exact-version
+        // files (immutable tarball bytes). Serving the npm bundle from a generic CDN
+        // keeps the free `licenseKey: 'GPL'` on its valid "self-hosted" channel; the
+        // vendor cloud CDN would mark the page "cloud" and reject the GPL key. Every
+        // class is a named export of this one file, so no import map is needed.
+        import {
+            ClassicEditor,
+            Essentials, Paragraph, Autoformat, PasteFromOffice, TextTransformation,
+            Heading, Bold, Italic, Underline, Strikethrough, Code,
+            Subscript, Superscript, RemoveFormat,
+            Font, Highlight,
+            Alignment, Indent, IndentBlock,
+            List, ListProperties, TodoList,
+            Link, LinkImage, AutoLink,
+            BlockQuote, CodeBlock, HorizontalLine, PageBreak,
+            Image, ImageCaption, ImageInsert, ImageResize, ImageStyle,
+            ImageToolbar, ImageTextAlternative, AutoImage, PictureEditing,
+            ImageUpload, Base64UploadAdapter,
+            Table, TableToolbar, TableProperties, TableCellProperties,
+            TableColumnResize, TableCaption,
+            MediaEmbed, SpecialCharacters, SpecialCharactersEssentials,
+            FindAndReplace, SourceEditing, Fullscreen, WordCount,
+            Bookmark, Mention, TextPartLanguage,
+            Style, GeneralHtmlSupport,
+            Markdown,
+        } from 'https://cdn.jsdelivr.net/npm/ckeditor5@48.2.0/dist/browser/ckeditor5.js';
+
+        const output = document.getElementById('markdown-output');
+
+        // Seed exercises every enabled feature. Marks without markdown syntax
+        // (underline, highlight, sub/superscript, font color/size/family) are seeded
+        // as inline HTML — the GFM parser passes it through and each mark's plugin
+        // upcasts it into a real mark.
+        const content = [
+            '# CKEditor 5 — full feature demo',
+            '',
+            '## Inline formatting',
+            '',
+            'A paragraph with **bold**, *italic*, <u>underline</u>, ~~strikethrough~~, `inline code`, ' +
+                '<mark class="marker-yellow">highlight</mark>, H<sub>2</sub>O, E = mc<sup>2</sup>, ' +
+                '<span style="color:#c0392b;">colored text</span>, ' +
+                '<span style="background-color:#fff2b2;">shaded background</span>, ' +
+                '<span style="font-family:Georgia, serif;">serif family</span>, ' +
+                '<span style="font-size:20px;">larger text</span>, ' +
+                'and an [external link](https://ckeditor.com).',
+            '',
+            '## Lists',
+            '',
+            '- Bullet one',
+            '- Bullet two',
+            '    - Nested bullet',
+            '',
+            '1. First',
+            '2. Second',
+            '',
+            '- [x] Write the demo',
+            '- [ ] Ship it',
+            '',
+            '## Table',
+            '',
+            '| Feature | Supported | Notes |',
+            '| --- | --- | --- |',
+            '| Headings | Yes | H1–H6 |',
+            '| Tables | Yes | GFM syntax |',
+            '| Images | Yes | Inserted via URL |',
+            '',
+            '## Media',
+            '',
+            '![Placeholder image](https://markdownarena.com/600x200.png)',
+            '',
+            '> A blockquote making an important point.',
+            '',
+            '```javascript',
+            'function greet(name) {',
+            '  return `Hello, ${name}!`;',
+            '}',
+            '```',
+            '',
+            '---',
+            '',
+            'Type `@` to mention someone, or use the toolbar to insert special characters, ' +
+                'media, page breaks, tables, and more.',
+        ].join('\n');
+
+        const editor = await ClassicEditor.create(document.getElementById('editor'), {
+            // Free, open-source (GPL) usage — the licenseKey is mandatory since v44.
+            licenseKey: 'GPL',
+            // Markdown swaps the data processor so getData()/setData() speak GFM.
+            // Autoformat adds as-you-type shortcuts (**x**, `x`, "# ", "- ", "> ", ```).
+            plugins: [
+                Essentials, Paragraph, Autoformat, PasteFromOffice, TextTransformation,
+                Heading, Bold, Italic, Underline, Strikethrough, Code,
+                Subscript, Superscript, RemoveFormat,
+                Font, Highlight,
+                Alignment, Indent, IndentBlock,
+                List, ListProperties, TodoList,
+                Link, LinkImage, AutoLink,
+                BlockQuote, CodeBlock, HorizontalLine, PageBreak,
+                Image, ImageCaption, ImageInsert, ImageResize, ImageStyle,
+                ImageToolbar, ImageTextAlternative, AutoImage, PictureEditing,
+                ImageUpload, Base64UploadAdapter,
+                Table, TableToolbar, TableProperties, TableCellProperties,
+                TableColumnResize, TableCaption,
+                MediaEmbed, SpecialCharacters, SpecialCharactersEssentials,
+                FindAndReplace, SourceEditing, Fullscreen, WordCount,
+                Bookmark, Mention, TextPartLanguage,
+                Style, GeneralHtmlSupport,
+                Markdown,
+            ],
+            toolbar: {
+                shouldNotGroupWhenFull: true,
+                items: [
+                    'undo', 'redo',
+                    '|', 'findAndReplace', 'selectAll',
+                    '|', 'link', 'bookmark', 'insertImage', 'insertTable', 'blockQuote',
+                    'mediaEmbed', 'codeBlock', 'pageBreak', 'horizontalLine', 'specialCharacters',
+                    '-', 'heading', 'style',
+                    '|', 'bold', 'italic', 'underline', 'strikethrough',
+                    {
+                        label: 'Basic styles',
+                        icon: 'text',
+                        items: [
+                            'fontSize', 'fontFamily', 'fontColor', 'fontBackgroundColor',
+                            'highlight', 'superscript', 'subscript', 'code', '|', 'textPartLanguage',
+                        ],
+                    },
+                    'removeFormat',
+                    '|', 'alignment',
+                    '|', 'bulletedList', 'numberedList', 'todoList',
+                    '|', 'outdent', 'indent',
+                    '|', 'sourceEditing', 'fullscreen',
+                ],
+            },
+            // Map "# ".."###### " onto real <h1>..<h6> so the levels round-trip.
+            heading: {
+                options: [
+                    { model: 'paragraph', title: 'Paragraph', class: 'ck-heading_paragraph' },
+                    { model: 'heading1', view: 'h1', title: 'Heading 1', class: 'ck-heading_heading1' },
+                    { model: 'heading2', view: 'h2', title: 'Heading 2', class: 'ck-heading_heading2' },
+                    { model: 'heading3', view: 'h3', title: 'Heading 3', class: 'ck-heading_heading3' },
+                    { model: 'heading4', view: 'h4', title: 'Heading 4', class: 'ck-heading_heading4' },
+                    { model: 'heading5', view: 'h5', title: 'Heading 5', class: 'ck-heading_heading5' },
+                    { model: 'heading6', view: 'h6', title: 'Heading 6', class: 'ck-heading_heading6' },
+                ],
+            },
+            fontFamily: { supportAllValues: true },
+            fontSize: { options: [10, 12, 14, 'default', 18, 20, 22], supportAllValues: true },
+            image: {
+                resizeOptions: [
+                    { name: 'resizeImage:original', label: 'Default image width', value: null },
+                    { name: 'resizeImage:50', label: '50% page width', value: '50' },
+                    { name: 'resizeImage:75', label: '75% page width', value: '75' },
+                ],
+                toolbar: [
+                    'imageTextAlternative', 'toggleImageCaption',
+                    '|', 'imageStyle:inline', 'imageStyle:wrapText', 'imageStyle:breakText',
+                    '|', 'resizeImage',
+                ],
+                insert: { integrations: ['url'] },
+            },
+            table: {
+                contentToolbar: [
+                    'tableColumn', 'tableRow', 'mergeTableCells',
+                    'tableProperties', 'tableCellProperties', 'toggleTableCaption',
+                ],
+            },
+            list: { properties: { styles: true, startIndex: true, reversed: true } },
+            link: {
+                addTargetToExternalLinks: true,
+                defaultProtocol: 'https://',
+                decorators: {
+                    toggleDownloadable: {
+                        mode: 'manual',
+                        label: 'Downloadable',
+                        attributes: { download: 'file' },
+                    },
+                },
+            },
+            mention: {
+                feeds: [
+                    { marker: '@', feed: ['@ada', '@alan', '@grace', '@edsger', '@linus'], minimumCharacters: 1 },
+                ],
+            },
+            style: {
+                definitions: [
+                    { name: 'Title', element: 'h1', classes: ['document-title'] },
+                    { name: 'Subtitle', element: 'h2', classes: ['document-subtitle'] },
+                    { name: 'Callout', element: 'p', classes: ['callout'] },
+                    { name: 'Side quote', element: 'blockquote', classes: ['side-quote'] },
+                    { name: 'Needs clarification', element: 'span', classes: ['needs-clarification'] },
+                    { name: 'Wide spacing', element: 'span', classes: ['wide-spacing'] },
+                    { name: 'Small caps', element: 'span', classes: ['small-caps'] },
+                    { name: 'Code (dark)', element: 'pre', classes: ['stylish-code', 'stylish-code-dark'] },
+                    { name: 'Code (bright)', element: 'pre', classes: ['stylish-code', 'stylish-code-bright'] },
+                ],
+            },
+            menuBar: { isVisible: true },
+            placeholder: 'Type or paste your content here!',
+            initialData: content,
+        });
+
+        // Show the live word count inside the editor frame, as CKEditor's own demo does.
+        document.querySelector('.ck.ck-editor__main')
+            .appendChild(editor.plugins.get('WordCount').wordCountContainer);
+
+        // Guards the editor -> markdown -> editor round-trip from echoing back.
+        let syncing = false;
+
+        // CKEditor -> Markdown: with the Markdown plugin active, getData() is GFM.
+        const renderMarkdown = () => {
+            if (syncing) return;
+            output.value = editor.getData();
+        };
+        editor.model.document.on('change:data', renderMarkdown);
+
+        // Markdown -> editor: re-parse the edited text back into the document.
+        output.addEventListener('input', () => {
+            syncing = true;
+            editor.setData(output.value);
+            syncing = false;
+        });
+
+        renderMarkdown();
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Novel Full</title>
+    <!-- Inter (body) + Cal Sans (headings) are the typefaces of novel.sh; raw exact-version files from jsDelivr. -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5.2.8/400.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5.2.8/400-italic.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5.2.8/500.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5.2.8/600.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5.2.8/700.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/cal-sans@5.2.3/index.css">
+    <!-- KaTeX typesets the math nodes; raw exact-version CSS pinned to the katex the import map resolves. -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.47/dist/katex.min.css">
+    <style>
+        /* shadcn CSS variables + Novel highlight palette, taken from novel.sh's globals.css. */
+        :root {
+            --background: #fff;
+            --foreground: hsl(222.2 84% 4.9%);
+            --muted: hsl(210 40% 96.1%);
+            --muted-foreground: hsl(215.4 16.3% 46.9%);
+            --accent: hsl(210 40% 96.1%);
+            --accent-foreground: hsl(222.2 47.4% 11.2%);
+            --border: hsl(214.3 31.8% 91.4%);
+            --primary: hsl(222.2 47.4% 11.2%);
+            --popover: #fff;
+            --radius: 0.5rem;
+            --novel-black: #000;
+            --novel-highlight-default: #ffffff;
+            --novel-highlight-purple: #f6f3f8;
+            --novel-highlight-red: #fdebeb;
+            --novel-highlight-yellow: #fbf4a2;
+            --novel-highlight-blue: #c1ecf9;
+            --novel-highlight-green: #acf79f;
+            --novel-highlight-orange: #faebdd;
+            --novel-highlight-pink: #faf1f5;
+            --novel-highlight-gray: #f1f1ef;
+            --novel-stone-100: #f5f5f4;
+            --novel-stone-200: #e7e5e4;
+            --novel-stone-800: #292524;
+        }
+
+        html {
+            font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+                'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.5;
+            -moz-osx-font-smoothing: grayscale;
+            -webkit-font-smoothing: antialiased;
+        }
+        body { margin: 0; color: var(--foreground); background: #fff; }
+
+        /* The editor sits in a left-aligned notion-style card, matching novel.sh.
+           Its border sits flush to the viewport edges; the content padding (and
+           the notion drag handle it makes room for) provides the inner inset. */
+        .novel-editor {
+            position: relative;
+            margin: 0;
+            min-height: 400px;
+            border: 1px solid var(--border);
+            border-radius: 0.75rem;
+            background: var(--background);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.08);
+        }
+
+        /* Editor content — grows with the page, no inner scroll (prosemirror.css: p-12 px-8). */
+        .ProseMirror {
+            padding: 2rem 3rem 3rem;
+            outline: none;
+            font-size: 1.0625rem;
+            line-height: 1.75;
+        }
+        @media (max-width: 640px) { .ProseMirror { padding: 1.5rem 1.25rem 2.5rem; } }
+        .ProseMirror > :first-child { margin-top: 0; }
+
+        .ProseMirror .is-editor-empty:first-child::before,
+        .ProseMirror .is-empty::before {
+            content: attr(data-placeholder);
+            float: left;
+            height: 0;
+            color: var(--muted-foreground);
+            pointer-events: none;
+        }
+
+        /* Headings use Cal Sans (novel.sh's prose-headings:font-title). */
+        .ProseMirror h1, .ProseMirror h2, .ProseMirror h3,
+        .ProseMirror h4, .ProseMirror h5, .ProseMirror h6 {
+            font-family: 'Cal Sans', Inter, sans-serif;
+            font-weight: 600;
+            line-height: 1.2;
+            margin: 2rem 0 0.6rem;
+        }
+        .ProseMirror h1 { font-size: 2.1rem; }
+        .ProseMirror h2 { font-size: 1.6rem; }
+        .ProseMirror h3 { font-size: 1.3rem; }
+        .ProseMirror p { margin: 0.75rem 0; }
+
+        .ProseMirror a {
+            color: var(--muted-foreground);
+            text-decoration: underline;
+            text-underline-offset: 3px;
+            cursor: pointer;
+            transition: color 0.12s;
+        }
+        .ProseMirror a:hover { color: var(--primary); }
+
+        .ProseMirror ul, .ProseMirror ol { padding-left: 1.6rem; margin: 0.75rem 0; }
+        .ProseMirror ul { list-style: disc; }
+        .ProseMirror ol { list-style: decimal; }
+        .ProseMirror li { margin: 0.2rem 0; }
+        .ProseMirror li p { margin: 0.2rem 0; }
+
+        .ProseMirror blockquote {
+            border-left: 4px solid var(--primary);
+            margin: 1rem 0; padding-left: 1rem; color: var(--foreground);
+        }
+
+        /* Inline code (bg-muted). */
+        .ProseMirror code {
+            background: var(--muted); border-radius: 0.375rem;
+            padding: 0.15rem 0.35rem; font-family: 'JetBrains Mono', ui-monospace, monospace;
+            font-size: 0.85em; font-weight: 500;
+        }
+
+        /* Code blocks: dark theme with highlight.js token colors (novel.sh globals.css). */
+        .ProseMirror pre {
+            background: #0d0d0d; color: #fff; border-radius: 0.5rem;
+            font-family: 'JetBrains Mono', ui-monospace, monospace;
+            padding: 0.75rem 1rem; margin: 1.25rem 0; overflow-x: auto;
+        }
+        .ProseMirror pre code { background: none; color: inherit; font-size: 0.8rem; padding: 0; font-weight: 400; }
+        .ProseMirror pre .hljs-comment, .ProseMirror pre .hljs-quote { color: #616161; }
+        .ProseMirror pre .hljs-variable, .ProseMirror pre .hljs-template-variable, .ProseMirror pre .hljs-attribute,
+        .ProseMirror pre .hljs-tag, .ProseMirror pre .hljs-name, .ProseMirror pre .hljs-regexp, .ProseMirror pre .hljs-link,
+        .ProseMirror pre .hljs-selector-id, .ProseMirror pre .hljs-selector-class { color: #f98181; }
+        .ProseMirror pre .hljs-number, .ProseMirror pre .hljs-meta, .ProseMirror pre .hljs-built_in,
+        .ProseMirror pre .hljs-builtin-name, .ProseMirror pre .hljs-literal, .ProseMirror pre .hljs-type,
+        .ProseMirror pre .hljs-params { color: #fbbc88; }
+        .ProseMirror pre .hljs-string, .ProseMirror pre .hljs-symbol, .ProseMirror pre .hljs-bullet { color: #b9f18d; }
+        .ProseMirror pre .hljs-title, .ProseMirror pre .hljs-section { color: #faf594; }
+        .ProseMirror pre .hljs-keyword, .ProseMirror pre .hljs-selector-tag { color: #70cff8; }
+        .ProseMirror pre .hljs-emphasis { font-style: italic; }
+        .ProseMirror pre .hljs-strong { font-weight: 700; }
+
+        .ProseMirror hr { border: none; border-top: 1px solid var(--muted-foreground); margin: 1rem 0 1.5rem; }
+
+        .ProseMirror mark { border-radius: 0.2rem; padding: 0.05rem 0; box-decoration-break: clone; }
+
+        /* Images (rounded-lg border) + prosemirror.css selection/hover behaviour. */
+        .ProseMirror img {
+            display: block; height: auto; max-width: 100%; margin: 1.25rem 0;
+            border-radius: 0.5rem; border: 1px solid var(--muted); transition: filter 0.1s ease-in-out;
+        }
+        .ProseMirror img:hover { cursor: pointer; filter: brightness(90%); }
+        .ProseMirror img.ProseMirror-selectednode { outline: 3px solid #5abbf7; filter: brightness(90%); }
+        .img-placeholder { position: relative; }
+        .img-placeholder:before {
+            content: ""; box-sizing: border-box; position: absolute; top: 50%; left: 50%;
+            width: 36px; height: 36px; margin: -18px 0 0 -18px; border-radius: 50%;
+            border: 3px solid var(--novel-stone-200); border-top-color: var(--novel-stone-800);
+            animation: novel-spin 0.6s linear infinite;
+        }
+        @keyframes novel-spin { to { transform: rotate(360deg); } }
+        .novel-uploading { opacity: 0.4; border-radius: 0.5rem; border: 1px solid var(--novel-stone-200); }
+
+        /* Inline KaTeX math node (hover-to-edit). */
+        .ProseMirror [data-type="math"] {
+            border-radius: 0.25rem; padding: 0.15rem 0.25rem; cursor: pointer;
+            transition: background 0.15s;
+        }
+        .ProseMirror [data-type="math"]:hover { background: var(--accent); }
+
+        .ProseMirror:not(.dragging) .ProseMirror-selectednode:not(img) {
+            outline: none; background-color: var(--novel-highlight-blue);
+            transition: background-color 0.2s; box-shadow: none;
+        }
+
+        /* Task lists — custom checkbox from novel.sh globals.css. */
+        .ProseMirror ul[data-type="taskList"] { list-style: none; padding-left: 0.5rem; }
+        .ProseMirror ul[data-type="taskList"] li { display: flex; gap: 0.5rem; align-items: flex-start; margin: 0.4rem 0; }
+        .ProseMirror ul[data-type="taskList"] li > label { margin-right: 0.2rem; user-select: none; }
+        .ProseMirror ul[data-type="taskList"] li > div { flex: 1 1 auto; }
+        .ProseMirror ul[data-type="taskList"] li > label input[type="checkbox"] {
+            -webkit-appearance: none; appearance: none; background-color: var(--background);
+            margin: 0; cursor: pointer; width: 1.2em; height: 1.2em; position: relative; top: 5px;
+            border: 2px solid var(--border); margin-right: 0.3rem; display: grid; place-content: center;
+        }
+        .ProseMirror ul[data-type="taskList"] li > label input[type="checkbox"]:hover,
+        .ProseMirror ul[data-type="taskList"] li > label input[type="checkbox"]:active { background-color: var(--accent); }
+        .ProseMirror ul[data-type="taskList"] li > label input[type="checkbox"]::before {
+            content: ""; width: 0.65em; height: 0.65em; transform: scale(0);
+            transition: 120ms transform ease-in-out; box-shadow: inset 1em 1em; transform-origin: center;
+            clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+        }
+        .ProseMirror ul[data-type="taskList"] li > label input[type="checkbox"]:checked::before { transform: scale(1); }
+        .ProseMirror ul[data-type="taskList"] li[data-checked="true"] > div > p {
+            color: var(--muted-foreground); text-decoration: line-through; text-decoration-thickness: 2px;
+        }
+
+        /* Embedded media (Twitter) from novel.sh globals.css. */
+        .ProseMirror-selectednode iframe { transition: outline 0.15s; outline: 6px solid #fbbf24; }
+
+        /* Notion-style drag handle (tiptap-extension-global-drag-handle), from globals.css. */
+        .drag-handle {
+            position: fixed; opacity: 1; transition: opacity ease-in 0.2s; border-radius: 0.25rem;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10' style='fill: rgba(0, 0, 0, 0.5)'%3E%3Cpath d='M3,2 C2.44771525,2 2,1.55228475 2,1 C2,0.44771525 2.44771525,0 3,0 C3.55228475,0 4,0.44771525 4,1 C4,1.55228475 3.55228475,2 3,2 Z M3,6 C2.44771525,6 2,5.55228475 2,5 C2,4.44771525 2.44771525,4 3,4 C3.55228475,4 4,4.44771525 4,5 C4,5.55228475 3.55228475,6 3,6 Z M3,10 C2.44771525,10 2,9.55228475 2,9 C2,8.44771525 2.44771525,8 3,8 C3.55228475,8 4,8.44771525 4,9 C4,9.55228475 3.55228475,10 3,10 Z M7,2 C6.44771525,2 6,1.55228475 6,1 C6,0.44771525 6.44771525,0 7,0 C7.55228475,0 8,0.44771525 8,1 C8,1.55228475 7.55228475,2 7,2 Z M7,6 C6.44771525,6 6,5.55228475 6,5 C6,4.44771525 6.44771525,4 7,4 C7.55228475,4 8,4.44771525 8,5 C8,5.55228475 7.55228475,6 7,6 Z M7,10 C6.44771525,10 6,9.55228475 6,9 C6,8.44771525 6.44771525,8 7,8 C7.55228475,8 8,8.44771525 8,9 C8,9.55228475 7.55228475,10 7,10 Z'%3E%3C/path%3E%3C/svg%3E");
+            background-size: calc(0.5em + 0.375rem); background-repeat: no-repeat; background-position: center;
+            width: 1.2rem; height: 1.5rem; z-index: 50; cursor: grab;
+        }
+        .drag-handle:hover { background-color: var(--novel-stone-100); }
+        .drag-handle:active { background-color: var(--novel-stone-200); cursor: grabbing; }
+        .drag-handle.hide { opacity: 0; pointer-events: none; }
+
+        .tippy-box { max-width: 400px !important; }
+
+        /* Bubble menu (selection toolbar) — flex row of ghost controls. overflow stays
+           visible so the node/link/colour dropdowns can escape the bar. */
+        .novel-bubble {
+            display: flex; align-items: stretch;
+            border: 1px solid var(--muted); border-radius: 0.5rem; background: var(--background);
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.14), 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+        .novel-btn {
+            display: inline-flex; align-items: center; gap: 0.35rem; background: transparent;
+            border: none; color: var(--foreground); font-family: inherit; font-size: 0.875rem;
+            font-weight: 500; padding: 0.5rem 0.6rem; cursor: pointer; white-space: nowrap; line-height: 1;
+        }
+        .novel-btn:hover { background: var(--accent); border-radius: 0.4rem; }
+        .novel-btn .novel-icon { display: block; }
+        .novel-btn.is-active, .novel-btn.is-active .novel-icon { color: #3b82f6; }
+        .novel-sep { width: 1px; background: var(--border); align-self: stretch; }
+
+        /* Popover panels (node type, link, colour). */
+        .novel-pop { position: relative; display: flex; }
+        .novel-pop-panel {
+            position: absolute; top: calc(100% + 6px); left: 0; z-index: 60;
+            background: var(--popover); border: 1px solid var(--border); border-radius: 0.5rem;
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.16); padding: 0.25rem; max-height: 20rem; overflow-y: auto;
+        }
+        .novel-pop-item {
+            display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;
+            width: 100%; box-sizing: border-box; padding: 0.35rem 0.5rem; border: none; background: transparent;
+            font-family: inherit; font-size: 0.875rem; color: var(--foreground); cursor: pointer;
+            border-radius: 0.3rem; text-align: left;
+        }
+        .novel-pop-item:hover { background: var(--accent); }
+        .novel-pop-item .novel-pop-left { display: flex; align-items: center; gap: 0.5rem; }
+        .novel-pop-item .novel-badge {
+            display: grid; place-content: center; width: 1.7rem; height: 1.7rem;
+            border: 1px solid var(--border); border-radius: 0.3rem;
+        }
+        .novel-pop-title { padding: 0.35rem 0.5rem 0.15rem; font-size: 0.8rem; font-weight: 600; color: var(--muted-foreground); }
+        .novel-swatch { display: grid; place-content: center; width: 1.7rem; height: 1.7rem; border: 1px solid var(--border); border-radius: 0.3rem; font-weight: 600; }
+        .novel-link-form { display: flex; padding: 0.25rem; gap: 0.25rem; }
+        .novel-link-form input {
+            flex: 1 1 auto; min-width: 12rem; border: none; outline: none; background: var(--background);
+            font-family: inherit; font-size: 0.875rem; padding: 0.35rem;
+        }
+        .novel-link-btn {
+            display: grid; place-content: center; width: 2rem; border: none; border-radius: 0.3rem;
+            background: var(--primary); color: #fff; cursor: pointer;
+        }
+        .novel-link-btn.novel-link-remove { background: transparent; color: #dc2626; border: 1px solid var(--border); }
+
+        /* Slash command menu (cmdk), styled to match the advanced editor. */
+        #slash-command {
+            z-index: 50; max-height: 330px; overflow-y: auto; width: 18rem;
+            border: 1px solid var(--muted); border-radius: 0.5rem; background: var(--background);
+            padding: 0.5rem 0.25rem; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);
+        }
+        #slash-command .novel-slash-empty { padding: 0.5rem; color: var(--muted-foreground); font-size: 0.875rem; }
+        #slash-command [cmdk-item] {
+            display: flex; align-items: center; gap: 0.5rem; width: 100%; box-sizing: border-box;
+            padding: 0.35rem 0.5rem; border-radius: 0.375rem; cursor: pointer; text-align: left;
+        }
+        #slash-command [cmdk-item][data-selected="true"], #slash-command [cmdk-item]:hover { background: var(--accent); }
+        #slash-command .novel-slash-badge {
+            display: grid; place-content: center; flex: none; width: 2.5rem; height: 2.5rem;
+            border: 1px solid var(--muted); border-radius: 0.375rem; background: var(--background);
+        }
+        #slash-command .novel-slash-title { font-weight: 500; font-size: 0.875rem; }
+        #slash-command .novel-slash-desc { font-size: 0.75rem; color: var(--muted-foreground); }
+
+        /* Markdown round-trip panel. */
+        .md-export-title { border-top: 1px solid #d0d7de; margin: 0; padding: 0.5rem 1rem; font-size: 0.75rem; letter-spacing: 0.04em; color: #6e7781; background: #f6f8fa; }
+        .md-export-output { width: 100%; box-sizing: border-box; padding: 1rem; font-family: monospace; field-sizing: content; border: none; resize: none; }
+    </style>
+</head>
+<body>
+
+    <div id="novel-target"></div>
+
+    <!-- JSPM serves packages' ESM builds verbatim; several in Novel's graph (tippy.js@6,
+         @tiptap/react@2) read process.env.NODE_ENV at module scope — define it. -->
+    <script>window.process = { env: { NODE_ENV: 'production' } };</script>
+
+    <!-- Import map generated with @jspm/generator for the minimal Novel demo (pins the
+         whole graph to one copy of each package — React/ProseMirror break if a second
+         loads). The data: entries stub react-tweet's CSS-module imports and re-export
+         children-differ's `diff`, neither loadable raw. Added here for the full demo:
+         lowlight (createLowlight + `common`, 37 grammars) loaded as raw immutable jsDelivr
+         files so JSPM's bundled `lowlight` entry — which eagerly pulls all ~190 highlight.js
+         grammars — is avoided; its bare highlight.js/devlop imports resolve through the map. -->
+    <script type="importmap">
+    {
+        "imports": {
+            "devlop": "https://ga.jspm.io/npm:devlop@1.1.0/lib/default.js",
+            "highlight.js/lib/core": "https://ga.jspm.io/npm:highlight.js@11.11.1/es/core.js",
+            "highlight.js/lib/languages/arduino": "https://ga.jspm.io/npm:highlight.js@11.11.1/es/languages/arduino.js",
+            "highlight.js/lib/languages/bash": "https://ga.jspm.io/npm:highlight.js@11.11.1/es/languages/bash.js",
+            "highlight.js/lib/languages/c": "https://ga.jspm.io/npm:highlight.js@11.11.1/es/languages/c.js",
+            "highlight.js/lib/languages/cpp": "https://ga.jspm.io/npm:highlight.js@11.11.1/es/languages/cpp.js",
+            "highlight.js/lib/languages/csharp": "https://ga.jspm.io/npm:highlight.js@11.11.1/es/languages/csharp.js",
+            "highlight.js/lib/languages/css": "https://ga.jspm.io/npm:highlight.js@11.11.1/es/languages/css.js",
+            "highlight.js/lib/languages/diff": "https://ga.jspm.io/npm:highlight.js@11.11.1/es/languages/diff.js",
+            "highlight.js/lib/languages/go": "https://ga.jspm.io/npm:highlight.js@11.11.1/es/languages/go.js",
+            "highlight.js/lib/languages/graphql": "https://ga.jspm.io/npm:highlight.js@11.11.1/es/languages/graphql.js",
+            "highlight.js/lib/languages/ini": "https://ga.jspm.io/npm:highlight.js@11.11.1/es/languages/ini.js",
+            "highlight.js/lib/languages/java": "https://ga.jspm.io/npm:highlight.js@11.11.1/es/languages/java.js",
+            "highlight.js/lib/languages/javascript": "https://ga.jspm.io/npm:highlight.js@11.11.1/es/languages/javascript.js",
+            "highlight.js/lib/languages/json": "https://ga.jspm.io/npm:highlight.js@11.11.1/es/languages/json.js",
+            "highlight.js/lib/languages/kotlin": "https://ga.jspm.io/npm:highlight.js@11.11.1/es/languages/kotlin.js",
+            "highlight.js/lib/languages/less": "https://ga.jspm.io/npm:highlight.js@11.11.1/es/languages/less.js",
+            "highlight.js/lib/languages/lua": "https://ga.jspm.io/npm:highlight.js@11.11.1/es/languages/lua.js",
+            "highlight.js/lib/languages/makefile": "https://ga.jspm.io/npm:highlight.js@11.11.1/es/languages/makefile.js",
+            "highlight.js/lib/languages/markdown": "https://ga.jspm.io/npm:highlight.js@11.11.1/es/languages/markdown.js",
+            "highlight.js/lib/languages/objectivec": "https://ga.jspm.io/npm:highlight.js@11.11.1/es/languages/objectivec.js",
+            "highlight.js/lib/languages/perl": "https://ga.jspm.io/npm:highlight.js@11.11.1/es/languages/perl.js",
+            "highlight.js/lib/languages/php": "https://ga.jspm.io/npm:highlight.js@11.11.1/es/languages/php.js",
+            "highlight.js/lib/languages/php-template": "https://ga.jspm.io/npm:highlight.js@11.11.1/es/languages/php-template.js",
+            "highlight.js/lib/languages/plaintext": "https://ga.jspm.io/npm:highlight.js@11.11.1/es/languages/plaintext.js",
+            "highlight.js/lib/languages/python": "https://ga.jspm.io/npm:highlight.js@11.11.1/es/languages/python.js",
+            "highlight.js/lib/languages/python-repl": "https://ga.jspm.io/npm:highlight.js@11.11.1/es/languages/python-repl.js",
+            "highlight.js/lib/languages/r": "https://ga.jspm.io/npm:highlight.js@11.11.1/es/languages/r.js",
+            "highlight.js/lib/languages/ruby": "https://ga.jspm.io/npm:highlight.js@11.11.1/es/languages/ruby.js",
+            "highlight.js/lib/languages/rust": "https://ga.jspm.io/npm:highlight.js@11.11.1/es/languages/rust.js",
+            "highlight.js/lib/languages/scss": "https://ga.jspm.io/npm:highlight.js@11.11.1/es/languages/scss.js",
+            "highlight.js/lib/languages/shell": "https://ga.jspm.io/npm:highlight.js@11.11.1/es/languages/shell.js",
+            "highlight.js/lib/languages/sql": "https://ga.jspm.io/npm:highlight.js@11.11.1/es/languages/sql.js",
+            "highlight.js/lib/languages/swift": "https://ga.jspm.io/npm:highlight.js@11.11.1/es/languages/swift.js",
+            "highlight.js/lib/languages/typescript": "https://ga.jspm.io/npm:highlight.js@11.11.1/es/languages/typescript.js",
+            "highlight.js/lib/languages/vbnet": "https://ga.jspm.io/npm:highlight.js@11.11.1/es/languages/vbnet.js",
+            "highlight.js/lib/languages/wasm": "https://ga.jspm.io/npm:highlight.js@11.11.1/es/languages/wasm.js",
+            "highlight.js/lib/languages/xml": "https://ga.jspm.io/npm:highlight.js@11.11.1/es/languages/xml.js",
+            "highlight.js/lib/languages/yaml": "https://ga.jspm.io/npm:highlight.js@11.11.1/es/languages/yaml.js",
+            "lowlight/lib/common.js": "https://cdn.jsdelivr.net/npm/lowlight@3.3.0/lib/common.js",
+            "lowlight/lib/index.js": "https://cdn.jsdelivr.net/npm/lowlight@3.3.0/lib/index.js",
+            "novel": "https://ga.jspm.io/npm:novel@1.0.2/dist/index.js",
+            "react": "https://ga.jspm.io/npm:react@18.3.1/index.js",
+            "react-dom/client": "https://ga.jspm.io/npm:react-dom@18.3.1/client.js",
+            "tiptap-markdown": "https://ga.jspm.io/npm:tiptap-markdown@0.8.10/dist/tiptap-markdown.es.js"
+        },
+        "scopes": {
+            "https://ga.jspm.io/": {
+                "@daybrush/utils": "https://ga.jspm.io/npm:@daybrush/utils@1.13.0/dist/utils.cjs.js",
+                "@egjs/agent": "https://ga.jspm.io/npm:@egjs/agent@2.4.4/dist/agent.esm.js",
+                "@egjs/children-differ": "data:text/javascript,import m from\"https://ga.jspm.io/npm:@egjs/children-differ@1.0.1/dist/children-differ.js\";export default m;export const diff=m.diff;",
+                "@egjs/list-differ": "https://ga.jspm.io/npm:@egjs/list-differ@1.0.1/dist/list-differ.esm.js",
+                "@popperjs/core": "https://ga.jspm.io/npm:@popperjs/core@2.11.8/lib/index.js",
+                "@radix-ui/primitive": "https://ga.jspm.io/npm:@radix-ui/primitive@1.1.4/dist/index.mjs",
+                "@radix-ui/react-compose-refs": "https://ga.jspm.io/npm:@radix-ui/react-compose-refs@1.1.3/dist/index.mjs",
+                "@radix-ui/react-context": "https://ga.jspm.io/npm:@radix-ui/react-context@1.1.4/dist/index.mjs",
+                "@radix-ui/react-dialog": "https://ga.jspm.io/npm:@radix-ui/react-dialog@1.1.18/dist/index.mjs",
+                "@radix-ui/react-dismissable-layer": "https://ga.jspm.io/npm:@radix-ui/react-dismissable-layer@1.1.14/dist/index.mjs",
+                "@radix-ui/react-focus-guards": "https://ga.jspm.io/npm:@radix-ui/react-focus-guards@1.1.4/dist/index.mjs",
+                "@radix-ui/react-focus-scope": "https://ga.jspm.io/npm:@radix-ui/react-focus-scope@1.1.11/dist/index.mjs",
+                "@radix-ui/react-id": "https://ga.jspm.io/npm:@radix-ui/react-id@1.1.2/dist/index.mjs",
+                "@radix-ui/react-portal": "https://ga.jspm.io/npm:@radix-ui/react-portal@1.1.13/dist/index.mjs",
+                "@radix-ui/react-presence": "https://ga.jspm.io/npm:@radix-ui/react-presence@1.1.6/dist/index.mjs",
+                "@radix-ui/react-primitive": "https://ga.jspm.io/npm:@radix-ui/react-primitive@2.1.7/dist/index.mjs",
+                "@radix-ui/react-slot": "https://ga.jspm.io/npm:@radix-ui/react-slot@1.3.0/dist/index.mjs",
+                "@radix-ui/react-use-callback-ref": "https://ga.jspm.io/npm:@radix-ui/react-use-callback-ref@1.1.2/dist/index.mjs",
+                "@radix-ui/react-use-controllable-state": "https://ga.jspm.io/npm:@radix-ui/react-use-controllable-state@1.2.3/dist/index.mjs",
+                "@radix-ui/react-use-effect-event": "https://ga.jspm.io/npm:@radix-ui/react-use-effect-event@0.0.3/dist/index.mjs",
+                "@radix-ui/react-use-layout-effect": "https://ga.jspm.io/npm:@radix-ui/react-use-layout-effect@1.1.2/dist/index.mjs",
+                "@scena/dragscroll": "https://ga.jspm.io/npm:@scena/dragscroll@1.4.0/dist/dragscroll.esm.js",
+                "@scena/event-emitter": "https://ga.jspm.io/npm:@scena/event-emitter@1.0.5/dist/event-emitter.cjs.js",
+                "@scena/matrix": "https://ga.jspm.io/npm:@scena/matrix@1.1.1/dist/matrix.cjs.js",
+                "@tiptap/core": "https://ga.jspm.io/npm:@tiptap/core@2.27.2/dist/index.js",
+                "@tiptap/extension-blockquote": "https://ga.jspm.io/npm:@tiptap/extension-blockquote@2.27.2/dist/index.js",
+                "@tiptap/extension-bold": "https://ga.jspm.io/npm:@tiptap/extension-bold@2.27.2/dist/index.js",
+                "@tiptap/extension-bubble-menu": "https://ga.jspm.io/npm:@tiptap/extension-bubble-menu@2.27.2/dist/index.js",
+                "@tiptap/extension-bullet-list": "https://ga.jspm.io/npm:@tiptap/extension-bullet-list@2.27.2/dist/index.js",
+                "@tiptap/extension-character-count": "https://ga.jspm.io/npm:@tiptap/extension-character-count@2.27.2/dist/index.js",
+                "@tiptap/extension-code": "https://ga.jspm.io/npm:@tiptap/extension-code@2.27.2/dist/index.js",
+                "@tiptap/extension-code-block": "https://ga.jspm.io/npm:@tiptap/extension-code-block@2.27.2/dist/index.js",
+                "@tiptap/extension-code-block-lowlight": "https://ga.jspm.io/npm:@tiptap/extension-code-block-lowlight@2.27.2/dist/index.js",
+                "@tiptap/extension-color": "https://ga.jspm.io/npm:@tiptap/extension-color@2.27.2/dist/index.js",
+                "@tiptap/extension-document": "https://ga.jspm.io/npm:@tiptap/extension-document@2.27.2/dist/index.js",
+                "@tiptap/extension-dropcursor": "https://ga.jspm.io/npm:@tiptap/extension-dropcursor@2.27.2/dist/index.js",
+                "@tiptap/extension-floating-menu": "https://ga.jspm.io/npm:@tiptap/extension-floating-menu@2.27.2/dist/index.js",
+                "@tiptap/extension-gapcursor": "https://ga.jspm.io/npm:@tiptap/extension-gapcursor@2.27.2/dist/index.js",
+                "@tiptap/extension-hard-break": "https://ga.jspm.io/npm:@tiptap/extension-hard-break@2.27.2/dist/index.js",
+                "@tiptap/extension-heading": "https://ga.jspm.io/npm:@tiptap/extension-heading@2.27.2/dist/index.js",
+                "@tiptap/extension-highlight": "https://ga.jspm.io/npm:@tiptap/extension-highlight@2.27.2/dist/index.js",
+                "@tiptap/extension-history": "https://ga.jspm.io/npm:@tiptap/extension-history@2.27.2/dist/index.js",
+                "@tiptap/extension-horizontal-rule": "https://ga.jspm.io/npm:@tiptap/extension-horizontal-rule@2.27.2/dist/index.js",
+                "@tiptap/extension-image": "https://ga.jspm.io/npm:@tiptap/extension-image@2.27.2/dist/index.js",
+                "@tiptap/extension-italic": "https://ga.jspm.io/npm:@tiptap/extension-italic@2.27.2/dist/index.js",
+                "@tiptap/extension-link": "https://ga.jspm.io/npm:@tiptap/extension-link@2.27.2/dist/index.js",
+                "@tiptap/extension-list-item": "https://ga.jspm.io/npm:@tiptap/extension-list-item@2.27.2/dist/index.js",
+                "@tiptap/extension-ordered-list": "https://ga.jspm.io/npm:@tiptap/extension-ordered-list@2.27.2/dist/index.js",
+                "@tiptap/extension-paragraph": "https://ga.jspm.io/npm:@tiptap/extension-paragraph@2.27.2/dist/index.js",
+                "@tiptap/extension-placeholder": "https://ga.jspm.io/npm:@tiptap/extension-placeholder@2.27.2/dist/index.js",
+                "@tiptap/extension-strike": "https://ga.jspm.io/npm:@tiptap/extension-strike@2.27.2/dist/index.js",
+                "@tiptap/extension-task-item": "https://ga.jspm.io/npm:@tiptap/extension-task-item@2.27.2/dist/index.js",
+                "@tiptap/extension-task-list": "https://ga.jspm.io/npm:@tiptap/extension-task-list@2.27.2/dist/index.js",
+                "@tiptap/extension-text": "https://ga.jspm.io/npm:@tiptap/extension-text@2.27.2/dist/index.js",
+                "@tiptap/extension-text-style": "https://ga.jspm.io/npm:@tiptap/extension-text-style@2.27.2/dist/index.js",
+                "@tiptap/extension-underline": "https://ga.jspm.io/npm:@tiptap/extension-underline@2.27.2/dist/index.js",
+                "@tiptap/extension-youtube": "https://ga.jspm.io/npm:@tiptap/extension-youtube@2.27.2/dist/index.js",
+                "@tiptap/pm/commands": "https://ga.jspm.io/npm:@tiptap/pm@2.27.2/commands/dist/index.js",
+                "@tiptap/pm/dropcursor": "https://ga.jspm.io/npm:@tiptap/pm@2.27.2/dropcursor/dist/index.js",
+                "@tiptap/pm/gapcursor": "https://ga.jspm.io/npm:@tiptap/pm@2.27.2/gapcursor/dist/index.js",
+                "@tiptap/pm/history": "https://ga.jspm.io/npm:@tiptap/pm@2.27.2/history/dist/index.js",
+                "@tiptap/pm/keymap": "https://ga.jspm.io/npm:@tiptap/pm@2.27.2/keymap/dist/index.js",
+                "@tiptap/pm/model": "https://ga.jspm.io/npm:@tiptap/pm@2.27.2/model/dist/index.js",
+                "@tiptap/pm/schema-list": "https://ga.jspm.io/npm:@tiptap/pm@2.27.2/schema-list/dist/index.js",
+                "@tiptap/pm/state": "https://ga.jspm.io/npm:@tiptap/pm@2.27.2/state/dist/index.js",
+                "@tiptap/pm/transform": "https://ga.jspm.io/npm:@tiptap/pm@2.27.2/transform/dist/index.js",
+                "@tiptap/pm/view": "https://ga.jspm.io/npm:@tiptap/pm@2.27.2/view/dist/index.js",
+                "@tiptap/react": "https://ga.jspm.io/npm:@tiptap/react@2.27.2/dist/index.js",
+                "@tiptap/starter-kit": "https://ga.jspm.io/npm:@tiptap/starter-kit@2.27.2/dist/index.js",
+                "@tiptap/suggestion": "https://ga.jspm.io/npm:@tiptap/suggestion@2.27.2/dist/index.js",
+                "aria-hidden": "https://ga.jspm.io/npm:aria-hidden@1.2.6/dist/es2015/index.js",
+                "clsx": "https://ga.jspm.io/npm:clsx@2.1.1/dist/clsx.mjs",
+                "cmdk": "https://ga.jspm.io/npm:cmdk@1.1.1/dist/index.mjs",
+                "css-styled": "https://ga.jspm.io/npm:css-styled@1.0.8/dist/styled.esm.js",
+                "css-to-mat": "https://ga.jspm.io/npm:css-to-mat@1.1.1/dist/css-to-mat.esm.js",
+                "dequal/lite": "https://ga.jspm.io/npm:dequal@2.0.3/lite/index.mjs",
+                "detect-node-es": "https://ga.jspm.io/npm:detect-node-es@1.1.0/es5/browser.js",
+                "entities": "https://ga.jspm.io/npm:entities@4.5.0/lib/esm/index.js",
+                "framework-utils": "https://ga.jspm.io/npm:framework-utils@1.1.0/dist/utils.cjs.js",
+                "gesto": "https://ga.jspm.io/npm:gesto@1.19.4/dist/gesto.esm.js",
+                "get-nonce": "https://ga.jspm.io/npm:get-nonce@1.0.1/dist/es5/index.js",
+                "https://ga.jspm.io/npm:react-tweet@3.3.1/dist/twitter-theme/highlighted-label.module.css": "data:text/javascript,export default{}",
+                "https://ga.jspm.io/npm:react-tweet@3.3.1/dist/twitter-theme/icons/icons.module.css": "data:text/javascript,export default{}",
+                "https://ga.jspm.io/npm:react-tweet@3.3.1/dist/twitter-theme/quoted-tweet/quoted-tweet-body.module.css": "data:text/javascript,export default{}",
+                "https://ga.jspm.io/npm:react-tweet@3.3.1/dist/twitter-theme/quoted-tweet/quoted-tweet-container.module.css": "data:text/javascript,export default{}",
+                "https://ga.jspm.io/npm:react-tweet@3.3.1/dist/twitter-theme/quoted-tweet/quoted-tweet-header.module.css": "data:text/javascript,export default{}",
+                "https://ga.jspm.io/npm:react-tweet@3.3.1/dist/twitter-theme/skeleton.module.css": "data:text/javascript,export default{}",
+                "https://ga.jspm.io/npm:react-tweet@3.3.1/dist/twitter-theme/theme.css": "data:text/javascript,export default{}",
+                "https://ga.jspm.io/npm:react-tweet@3.3.1/dist/twitter-theme/tweet-actions.module.css": "data:text/javascript,export default{}",
+                "https://ga.jspm.io/npm:react-tweet@3.3.1/dist/twitter-theme/tweet-body.module.css": "data:text/javascript,export default{}",
+                "https://ga.jspm.io/npm:react-tweet@3.3.1/dist/twitter-theme/tweet-container.module.css": "data:text/javascript,export default{}",
+                "https://ga.jspm.io/npm:react-tweet@3.3.1/dist/twitter-theme/tweet-header.module.css": "data:text/javascript,export default{}",
+                "https://ga.jspm.io/npm:react-tweet@3.3.1/dist/twitter-theme/tweet-in-reply-to.module.css": "data:text/javascript,export default{}",
+                "https://ga.jspm.io/npm:react-tweet@3.3.1/dist/twitter-theme/tweet-info-created-at.module.css": "data:text/javascript,export default{}",
+                "https://ga.jspm.io/npm:react-tweet@3.3.1/dist/twitter-theme/tweet-info.module.css": "data:text/javascript,export default{}",
+                "https://ga.jspm.io/npm:react-tweet@3.3.1/dist/twitter-theme/tweet-link.module.css": "data:text/javascript,export default{}",
+                "https://ga.jspm.io/npm:react-tweet@3.3.1/dist/twitter-theme/tweet-media-video.module.css": "data:text/javascript,export default{}",
+                "https://ga.jspm.io/npm:react-tweet@3.3.1/dist/twitter-theme/tweet-media.module.css": "data:text/javascript,export default{}",
+                "https://ga.jspm.io/npm:react-tweet@3.3.1/dist/twitter-theme/tweet-not-found.module.css": "data:text/javascript,export default{}",
+                "https://ga.jspm.io/npm:react-tweet@3.3.1/dist/twitter-theme/tweet-replies.module.css": "data:text/javascript,export default{}",
+                "https://ga.jspm.io/npm:react-tweet@3.3.1/dist/twitter-theme/tweet-skeleton.module.css": "data:text/javascript,export default{}",
+                "https://ga.jspm.io/npm:react-tweet@3.3.1/dist/twitter-theme/verified-badge.module.css": "data:text/javascript,export default{}",
+                "jotai": "https://ga.jspm.io/npm:jotai@2.20.1/esm/index.mjs",
+                "jotai/react": "https://ga.jspm.io/npm:jotai@2.20.1/esm/react.mjs",
+                "jotai/vanilla": "https://ga.jspm.io/npm:jotai@2.20.1/esm/vanilla.mjs",
+                "jotai/vanilla/internals": "https://ga.jspm.io/npm:jotai@2.20.1/esm/vanilla/internals.mjs",
+                "katex": "https://ga.jspm.io/npm:katex@0.16.47/dist/katex.mjs",
+                "linkify-it": "https://ga.jspm.io/npm:linkify-it@5.0.2/index.mjs",
+                "linkifyjs": "https://ga.jspm.io/npm:linkifyjs@4.3.3/dist/linkify.mjs",
+                "markdown-it": "https://ga.jspm.io/npm:markdown-it@14.3.0/index.mjs",
+                "markdown-it-task-lists": "https://ga.jspm.io/npm:markdown-it-task-lists@2.1.1/index.js",
+                "mdurl": "https://ga.jspm.io/npm:mdurl@2.0.0/index.mjs",
+                "orderedmap": "https://ga.jspm.io/npm:orderedmap@2.1.1/dist/index.js",
+                "overlap-area": "https://ga.jspm.io/npm:overlap-area@1.1.0/dist/overlap-area.esm.js",
+                "prosemirror-commands": "https://ga.jspm.io/npm:prosemirror-commands@1.7.1/dist/index.js",
+                "prosemirror-dropcursor": "https://ga.jspm.io/npm:prosemirror-dropcursor@1.8.2/dist/index.js",
+                "prosemirror-gapcursor": "https://ga.jspm.io/npm:prosemirror-gapcursor@1.4.1/dist/index.js",
+                "prosemirror-history": "https://ga.jspm.io/npm:prosemirror-history@1.5.0/dist/index.js",
+                "prosemirror-keymap": "https://ga.jspm.io/npm:prosemirror-keymap@1.2.3/dist/index.js",
+                "prosemirror-markdown": "https://ga.jspm.io/npm:prosemirror-markdown@1.13.4/dist/index.js",
+                "prosemirror-model": "https://ga.jspm.io/npm:prosemirror-model@1.25.9/dist/index.js",
+                "prosemirror-schema-list": "https://ga.jspm.io/npm:prosemirror-schema-list@1.5.1/dist/index.js",
+                "prosemirror-state": "https://ga.jspm.io/npm:prosemirror-state@1.4.4/dist/index.js",
+                "prosemirror-transform": "https://ga.jspm.io/npm:prosemirror-transform@1.12.0/dist/index.js",
+                "prosemirror-view": "https://ga.jspm.io/npm:prosemirror-view@1.42.0/dist/index.js",
+                "punycode.js": "https://ga.jspm.io/npm:punycode.js@2.3.1/punycode.es6.js",
+                "react-css-styled": "https://ga.jspm.io/npm:react-css-styled@1.1.9/dist/styled.esm.js",
+                "react-dom": "https://ga.jspm.io/npm:react-dom@18.3.1/index.js",
+                "react-moveable": "https://ga.jspm.io/npm:react-moveable@0.56.0/dist/moveable.esm.js",
+                "react-remove-scroll": "https://ga.jspm.io/npm:react-remove-scroll@2.7.2/dist/es2015/index.js",
+                "react-remove-scroll-bar": "https://ga.jspm.io/npm:react-remove-scroll-bar@2.3.8/dist/es2015/index.js",
+                "react-remove-scroll-bar/constants": "https://ga.jspm.io/npm:react-remove-scroll-bar@2.3.8/dist/es2015/constants.js",
+                "react-style-singleton": "https://ga.jspm.io/npm:react-style-singleton@2.2.3/dist/es2015/index.js",
+                "react-tweet": "https://ga.jspm.io/npm:react-tweet@3.3.1/dist/index.client.js",
+                "react/jsx-runtime": "https://ga.jspm.io/npm:react@18.3.1/jsx-runtime.js",
+                "rope-sequence": "https://ga.jspm.io/npm:rope-sequence@1.3.4/dist/index.js",
+                "scheduler": "https://ga.jspm.io/npm:scheduler@0.23.2/index.js",
+                "swr": "https://ga.jspm.io/npm:swr@2.4.2/dist/index/index.mjs",
+                "tippy.js": "https://ga.jspm.io/npm:tippy.js@6.3.7/dist/tippy.esm.js",
+                "tiptap-extension-global-drag-handle": "https://ga.jspm.io/npm:tiptap-extension-global-drag-handle@0.1.18/dist/index.js",
+                "tslib": "https://ga.jspm.io/npm:tslib@2.8.1/tslib.es6.mjs",
+                "tunnel-rat": "https://ga.jspm.io/npm:tunnel-rat@0.1.2/dist/index.js",
+                "uc.micro": "https://ga.jspm.io/npm:uc.micro@2.1.0/index.mjs",
+                "use-callback-ref": "https://ga.jspm.io/npm:use-callback-ref@1.3.3/dist/es2015/index.js",
+                "use-sidecar": "https://ga.jspm.io/npm:use-sidecar@1.1.3/dist/es2015/index.js",
+                "use-sync-external-store/shim": "https://ga.jspm.io/npm:use-sync-external-store@1.6.0/shim/index.js",
+                "use-sync-external-store/shim/with-selector.js": "https://ga.jspm.io/npm:use-sync-external-store@1.6.0/shim/with-selector.js",
+                "w3c-keyname": "https://ga.jspm.io/npm:w3c-keyname@2.2.8/index.js",
+                "zustand": "https://ga.jspm.io/npm:zustand@4.5.7/esm/index.mjs",
+                "zustand/vanilla": "https://ga.jspm.io/npm:zustand@4.5.7/esm/vanilla.mjs"
+            }
+        }
+    }
+    </script>
+
+    <script type="module">
+        // Novel is a set of headless React components over TipTap v2. This full demo mirrors
+        // novel.sh's official "advanced editor" (apps/web/components/tailwind/*): the slash
+        // command menu, the selection bubble menu with node/link/math/format/colour selectors,
+        // a notion-style drag handle, task lists, images, embeds and KaTeX math. Novel ships no
+        // Markdown parser/serializer of its own, so tiptap-markdown rides along for the round-trip.
+        // Skipped from the official demo: AI autocomplete/commands (needs an API backend) and the
+        // blob-store image upload (replaced with an in-browser base64 upload).
+        import React from 'react';
+        import { createRoot } from 'react-dom/client';
+        import {
+            EditorRoot, EditorContent, EditorCommand, EditorCommandEmpty, EditorCommandItem, EditorCommandList,
+            EditorBubble, useEditor, ImageResizer,
+            handleCommandNavigation, handleImagePaste, handleImageDrop, createImageUpload,
+            createSuggestionItems, renderItems, Command,
+            StarterKit, Placeholder, TiptapLink, TiptapImage, UpdatedImage, TaskList, TaskItem,
+            HorizontalRule, CodeBlockLowlight, Twitter, Mathematics, CharacterCount,
+            TiptapUnderline, HighlightExtension, TextStyle, Color, CustomKeymap, GlobalDragHandle,
+            UploadImagesPlugin,
+        } from 'novel';
+        import { Markdown } from 'tiptap-markdown';
+        import { createLowlight } from 'lowlight/lib/index.js';
+        import { grammars as common } from 'lowlight/lib/common.js';
+
+        const h = React.createElement;
+        const { useState, useRef, useEffect, useReducer } = React;
+
+        /* ---- lucide icons (inline, so no lucide-react dependency) ---- */
+        const ICONS = {
+            "bold": '<path d="M6 12h9a4 4 0 0 1 0 8H7a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h7a4 4 0 0 1 0 8" />',
+            "check-square": '<path d="M21 10.656V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h12.344" /> <path d="m9 11 3 3L22 4" />',
+            "check": '<path d="M20 6 9 17l-5-5" />',
+            "chevron-down": '<path d="m6 9 6 6 6-6" />',
+            "code": '<path d="m16 18 6-6-6-6" /> <path d="m8 6-6 6 6 6" />',
+            "heading-1": '<path d="M4 12h8" /> <path d="M4 18V6" /> <path d="M12 18V6" /> <path d="m17 12 3-2v8" />',
+            "heading-2": '<path d="M4 12h8" /> <path d="M4 18V6" /> <path d="M12 18V6" /> <path d="M21 18h-4c0-4 4-3 4-6 0-1.5-2-2.5-4-1" />',
+            "heading-3": '<path d="M4 12h8" /> <path d="M4 18V6" /> <path d="M12 18V6" /> <path d="M17.5 10.5c1.7-1 3.5 0 3.5 1.5a2 2 0 0 1-2 2" /> <path d="M17 17.5c2 1.5 4 .3 4-1.5a2 2 0 0 0-2-2" />',
+            "image": '<rect width="18" height="18" x="3" y="3" rx="2" ry="2" /> <circle cx="9" cy="9" r="2" /> <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />',
+            "italic": '<line x1="19" x2="10" y1="4" y2="4" /> <line x1="14" x2="5" y1="20" y2="20" /> <line x1="15" x2="9" y1="4" y2="20" />',
+            "list-ordered": '<path d="M11 5h10" /> <path d="M11 12h10" /> <path d="M11 19h10" /> <path d="M4 4h1v5" /> <path d="M4 9h2" /> <path d="M6.5 20H3.4c0-1 2.6-1.925 2.6-3.5a1.5 1.5 0 0 0-2.6-1.02" />',
+            "list": '<path d="M3 5h.01" /> <path d="M3 12h.01" /> <path d="M3 19h.01" /> <path d="M8 5h13" /> <path d="M8 12h13" /> <path d="M8 19h13" />',
+            "sigma": '<path d="M18 7V5a1 1 0 0 0-1-1H6.5a.5.5 0 0 0-.4.8l4.5 6a2 2 0 0 1 0 2.4l-4.5 6a.5.5 0 0 0 .4.8H17a1 1 0 0 0 1-1v-2" />',
+            "strikethrough": '<path d="M16 4H9a3 3 0 0 0-2.83 4" /> <path d="M14 12a4 4 0 0 1 0 8H6" /> <line x1="4" x2="20" y1="12" y2="12" />',
+            "text-quote": '<path d="M17 5H3" /> <path d="M21 12H8" /> <path d="M21 19H8" /> <path d="M3 12v7" />',
+            "text": '<path d="M21 5H3" /> <path d="M15 12H3" /> <path d="M17 19H3" />',
+            "trash": '<path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" /> <path d="M3 6h18" /> <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />',
+            "twitter": '<path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z" />',
+            "type": '<path d="M12 4v16" /> <path d="M4 7V5a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v2" /> <path d="M9 20h6" />',
+            "underline": '<path d="M6 4v6a6 6 0 0 0 12 0V4" /> <line x1="4" x2="20" y1="20" y2="20" />',
+        };
+        const Icon = (name, size = 16) => h('svg', {
+            width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor',
+            strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round', className: 'novel-icon',
+            dangerouslySetInnerHTML: { __html: ICONS[name] },
+        });
+
+        /* ---- in-browser image upload (no backend): resolve to a base64 data URL ---- */
+        const uploadFn = createImageUpload({
+            onUpload: (file) => new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.readAsDataURL(file);
+            }),
+            validateFn: (file) => file.type.includes('image/'),
+        });
+
+        /* ---- extensions, mirroring novel.sh's extensions.ts (AIHighlight dropped: AI-only) ---- */
+        const lowlight = createLowlight(common);
+        const extensions = [
+            // codeBlock is disabled here because CodeBlockLowlight (below) owns that node;
+            // horizontalRule/gapcursor are disabled in favour of Novel's own HorizontalRule.
+            StarterKit.configure({
+                codeBlock: false,
+                horizontalRule: false,
+                gapcursor: false,
+                dropcursor: { color: '#DBEAFE', width: 4 },
+            }),
+            Placeholder.configure({
+                placeholder: ({ node }) =>
+                    node.type.name === 'heading' ? `Heading ${node.attrs.level}` : "Press '/' for commands, or just start writing…",
+                includeChildren: true,
+            }),
+            TiptapLink.configure({ openOnClick: false, HTMLAttributes: { rel: 'noopener noreferrer nofollow' } }),
+            TiptapImage.extend({
+                addProseMirrorPlugins() { return [UploadImagesPlugin({ imageClass: 'novel-uploading' })]; },
+            }).configure({ allowBase64: true }),
+            UpdatedImage,
+            TaskList,
+            TaskItem.configure({ nested: true }),
+            HorizontalRule,
+            CodeBlockLowlight.configure({ lowlight }),
+            Twitter.configure({ inline: false }),
+            Mathematics.configure({ katexOptions: { throwOnError: false } }),
+            CharacterCount,
+            TiptapUnderline,
+            Markdown.configure({
+                html: true, tightLists: true, bulletListMarker: '-',
+                linkify: false, breaks: false, transformPastedText: false, transformCopiedText: false,
+            }),
+            HighlightExtension,
+            TextStyle,
+            Color,
+            CustomKeymap,
+            GlobalDragHandle,
+        ];
+
+        /* ---- slash command items (novel.sh slash-command.tsx; "Send Feedback" dropped) ---- */
+        const suggestionItems = createSuggestionItems([
+            { title: 'Text', description: 'Just start typing with plain text.', searchTerms: ['p', 'paragraph'], icon: Icon('text', 18),
+                command: ({ editor, range }) => editor.chain().focus().deleteRange(range).toggleNode('paragraph', 'paragraph').run() },
+            { title: 'To-do List', description: 'Track tasks with a to-do list.', searchTerms: ['todo', 'task', 'list', 'check', 'checkbox'], icon: Icon('check-square', 18),
+                command: ({ editor, range }) => editor.chain().focus().deleteRange(range).toggleTaskList().run() },
+            { title: 'Heading 1', description: 'Big section heading.', searchTerms: ['title', 'big', 'large'], icon: Icon('heading-1', 18),
+                command: ({ editor, range }) => editor.chain().focus().deleteRange(range).setNode('heading', { level: 1 }).run() },
+            { title: 'Heading 2', description: 'Medium section heading.', searchTerms: ['subtitle', 'medium'], icon: Icon('heading-2', 18),
+                command: ({ editor, range }) => editor.chain().focus().deleteRange(range).setNode('heading', { level: 2 }).run() },
+            { title: 'Heading 3', description: 'Small section heading.', searchTerms: ['subtitle', 'small'], icon: Icon('heading-3', 18),
+                command: ({ editor, range }) => editor.chain().focus().deleteRange(range).setNode('heading', { level: 3 }).run() },
+            { title: 'Bullet List', description: 'Create a simple bullet list.', searchTerms: ['unordered', 'point'], icon: Icon('list', 18),
+                command: ({ editor, range }) => editor.chain().focus().deleteRange(range).toggleBulletList().run() },
+            { title: 'Numbered List', description: 'Create a list with numbering.', searchTerms: ['ordered'], icon: Icon('list-ordered', 18),
+                command: ({ editor, range }) => editor.chain().focus().deleteRange(range).toggleOrderedList().run() },
+            { title: 'Quote', description: 'Capture a quote.', searchTerms: ['blockquote'], icon: Icon('text-quote', 18),
+                command: ({ editor, range }) => editor.chain().focus().deleteRange(range).toggleNode('paragraph', 'paragraph').toggleBlockquote().run() },
+            { title: 'Code', description: 'Capture a code snippet.', searchTerms: ['codeblock'], icon: Icon('code', 18),
+                command: ({ editor, range }) => editor.chain().focus().deleteRange(range).toggleCodeBlock().run() },
+            { title: 'Image', description: 'Upload an image from your computer.', searchTerms: ['photo', 'picture', 'media'], icon: Icon('image', 18),
+                command: ({ editor, range }) => {
+                    editor.chain().focus().deleteRange(range).run();
+                    const input = document.createElement('input');
+                    input.type = 'file';
+                    input.accept = 'image/*';
+                    input.onchange = () => {
+                        if (input.files?.length) {
+                            const pos = editor.view.state.selection.from;
+                            uploadFn(input.files[0], editor.view, pos);
+                        }
+                    };
+                    input.click();
+                } },
+            { title: 'Twitter', description: 'Embed a Tweet.', searchTerms: ['twitter', 'embed'], icon: Icon('twitter', 18),
+                command: ({ editor, range }) => {
+                    const tweetLink = prompt('Please enter Twitter Link');
+                    const tweetRegex = /^https?:\/\/(www\.)?x\.com\/([a-zA-Z0-9_]{1,15})(\/status\/(\d+))?(\/\S*)?$/;
+                    if (tweetRegex.test(tweetLink)) editor.chain().focus().deleteRange(range).setTweet({ src: tweetLink }).run();
+                    else if (tweetLink !== null) alert('Please enter a correct Twitter Link');
+                } },
+        ]);
+        const slashCommand = Command.configure({ suggestion: { items: () => suggestionItems, render: renderItems } });
+        extensions.push(slashCommand);
+
+        /* ---- seed document (novel.sh lib/content.ts, adapted: extra formatting line, math
+                kept, live-fetch tweet dropped, code blocks given languages to highlight) ---- */
+        const seedContent = {
+            type: 'doc',
+            content: [
+                { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Introducing Novel' }] },
+                { type: 'paragraph', content: [
+                    { type: 'text', marks: [{ type: 'link', attrs: { href: 'https://github.com/steven-tey/novel', target: '_blank' } }], text: 'Novel' },
+                    { type: 'text', text: ' is a Notion-style WYSIWYG editor. Built with ' },
+                    { type: 'text', marks: [{ type: 'link', attrs: { href: 'https://tiptap.dev/', target: '_blank' } }], text: 'Tiptap' },
+                    { type: 'text', text: '.' },
+                ] },
+                { type: 'paragraph', content: [
+                    { type: 'text', text: 'Select text to open the bubble menu. This line shows ' },
+                    { type: 'text', marks: [{ type: 'bold' }], text: 'bold' },
+                    { type: 'text', text: ', ' },
+                    { type: 'text', marks: [{ type: 'italic' }], text: 'italic' },
+                    { type: 'text', text: ', ' },
+                    { type: 'text', marks: [{ type: 'underline' }], text: 'underline' },
+                    { type: 'text', text: ', ' },
+                    { type: 'text', marks: [{ type: 'strike' }], text: 'strikethrough' },
+                    { type: 'text', text: ', ' },
+                    { type: 'text', marks: [{ type: 'code' }], text: 'inline code' },
+                    { type: 'text', text: ', a ' },
+                    { type: 'text', marks: [{ type: 'textStyle', attrs: { color: '#9333EA' } }], text: 'purple colour' },
+                    { type: 'text', text: ', and a ' },
+                    { type: 'text', marks: [{ type: 'highlight', attrs: { color: 'var(--novel-highlight-blue)' } }], text: 'blue highlight' },
+                    { type: 'text', text: '.' },
+                ] },
+                { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Installation' }] },
+                { type: 'codeBlock', attrs: { language: 'bash' }, content: [{ type: 'text', text: 'npm i novel' }] },
+                { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Usage' }] },
+                { type: 'codeBlock', attrs: { language: 'typescript' }, content: [{ type: 'text', text: 'import { Editor } from "novel";\n\nexport default function App() {\n  return <Editor />;\n}' }] },
+                { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Features' }] },
+                { type: 'orderedList', attrs: { tight: true, start: 1 }, content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Slash menu & bubble menu' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Image uploads (drag & drop / copy & paste, or from the slash menu)' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Tweet embeds from the slash menu' }] }] },
+                    { type: 'listItem', content: [
+                        { type: 'paragraph', content: [{ type: 'text', text: 'Mathematical symbols with LaTeX expressions:' }] },
+                        { type: 'orderedList', attrs: { tight: true, start: 1 }, content: [
+                            { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'math', attrs: { latex: 'E = mc^2' } }] }] },
+                            { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'math', attrs: { latex: 'a^2 = \\sqrt{b^2 + c^2}' } }] }] },
+                            { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'math', attrs: { latex: '\\hat{f}(\\xi) = \\int_{-\\infty}^{\\infty} f(x)\\,e^{-2\\pi i x\\xi}\\,dx' } }] }] },
+                            { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'math', attrs: { latex: '\\sum_{i=0}^n x_i' } }] }] },
+                        ] },
+                    ] },
+                ] },
+                { type: 'image', attrs: { src: 'https://markdownarena.com/600x200.png', alt: 'Placeholder image', title: 'Placeholder image' } },
+                { type: 'blockquote', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'A Notion-style block editor for the web.' }] }] },
+                { type: 'horizontalRule' },
+                { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Learn more' }] },
+                { type: 'taskList', content: [
+                    { type: 'taskItem', attrs: { checked: true }, content: [{ type: 'paragraph', content: [
+                        { type: 'text', text: 'Star us on ' },
+                        { type: 'text', marks: [{ type: 'link', attrs: { href: 'https://github.com/steven-tey/novel', target: '_blank' } }], text: 'GitHub' },
+                    ] }] },
+                    { type: 'taskItem', attrs: { checked: false }, content: [{ type: 'paragraph', content: [
+                        { type: 'text', text: 'Install the ' },
+                        { type: 'text', marks: [{ type: 'link', attrs: { href: 'https://www.npmjs.com/package/novel', target: '_blank' } }], text: 'NPM package' },
+                    ] }] },
+                ] },
+            ],
+        };
+
+        /* ---- bubble-menu selectors, translated from novel.sh's selectors/*.tsx to plain
+                React (no radix Popover / shadcn Button). Each re-renders on editor transactions
+                so active states track the selection. ---- */
+        const useEditorTick = (editor) => {
+            const [, force] = useReducer((x) => x + 1, 0);
+            useEffect(() => {
+                if (!editor) return;
+                editor.on('transaction', force);
+                return () => editor.off('transaction', force);
+            }, [editor]);
+        };
+
+        function Popover({ open, onOpenChange, trigger, width, children }) {
+            const ref = useRef(null);
+            useEffect(() => {
+                if (!open) return;
+                const onDown = (e) => { if (ref.current && !ref.current.contains(e.target)) onOpenChange(false); };
+                document.addEventListener('mousedown', onDown);
+                return () => document.removeEventListener('mousedown', onDown);
+            }, [open]);
+            return h('div', { className: 'novel-pop', ref },
+                trigger,
+                open && h('div', { className: 'novel-pop-panel', style: width ? { width } : undefined,
+                    onMouseDown: (e) => e.preventDefault() }, children),
+            );
+        }
+
+        const NODE_ITEMS = [
+            { name: 'Text', icon: 'type', command: (e) => e.chain().focus().clearNodes().run(),
+                isActive: (e) => e.isActive('paragraph') && !e.isActive('bulletList') && !e.isActive('orderedList') },
+            { name: 'Heading 1', icon: 'heading-1', command: (e) => e.chain().focus().clearNodes().toggleHeading({ level: 1 }).run(), isActive: (e) => e.isActive('heading', { level: 1 }) },
+            { name: 'Heading 2', icon: 'heading-2', command: (e) => e.chain().focus().clearNodes().toggleHeading({ level: 2 }).run(), isActive: (e) => e.isActive('heading', { level: 2 }) },
+            { name: 'Heading 3', icon: 'heading-3', command: (e) => e.chain().focus().clearNodes().toggleHeading({ level: 3 }).run(), isActive: (e) => e.isActive('heading', { level: 3 }) },
+            { name: 'To-do List', icon: 'check-square', command: (e) => e.chain().focus().clearNodes().toggleTaskList().run(), isActive: (e) => e.isActive('taskItem') },
+            { name: 'Bullet List', icon: 'list', command: (e) => e.chain().focus().clearNodes().toggleBulletList().run(), isActive: (e) => e.isActive('bulletList') },
+            { name: 'Numbered List', icon: 'list-ordered', command: (e) => e.chain().focus().clearNodes().toggleOrderedList().run(), isActive: (e) => e.isActive('orderedList') },
+            { name: 'Quote', icon: 'text-quote', command: (e) => e.chain().focus().clearNodes().toggleBlockquote().run(), isActive: (e) => e.isActive('blockquote') },
+            { name: 'Code', icon: 'code', command: (e) => e.chain().focus().clearNodes().toggleCodeBlock().run(), isActive: (e) => e.isActive('codeBlock') },
+        ];
+
+        function NodeSelector({ open, onOpenChange }) {
+            const { editor } = useEditor();
+            useEditorTick(editor);
+            if (!editor) return null;
+            const active = [...NODE_ITEMS].reverse().find((it) => it.isActive(editor)) || { name: 'Multiple' };
+            const trigger = h('button', { type: 'button', className: 'novel-btn',
+                onMouseDown: (e) => e.preventDefault(), onClick: () => onOpenChange(!open) },
+                h('span', null, active.name), Icon('chevron-down', 14));
+            return h(Popover, { open, onOpenChange, trigger, width: '12rem' },
+                NODE_ITEMS.map((it) => h('button', {
+                    key: it.name, type: 'button', className: 'novel-pop-item',
+                    onMouseDown: (e) => e.preventDefault(),
+                    onClick: () => { it.command(editor); onOpenChange(false); },
+                },
+                    h('span', { className: 'novel-pop-left' }, h('span', { className: 'novel-badge' }, Icon(it.icon, 14)), h('span', null, it.name)),
+                    active.name === it.name && Icon('check', 16),
+                )),
+            );
+        }
+
+        function LinkSelector({ open, onOpenChange }) {
+            const { editor } = useEditor();
+            const inputRef = useRef(null);
+            useEditorTick(editor);
+            useEffect(() => { if (open) inputRef.current?.focus(); }, [open]);
+            if (!editor) return null;
+            const href = editor.getAttributes('link').href;
+            const getUrl = (str) => { try { return new URL(str).toString(); } catch (_) {} try { if (str.includes('.') && !str.includes(' ')) return new URL('https://' + str).toString(); } catch (_) {} return null; };
+            const trigger = h('button', { type: 'button', className: 'novel-btn' + (editor.isActive('link') ? ' is-active' : ''),
+                onMouseDown: (e) => e.preventDefault(), onClick: () => onOpenChange(!open) },
+                h('span', { style: { textDecoration: 'underline', textUnderlineOffset: '4px' } }, 'Link'));
+            return h(Popover, { open, onOpenChange, trigger },
+                h('form', { className: 'novel-link-form', onSubmit: (e) => {
+                    e.preventDefault();
+                    const url = getUrl(e.currentTarget[0].value);
+                    if (url) { editor.chain().focus().setLink({ href: url }).run(); onOpenChange(false); }
+                } },
+                    h('input', { ref: inputRef, type: 'text', placeholder: 'Paste a link', defaultValue: href || '' }),
+                    href
+                        ? h('button', { type: 'button', className: 'novel-link-btn novel-link-remove',
+                            onClick: () => { editor.chain().focus().unsetLink().run(); onOpenChange(false); } }, Icon('trash', 15))
+                        : h('button', { type: 'submit', className: 'novel-link-btn' }, Icon('check', 15)),
+                ),
+            );
+        }
+
+        function MathSelector() {
+            const { editor } = useEditor();
+            useEditorTick(editor);
+            if (!editor) return null;
+            return h('button', { type: 'button', className: 'novel-btn' + (editor.isActive('math') ? ' is-active' : ''),
+                onMouseDown: (e) => e.preventDefault(),
+                onClick: () => {
+                    if (editor.isActive('math')) { editor.chain().focus().unsetLatex().run(); return; }
+                    const { from, to } = editor.state.selection;
+                    const latex = editor.state.doc.textBetween(from, to);
+                    if (latex) editor.chain().focus().setLatex({ latex }).run();
+                } }, Icon('sigma', 16));
+        }
+
+        const MARK_ITEMS = [
+            { name: 'bold', icon: 'bold', command: (e) => e.chain().focus().toggleBold().run(), isActive: (e) => e.isActive('bold') },
+            { name: 'italic', icon: 'italic', command: (e) => e.chain().focus().toggleItalic().run(), isActive: (e) => e.isActive('italic') },
+            { name: 'underline', icon: 'underline', command: (e) => e.chain().focus().toggleUnderline().run(), isActive: (e) => e.isActive('underline') },
+            { name: 'strike', icon: 'strikethrough', command: (e) => e.chain().focus().toggleStrike().run(), isActive: (e) => e.isActive('strike') },
+            { name: 'code', icon: 'code', command: (e) => e.chain().focus().toggleCode().run(), isActive: (e) => e.isActive('code') },
+        ];
+
+        function TextButtons() {
+            const { editor } = useEditor();
+            useEditorTick(editor);
+            if (!editor) return null;
+            return h('div', { style: { display: 'flex' } },
+                MARK_ITEMS.map((it) => h('button', {
+                    key: it.name, type: 'button', className: 'novel-btn' + (it.isActive(editor) ? ' is-active' : ''),
+                    onMouseDown: (e) => e.preventDefault(), onClick: () => it.command(editor),
+                }, Icon(it.icon, 16))),
+            );
+        }
+
+        const TEXT_COLORS = [
+            { name: 'Default', color: 'var(--novel-black)' }, { name: 'Purple', color: '#9333EA' },
+            { name: 'Red', color: '#E00000' }, { name: 'Yellow', color: '#EAB308' }, { name: 'Blue', color: '#2563EB' },
+            { name: 'Green', color: '#008A00' }, { name: 'Orange', color: '#FFA500' }, { name: 'Pink', color: '#BA4081' },
+            { name: 'Gray', color: '#A8A29E' },
+        ];
+        const HIGHLIGHT_COLORS = [
+            { name: 'Default', color: 'var(--novel-highlight-default)' }, { name: 'Purple', color: 'var(--novel-highlight-purple)' },
+            { name: 'Red', color: 'var(--novel-highlight-red)' }, { name: 'Yellow', color: 'var(--novel-highlight-yellow)' },
+            { name: 'Blue', color: 'var(--novel-highlight-blue)' }, { name: 'Green', color: 'var(--novel-highlight-green)' },
+            { name: 'Orange', color: 'var(--novel-highlight-orange)' }, { name: 'Pink', color: 'var(--novel-highlight-pink)' },
+            { name: 'Gray', color: 'var(--novel-highlight-gray)' },
+        ];
+
+        function ColorSelector({ open, onOpenChange }) {
+            const { editor } = useEditor();
+            useEditorTick(editor);
+            if (!editor) return null;
+            const activeColor = TEXT_COLORS.find(({ color }) => editor.isActive('textStyle', { color }));
+            const activeHl = HIGHLIGHT_COLORS.find(({ color }) => editor.isActive('highlight', { color }));
+            const trigger = h('button', { type: 'button', className: 'novel-btn',
+                onMouseDown: (e) => e.preventDefault(), onClick: () => onOpenChange(!open) },
+                h('span', { style: { color: activeColor?.color, backgroundColor: activeHl?.color, borderRadius: '0.2rem', padding: '0 0.25rem' } }, 'A'),
+                Icon('chevron-down', 14));
+            return h(Popover, { open, onOpenChange, trigger, width: '12rem' },
+                h('div', { className: 'novel-pop-title' }, 'Color'),
+                TEXT_COLORS.map(({ name, color }) => h('button', {
+                    key: name, type: 'button', className: 'novel-pop-item', onMouseDown: (e) => e.preventDefault(),
+                    onClick: () => { editor.commands.unsetColor(); if (name !== 'Default') editor.chain().focus().setColor(color).run(); onOpenChange(false); },
+                },
+                    h('span', { className: 'novel-pop-left' }, h('span', { className: 'novel-swatch', style: { color } }, 'A'), h('span', null, name)),
+                    activeColor?.name === name && Icon('check', 16),
+                )),
+                h('div', { className: 'novel-pop-title' }, 'Background'),
+                HIGHLIGHT_COLORS.map(({ name, color }) => h('button', {
+                    key: name, type: 'button', className: 'novel-pop-item', onMouseDown: (e) => e.preventDefault(),
+                    onClick: () => { editor.commands.unsetHighlight(); if (name !== 'Default') editor.chain().focus().setHighlight({ color }).run(); onOpenChange(false); },
+                },
+                    h('span', { className: 'novel-pop-left' }, h('span', { className: 'novel-swatch', style: { backgroundColor: color } }, 'A'), h('span', null, name)),
+                    activeHl?.name === name && Icon('check', 16),
+                )),
+            );
+        }
+
+        /* ---- app: editor card + markdown round-trip panel ---- */
+        function App() {
+            const editorRef = useRef(null);
+            const syncing = useRef(false);
+            const [markdown, setMarkdown] = useState('');
+            const [openNode, setOpenNode] = useState(false);
+            const [openLink, setOpenLink] = useState(false);
+            const [openColor, setOpenColor] = useState(false);
+
+            const sep = () => h('div', { className: 'novel-sep' });
+
+            const slashMenu = h(EditorCommand, { className: '' },
+                h(EditorCommandEmpty, { className: 'novel-slash-empty' }, 'No results'),
+                h(EditorCommandList, null,
+                    suggestionItems.map((item) => h(EditorCommandItem, {
+                        key: item.title, value: item.title, keywords: item.searchTerms,
+                        onCommand: (val) => item.command(val),
+                    },
+                        h('div', { className: 'novel-slash-badge' }, item.icon),
+                        h('div', null,
+                            h('div', { className: 'novel-slash-title' }, item.title),
+                            h('div', { className: 'novel-slash-desc' }, item.description),
+                        ),
+                    )),
+                ),
+            );
+
+            const bubble = h(EditorBubble, { className: 'novel-bubble', tippyOptions: { placement: 'top' } },
+                h(NodeSelector, { open: openNode, onOpenChange: setOpenNode }), sep(),
+                h(LinkSelector, { open: openLink, onOpenChange: setOpenLink }), sep(),
+                h(MathSelector), sep(),
+                h(TextButtons), sep(),
+                h(ColorSelector, { open: openColor, onOpenChange: setOpenColor }),
+            );
+
+            const onEditorChange = (editor) => { if (!syncing.current) setMarkdown(editor.storage.markdown.getMarkdown()); };
+
+            const editorContent = h(EditorContent, {
+                className: 'novel-editor',
+                initialContent: seedContent,
+                extensions,
+                editorProps: {
+                    handleDOMEvents: { keydown: (_view, event) => handleCommandNavigation(event) },
+                    handlePaste: (view, event) => handleImagePaste(view, event, uploadFn),
+                    handleDrop: (view, event, _slice, moved) => handleImageDrop(view, event, moved, uploadFn),
+                    attributes: { class: 'novel-prose' },
+                },
+                onCreate: ({ editor }) => { editorRef.current = editor; setMarkdown(editor.storage.markdown.getMarkdown()); },
+                onUpdate: ({ editor }) => onEditorChange(editor),
+                slotAfter: h(ImageResizer),
+            }, slashMenu, bubble);
+
+            const onMarkdownInput = (e) => {
+                const value = e.target.value;
+                setMarkdown(value);
+                const editor = editorRef.current;
+                if (!editor) return;
+                // emitUpdate=false keeps onUpdate from firing back into the textarea mid-typing.
+                syncing.current = true;
+                editor.commands.setContent(value, false);
+                syncing.current = false;
+            };
+
+            return h(React.Fragment, null,
+                h(EditorRoot, null, editorContent),
+                h('h2', { className: 'md-export-title' }, 'MARKDOWN 2-WAY EDITABLE'),
+                h('textarea', { className: 'md-export-output', id: 'novel-markdown-output', rows: 14, spellCheck: false, value: markdown, onChange: onMarkdownInput }),
+            );
+        }
+
+        createRoot(document.getElementById('novel-target')).render(h(App));
+    </script>
+
+</body>
+</html>

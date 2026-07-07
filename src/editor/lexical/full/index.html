@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lexical Full</title>
+    <style>
+        html {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+                Helvetica, Arial, sans-serif;
+            font-size: 15px;
+            color: rgb(5, 5, 5);
+        }
+        body { margin: 0; }
+
+        /* Toolbar — white bar, borderless rounded buttons, light-blue active. */
+        .toolbar {
+            display: flex; flex-wrap: wrap; align-items: center; gap: 2px;
+            background: #fff; border-bottom: 1px solid #ddd; padding: 6px 8px;
+            position: sticky; top: 0; z-index: 20;
+        }
+        .toolbar button {
+            border: 0; background: none; border-radius: 8px; padding: 6px 10px;
+            font: inherit; font-size: 14px; color: #777; line-height: 1; cursor: pointer;
+        }
+        .toolbar button:hover:not(:disabled) { background: #eee; }
+        .toolbar button:disabled { cursor: not-allowed; opacity: 0.35; }
+        .toolbar button.is-active { background: rgb(223, 232, 250); color: #1b1b1b; }
+        .toolbar .divider { width: 1px; align-self: stretch; background: #eaeaea; margin: 2px 4px; }
+
+        /* Editor content — grows with the page, no inner scroll, ≥1rem left space. */
+        .lex-content { padding: 18px 28px 32px; outline: none; caret-color: rgb(5, 5, 5); line-height: 1.6; min-height: 140px; }
+        .lex-content:focus { outline: none; }
+
+        /* Content styles translated from Lexical's playground editor theme. */
+        .lex-content .PlaygroundEditorTheme__paragraph { margin: 0 0 8px; position: relative; }
+        .lex-content .PlaygroundEditorTheme__quote {
+            margin: 0 0 10px; margin-left: 20px; color: rgb(101, 103, 107);
+            border-left: 4px solid rgb(206, 208, 212); padding-left: 16px;
+        }
+        .lex-content .PlaygroundEditorTheme__h1 { font-size: 24px; color: rgb(5, 5, 5); font-weight: 400; margin: 0 0 12px; }
+        .lex-content .PlaygroundEditorTheme__h2 { font-size: 16px; color: rgb(101, 103, 107); font-weight: 700; margin: 0 0 8px; text-transform: uppercase; }
+        .lex-content .PlaygroundEditorTheme__h3 { font-size: 12px; margin: 0 0 8px; text-transform: uppercase; }
+
+        .lex-content .PlaygroundEditorTheme__textBold { font-weight: bold; }
+        .lex-content .PlaygroundEditorTheme__textItalic { font-style: italic; }
+        .lex-content .PlaygroundEditorTheme__textUnderline { text-decoration: underline; }
+        .lex-content .PlaygroundEditorTheme__textStrikethrough { text-decoration: line-through; }
+        .lex-content .PlaygroundEditorTheme__textUnderlineStrikethrough { text-decoration: underline line-through; }
+        .lex-content .PlaygroundEditorTheme__textSubscript { font-size: 0.8em; vertical-align: sub !important; }
+        .lex-content .PlaygroundEditorTheme__textSuperscript { font-size: 0.8em; vertical-align: super; }
+        .lex-content .PlaygroundEditorTheme__textCode {
+            background-color: rgb(240, 242, 245); padding: 1px 0.25rem;
+            font-family: Menlo, Consolas, Monaco, monospace; font-size: 94%;
+        }
+        .lex-content .PlaygroundEditorTheme__textHighlight {
+            background: rgba(255, 212, 0, 0.14); border-bottom: 2px solid rgba(255, 212, 0, 0.3);
+        }
+        .lex-content .PlaygroundEditorTheme__link { color: rgb(33, 111, 219); text-decoration: none; }
+        .lex-content .PlaygroundEditorTheme__link:hover { text-decoration: underline; cursor: pointer; }
+
+        /* Code block + line-number gutter + Prism token colors. */
+        .lex-content .PlaygroundEditorTheme__code {
+            background-color: rgb(240, 242, 245); font-family: Menlo, Consolas, Monaco, monospace;
+            display: block; line-height: 1.53; font-size: 13px; margin: 8px 0; padding: 8px 8px 8px 52px;
+            overflow-x: auto; position: relative; tab-size: 2; white-space: pre; box-sizing: border-box;
+        }
+        .lex-content .PlaygroundEditorTheme__code:before {
+            content: attr(data-gutter); position: absolute; background-color: #eee; left: 0; top: 0;
+            border-right: 1px solid #ccc; padding: 8px; color: #777; white-space: pre-wrap;
+            text-align: right; min-width: 25px; height: 100%; box-sizing: border-box;
+        }
+        .lex-content .PlaygroundEditorTheme__tokenComment { color: slategray; }
+        .lex-content .PlaygroundEditorTheme__tokenPunctuation { color: #999; }
+        .lex-content .PlaygroundEditorTheme__tokenProperty { color: #905; }
+        .lex-content .PlaygroundEditorTheme__tokenSelector { color: #690; }
+        .lex-content .PlaygroundEditorTheme__tokenOperator { color: #9a6e3a; }
+        .lex-content .PlaygroundEditorTheme__tokenAttr { color: #07a; }
+        .lex-content .PlaygroundEditorTheme__tokenVariable { color: #e90; }
+        .lex-content .PlaygroundEditorTheme__tokenFunction { color: #dd4a68; }
+
+        /* Lists + check list. */
+        .lex-content .PlaygroundEditorTheme__ul { padding: 0; margin: 0; list-style-position: outside; }
+        .lex-content .PlaygroundEditorTheme__ol1 { padding: 0; margin: 0; list-style-position: outside; }
+        .lex-content .PlaygroundEditorTheme__ol2 { padding: 0; margin: 0; list-style-type: upper-alpha; list-style-position: outside; }
+        .lex-content .PlaygroundEditorTheme__ol3 { padding: 0; margin: 0; list-style-type: lower-alpha; list-style-position: outside; }
+        .lex-content .PlaygroundEditorTheme__listItem { margin: 0 32px; }
+        .lex-content .PlaygroundEditorTheme__nestedListItem { list-style-type: none; }
+        .lex-content .PlaygroundEditorTheme__nestedListItem:before,
+        .lex-content .PlaygroundEditorTheme__nestedListItem:after { display: none; }
+        .lex-content .PlaygroundEditorTheme__listItemChecked,
+        .lex-content .PlaygroundEditorTheme__listItemUnchecked {
+            position: relative; margin-left: 8px; margin-right: 8px; padding-left: 24px; padding-right: 24px;
+            list-style-type: none; outline: none;
+        }
+        .lex-content .PlaygroundEditorTheme__listItemChecked { text-decoration: line-through; }
+        .lex-content .PlaygroundEditorTheme__listItemUnchecked:before,
+        .lex-content .PlaygroundEditorTheme__listItemChecked:before {
+            content: ''; width: 16px; height: 16px; top: 2px; left: 0; cursor: pointer;
+            display: block; background-size: cover; position: absolute; border-radius: 2px;
+        }
+        .lex-content .PlaygroundEditorTheme__listItemUnchecked:before { border: 1px solid #999; }
+        .lex-content .PlaygroundEditorTheme__listItemChecked:before { border: 1px solid rgb(61, 135, 245); background-color: #3d87f5; }
+        .lex-content .PlaygroundEditorTheme__listItemChecked:after {
+            content: ''; cursor: pointer; border-color: #fff; border-style: solid; position: absolute;
+            display: block; top: 6px; width: 3px; left: 6px; height: 6px; transform: rotate(45deg);
+            border-width: 0 2px 2px 0;
+        }
+
+        /* Marks / highlight. */
+        .lex-content .PlaygroundEditorTheme__mark {
+            background: rgba(255, 212, 0, 0.14); border-bottom: 2px solid rgba(255, 212, 0, 0.3); padding-bottom: 2px;
+        }
+
+        /* Tables. */
+        .lex-content .PlaygroundEditorTheme__table {
+            border-collapse: collapse; border-spacing: 0; table-layout: fixed;
+            width: fit-content; margin: 16px 0; overflow: visible;
+        }
+        .lex-content .PlaygroundEditorTheme__tableCell {
+            border: 1px solid #bbb; width: 90px; vertical-align: top; text-align: start;
+            padding: 6px 8px; position: relative; outline: none;
+        }
+        .lex-content .PlaygroundEditorTheme__tableCellHeader { background-color: #f2f3f5; text-align: start; }
+        .lex-content .PlaygroundEditorTheme__tableSelected { outline: 2px solid rgb(60, 132, 244); }
+        .lex-content .PlaygroundEditorTheme__tableScrollableWrapper { overflow-x: auto; margin: 16px 0; }
+        .lex-content .PlaygroundEditorTheme__tableScrollableWrapper > .PlaygroundEditorTheme__table { margin: 0; }
+
+        /* Horizontal rule. */
+        .lex-content .PlaygroundEditorTheme__hr { padding: 2px 0; border: none; margin: 1em 0; cursor: pointer; }
+        .lex-content .PlaygroundEditorTheme__hr:after { content: ''; display: block; height: 2px; background-color: #ccc; }
+        .lex-content .PlaygroundEditorTheme__hr.PlaygroundEditorTheme__hrSelected { outline: 2px solid rgb(60, 132, 244); user-select: none; }
+
+        /* Markdown round-trip panel. */
+        .md-export-title { border-top: 1px solid #d0d7de; margin: 0; padding: 0.5rem 1rem; font-size: 0.75rem; letter-spacing: 0.04em; color: #6e7781; background: #f6f8fa; }
+        .md-export-output { width: 100%; box-sizing: border-box; padding: 1rem; font-family: monospace; field-sizing: content; border: none; resize: none; }
+    </style>
+</head>
+<body>
+
+    <div id="toolbar" class="toolbar"></div>
+
+    <div id="lexical-target" class="lex-content" contenteditable="true" spellcheck="false"></div>
+
+    <h2 class="md-export-title">MARKDOWN 2-WAY EDITABLE</h2>
+    <textarea class="md-export-output" id="lexical-markdown-output" rows="16" spellcheck="false"></textarea>
+
+    <!-- Prism auto-highlights on load; keep it manual so it never touches the live editor DOM. -->
+    <script>window.Prism = { manual: true };</script>
+
+    <!-- Import map generated by @jspm/generator: JSPM modules import their deps as
+         bare specifiers, so this map pins the demo's whole dependency graph to
+         exact versions — one copy of each package (a second copy of the core would
+         break instanceof node-identity checks). -->
+    <script type="importmap">
+    {
+        "imports": {
+            "@lexical/code": "https://ga.jspm.io/npm:@lexical/code@0.46.0/dist/LexicalCode.prod.mjs",
+            "@lexical/extension": "https://ga.jspm.io/npm:@lexical/extension@0.46.0/dist/LexicalExtension.prod.mjs",
+            "@lexical/history": "https://ga.jspm.io/npm:@lexical/history@0.46.0/dist/LexicalHistory.prod.mjs",
+            "@lexical/link": "https://ga.jspm.io/npm:@lexical/link@0.46.0/dist/LexicalLink.prod.mjs",
+            "@lexical/list": "https://ga.jspm.io/npm:@lexical/list@0.46.0/dist/LexicalList.prod.mjs",
+            "@lexical/markdown": "https://ga.jspm.io/npm:@lexical/markdown@0.46.0/dist/LexicalMarkdown.prod.mjs",
+            "@lexical/rich-text": "https://ga.jspm.io/npm:@lexical/rich-text@0.46.0/dist/LexicalRichText.prod.mjs",
+            "@lexical/selection": "https://ga.jspm.io/npm:@lexical/selection@0.46.0/dist/LexicalSelection.prod.mjs",
+            "@lexical/table": "https://ga.jspm.io/npm:@lexical/table@0.46.0/dist/LexicalTable.prod.mjs",
+            "@lexical/utils": "https://ga.jspm.io/npm:@lexical/utils@0.46.0/dist/LexicalUtils.prod.mjs",
+            "lexical": "https://ga.jspm.io/npm:lexical@0.46.0/dist/Lexical.prod.mjs"
+        },
+        "scopes": {
+            "https://ga.jspm.io/": {
+                "@lexical/clipboard": "https://ga.jspm.io/npm:@lexical/clipboard@0.46.0/dist/LexicalClipboard.prod.mjs",
+                "@lexical/code-core": "https://ga.jspm.io/npm:@lexical/code-core@0.46.0/dist/LexicalCodeCore.prod.mjs",
+                "@lexical/code-prism": "https://ga.jspm.io/npm:@lexical/code-prism@0.46.0/dist/LexicalCodePrism.prod.mjs",
+                "@lexical/dragon": "https://ga.jspm.io/npm:@lexical/dragon@0.46.0/dist/LexicalDragon.prod.mjs",
+                "@lexical/html": "https://ga.jspm.io/npm:@lexical/html@0.46.0/dist/LexicalHtml.prod.mjs",
+                "prismjs": "https://ga.jspm.io/npm:prismjs@1.30.0/prism.js",
+                "prismjs/components/": "https://ga.jspm.io/npm:prismjs@1.30.0/components/"
+            }
+        }
+    }
+    </script>
+
+    <script type="module">
+        // Lexical's core is framework-agnostic, so this demo wires the full editor
+        // up in vanilla JS (no React). Every @lexical/* package shares the single
+        // pinned copy of the core, so node instanceof checks stay valid.
+        import {
+            createEditor, $getRoot, $getSelection, $isRangeSelection, $setSelection,
+            $createParagraphNode, $createTextNode, $isElementNode, $isRootOrShadowRoot,
+            $isTextNode, $isParagraphNode, FORMAT_TEXT_COMMAND, FORMAT_ELEMENT_COMMAND,
+            UNDO_COMMAND, REDO_COMMAND, CAN_UNDO_COMMAND, CAN_REDO_COMMAND,
+            COMMAND_PRIORITY_LOW, COMMAND_PRIORITY_EDITOR,
+        } from 'lexical';
+        import {
+            registerRichText, HeadingNode, QuoteNode,
+            $createHeadingNode, $createQuoteNode, $isHeadingNode, $isQuoteNode,
+        } from '@lexical/rich-text';
+        import { registerHistory, createEmptyHistoryState } from '@lexical/history';
+        import {
+            ListNode, ListItemNode, registerList, registerCheckList, $isListNode,
+            INSERT_UNORDERED_LIST_COMMAND, INSERT_ORDERED_LIST_COMMAND,
+            INSERT_CHECK_LIST_COMMAND, REMOVE_LIST_COMMAND,
+        } from '@lexical/list';
+        import { CodeNode, CodeHighlightNode, registerCodeHighlighting, $createCodeNode, $isCodeNode } from '@lexical/code';
+        import { LinkNode, $toggleLink, TOGGLE_LINK_COMMAND, $isLinkNode } from '@lexical/link';
+        import { $setBlocksType, $forEachSelectedTextNode } from '@lexical/selection';
+        import {
+            TableNode, TableCellNode, TableRowNode, registerTablePlugin,
+            registerTableSelectionObserver, INSERT_TABLE_COMMAND, TableCellHeaderStates,
+            $createTableNode, $createTableRowNode, $createTableCellNode,
+            $isTableNode, $isTableCellNode, $isTableRowNode,
+        } from '@lexical/table';
+        import { mergeRegister, $findMatchingParent, $getNearestNodeOfType, $insertNodeToNearestRoot } from '@lexical/utils';
+        import {
+            HorizontalRuleNode, $createHorizontalRuleNode, $isHorizontalRuleNode,
+            INSERT_HORIZONTAL_RULE_COMMAND,
+        } from '@lexical/extension';
+        import {
+            $convertFromMarkdownString, $convertToMarkdownString, registerMarkdownShortcuts,
+            TRANSFORMERS, CHECK_LIST, isTableRowDivider,
+        } from '@lexical/markdown';
+
+        const output = document.getElementById('lexical-markdown-output');
+
+        /* -------- Extra Markdown transformers ported from Lexical's playground:
+           horizontal rules and (primitive) tables, which @lexical/markdown ships
+           no transformer for. CHECK_LIST is also opt-in (not in TRANSFORMERS). ---- */
+        const HR = {
+            dependencies: [HorizontalRuleNode],
+            export: (node) => ($isHorizontalRuleNode(node) ? '***' : null),
+            regExp: /^(---|\*\*\*|___)\s?$/,
+            replace: (parentNode, _1, _2, isImport) => {
+                const line = $createHorizontalRuleNode();
+                if (isImport || parentNode.getNextSibling() != null) parentNode.replace(line);
+                else parentNode.insertBefore(line);
+                line.selectNext();
+            },
+            triggerOnEnter: true,
+            type: 'element',
+        };
+
+        const TABLE_ROW_REG_EXP = /^(?:\|)(.+)(?:\|)\s?$/;
+        const getTableColumnsSize = (table) => {
+            const row = table.getFirstChild();
+            return $isTableRowNode(row) ? row.getChildrenSize() : 0;
+        };
+        const $createTableCell = (textContent) => {
+            textContent = textContent.replace(/\\n/g, '\n');
+            const cell = $createTableCellNode(TableCellHeaderStates.NO_STATUS);
+            $convertFromMarkdownString(textContent, PLAYGROUND_TRANSFORMERS, cell);
+            return cell;
+        };
+        const mapToTableCells = (textContent) => {
+            const match = textContent.match(TABLE_ROW_REG_EXP);
+            if (!match || !match[1]) return null;
+            return match[1].split('|').map((text) => $createTableCell(text));
+        };
+        const TABLE = {
+            dependencies: [TableNode, TableRowNode, TableCellNode],
+            export: (node) => {
+                if (!$isTableNode(node)) return null;
+                const outputRows = [];
+                for (const row of node.getChildren()) {
+                    if (!$isTableRowNode(row)) continue;
+                    const rowOutput = [];
+                    let isHeaderRow = false;
+                    for (const cell of row.getChildren()) {
+                        if ($isTableCellNode(cell)) {
+                            rowOutput.push($convertToMarkdownString(PLAYGROUND_TRANSFORMERS, cell).replace(/\n/g, '\\n').trim());
+                            if (cell.__headerState === TableCellHeaderStates.ROW) isHeaderRow = true;
+                        }
+                    }
+                    outputRows.push(`| ${rowOutput.join(' | ')} |`);
+                    if (isHeaderRow) outputRows.push(`| ${rowOutput.map(() => '---').join(' | ')} |`);
+                }
+                return outputRows.join('\n');
+            },
+            regExp: TABLE_ROW_REG_EXP,
+            replace: (parentNode, _1, match) => {
+                if (isTableRowDivider(match[0])) {
+                    const table = parentNode.getPreviousSibling();
+                    if (!table || !$isTableNode(table)) return;
+                    const rows = table.getChildren();
+                    const lastRow = rows[rows.length - 1];
+                    if (!lastRow || !$isTableRowNode(lastRow)) return;
+                    lastRow.getChildren().forEach((cell) => {
+                        if ($isTableCellNode(cell)) cell.setHeaderStyles(TableCellHeaderStates.ROW, TableCellHeaderStates.ROW);
+                    });
+                    parentNode.remove();
+                    return;
+                }
+                const matchCells = mapToTableCells(match[0]);
+                if (matchCells == null) return;
+                const rows = [matchCells];
+                let sibling = parentNode.getPreviousSibling();
+                let maxCells = matchCells.length;
+                while (sibling) {
+                    if (!$isParagraphNode(sibling) || sibling.getChildrenSize() !== 1) break;
+                    const firstChild = sibling.getFirstChild();
+                    if (!$isTextNode(firstChild)) break;
+                    const cells = mapToTableCells(firstChild.getTextContent());
+                    if (cells == null) break;
+                    maxCells = Math.max(maxCells, cells.length);
+                    rows.unshift(cells);
+                    const previousSibling = sibling.getPreviousSibling();
+                    sibling.remove();
+                    sibling = previousSibling;
+                }
+                const table = $createTableNode();
+                for (const cells of rows) {
+                    const tableRow = $createTableRowNode();
+                    table.append(tableRow);
+                    for (let i = 0; i < maxCells; i++) tableRow.append(i < cells.length ? cells[i] : $createTableCell(''));
+                }
+                const previousSibling = parentNode.getPreviousSibling();
+                if ($isTableNode(previousSibling) && getTableColumnsSize(previousSibling) === maxCells) {
+                    previousSibling.append(...table.getChildren());
+                    parentNode.remove();
+                } else {
+                    parentNode.replace(table);
+                }
+                table.selectEnd();
+            },
+            type: 'element',
+        };
+
+        const PLAYGROUND_TRANSFORMERS = [TABLE, HR, CHECK_LIST, ...TRANSFORMERS];
+
+        const SEED = [
+            '# Lexical full demo',
+            '',
+            '## Text formatting',
+            '',
+            'A paragraph with **bold**, *italic*, `inline code`, ~~strikethrough~~, ==highlight==, and a [link](https://lexical.dev).',
+            '',
+            '### Lists',
+            '',
+            '- Bullet one',
+            '- Bullet two',
+            '    - Nested bullet',
+            '',
+            '1. First',
+            '2. Second',
+            '',
+            '- [x] Write the demo',
+            '- [ ] Ship it',
+            '',
+            '> A blockquote with a point to make.',
+            '',
+            '```js',
+            'function greet(name) {',
+            '  return `Hello, ${name}!`;',
+            '}',
+            '```',
+            '',
+            '---',
+            '',
+            '| Name | Role | Age |',
+            '| --- | --- | --- |',
+            '| Ada | Engineer | 36 |',
+            '| Alan | Mathematician | 41 |',
+        ].join('\n');
+
+        const theme = {
+            paragraph: 'PlaygroundEditorTheme__paragraph',
+            quote: 'PlaygroundEditorTheme__quote',
+            heading: {
+                h1: 'PlaygroundEditorTheme__h1',
+                h2: 'PlaygroundEditorTheme__h2',
+                h3: 'PlaygroundEditorTheme__h3',
+            },
+            hr: 'PlaygroundEditorTheme__hr',
+            hrSelected: 'PlaygroundEditorTheme__hrSelected',
+            link: 'PlaygroundEditorTheme__link',
+            code: 'PlaygroundEditorTheme__code',
+            codeHighlight: {
+                atrule: 'PlaygroundEditorTheme__tokenAttr',
+                attr: 'PlaygroundEditorTheme__tokenAttr',
+                boolean: 'PlaygroundEditorTheme__tokenProperty',
+                builtin: 'PlaygroundEditorTheme__tokenSelector',
+                cdata: 'PlaygroundEditorTheme__tokenComment',
+                char: 'PlaygroundEditorTheme__tokenSelector',
+                class: 'PlaygroundEditorTheme__tokenFunction',
+                'class-name': 'PlaygroundEditorTheme__tokenFunction',
+                comment: 'PlaygroundEditorTheme__tokenComment',
+                constant: 'PlaygroundEditorTheme__tokenProperty',
+                doctype: 'PlaygroundEditorTheme__tokenComment',
+                entity: 'PlaygroundEditorTheme__tokenOperator',
+                function: 'PlaygroundEditorTheme__tokenFunction',
+                important: 'PlaygroundEditorTheme__tokenVariable',
+                keyword: 'PlaygroundEditorTheme__tokenAttr',
+                namespace: 'PlaygroundEditorTheme__tokenVariable',
+                number: 'PlaygroundEditorTheme__tokenProperty',
+                operator: 'PlaygroundEditorTheme__tokenOperator',
+                prolog: 'PlaygroundEditorTheme__tokenComment',
+                property: 'PlaygroundEditorTheme__tokenProperty',
+                punctuation: 'PlaygroundEditorTheme__tokenPunctuation',
+                regex: 'PlaygroundEditorTheme__tokenVariable',
+                selector: 'PlaygroundEditorTheme__tokenSelector',
+                string: 'PlaygroundEditorTheme__tokenSelector',
+                symbol: 'PlaygroundEditorTheme__tokenProperty',
+                tag: 'PlaygroundEditorTheme__tokenProperty',
+                url: 'PlaygroundEditorTheme__tokenOperator',
+                variable: 'PlaygroundEditorTheme__tokenVariable',
+            },
+            list: {
+                ul: 'PlaygroundEditorTheme__ul',
+                listitem: 'PlaygroundEditorTheme__listItem',
+                listitemChecked: 'PlaygroundEditorTheme__listItemChecked',
+                listitemUnchecked: 'PlaygroundEditorTheme__listItemUnchecked',
+                nested: { listitem: 'PlaygroundEditorTheme__nestedListItem' },
+                olDepth: [
+                    'PlaygroundEditorTheme__ol1',
+                    'PlaygroundEditorTheme__ol2',
+                    'PlaygroundEditorTheme__ol3',
+                ],
+            },
+            table: 'PlaygroundEditorTheme__table',
+            tableCell: 'PlaygroundEditorTheme__tableCell',
+            tableCellHeader: 'PlaygroundEditorTheme__tableCellHeader',
+            tableRowStriping: 'PlaygroundEditorTheme__tableRowStriping',
+            tableScrollableWrapper: 'PlaygroundEditorTheme__tableScrollableWrapper',
+            tableSelected: 'PlaygroundEditorTheme__tableSelected',
+            text: {
+                bold: 'PlaygroundEditorTheme__textBold',
+                code: 'PlaygroundEditorTheme__textCode',
+                highlight: 'PlaygroundEditorTheme__textHighlight',
+                italic: 'PlaygroundEditorTheme__textItalic',
+                strikethrough: 'PlaygroundEditorTheme__textStrikethrough',
+                subscript: 'PlaygroundEditorTheme__textSubscript',
+                superscript: 'PlaygroundEditorTheme__textSuperscript',
+                underline: 'PlaygroundEditorTheme__textUnderline',
+                underlineStrikethrough: 'PlaygroundEditorTheme__textUnderlineStrikethrough',
+            },
+            mark: 'PlaygroundEditorTheme__mark',
+        };
+
+        const editor = createEditor({
+            namespace: 'markdown-arena-lexical-full',
+            theme,
+            nodes: [
+                HeadingNode, QuoteNode, ListNode, ListItemNode, CodeNode, CodeHighlightNode,
+                LinkNode, TableNode, TableCellNode, TableRowNode, HorizontalRuleNode,
+            ],
+            onError: (error) => { throw error; },
+        });
+        editor.setRootElement(document.getElementById('lexical-target'));
+
+        mergeRegister(
+            registerRichText(editor),
+            registerHistory(editor, createEmptyHistoryState(), 300),
+            registerList(editor),
+            registerCheckList(editor),
+            registerCodeHighlighting(editor),
+            registerTablePlugin(editor),
+            registerTableSelectionObserver(editor),
+            registerMarkdownShortcuts(editor, PLAYGROUND_TRANSFORMERS),
+        );
+
+        // Horizontal rules and links need their own command handlers in vanilla.
+        editor.registerCommand(INSERT_HORIZONTAL_RULE_COMMAND, () => {
+            const selection = $getSelection();
+            if (!$isRangeSelection(selection)) return false;
+            $insertNodeToNearestRoot($createHorizontalRuleNode());
+            return true;
+        }, COMMAND_PRIORITY_EDITOR);
+        editor.registerCommand(TOGGLE_LINK_COMMAND, (payload) => {
+            if (payload === null) { $toggleLink(null); return true; }
+            if (typeof payload === 'string') { $toggleLink(payload); return true; }
+            const { url, ...rest } = payload;
+            $toggleLink(url, rest);
+            return true;
+        }, COMMAND_PRIORITY_LOW);
+
+        // Parse Markdown into the editor. Clearing the selection after a full
+        // rebuild leaves nothing for the reconciler to force into the DOM, so
+        // focus stays in the textarea while editing it (the next Enter lands there).
+        const importMarkdown = (md) => {
+            $convertFromMarkdownString(md, PLAYGROUND_TRANSFORMERS);
+            $setSelection(null);
+        };
+
+        // Seed the document, then add underline / sub / superscript directly as
+        // formatted text nodes — Markdown has no syntax for those marks.
+        editor.update(() => {
+            importMarkdown(SEED);
+            const root = $getRoot();
+            const heading = $createHeadingNode('h3');
+            heading.append($createTextNode('More marks'));
+            const underline = $createTextNode('underline'); underline.toggleFormat('underline');
+            const sub = $createTextNode('2'); sub.toggleFormat('subscript');
+            const sup = $createTextNode('2'); sup.toggleFormat('superscript');
+            const para = $createParagraphNode();
+            para.append(
+                $createTextNode('This line has '), underline,
+                $createTextNode(', plus H'), sub,
+                $createTextNode('O and E = mc'), sup, $createTextNode('.'),
+            );
+            root.append(heading, para);
+            $setSelection(null);
+        });
+
+        /* -------- Toolbar: declarative buttons + one state-refresh function. ---- */
+        const FORMATS = ['bold', 'italic', 'underline', 'strikethrough', 'code', 'subscript', 'superscript'];
+        const state = { blockType: '', align: '', link: false, canUndo: false, canRedo: false, format: {} };
+
+        const $blockElement = (selection) => {
+            const anchorNode = selection.anchor.getNode();
+            let element = anchorNode.getKey() === 'root'
+                ? anchorNode
+                : $findMatchingParent(anchorNode, (e) => {
+                    const parent = e.getParent();
+                    return parent !== null && $isRootOrShadowRoot(parent);
+                });
+            if (element === null) element = anchorNode.getTopLevelElementOrThrow();
+            return element;
+        };
+        const $blockType = (element, selection) => {
+            if ($isListNode(element)) {
+                const listNode = $getNearestNodeOfType(selection.anchor.getNode(), ListNode);
+                return (listNode || element).getListType();
+            }
+            if ($isHeadingNode(element)) return element.getTag();
+            if ($isQuoteNode(element)) return 'quote';
+            if ($isCodeNode(element)) return 'code';
+            return element.getType();
+        };
+        const computeState = () => {
+            const selection = $getSelection();
+            if (!$isRangeSelection(selection)) {
+                state.blockType = ''; state.align = ''; state.link = false;
+                for (const f of FORMATS) state.format[f] = false;
+                return;
+            }
+            for (const f of FORMATS) state.format[f] = selection.hasFormat(f);
+            const element = $blockElement(selection);
+            state.blockType = element ? $blockType(element, selection) : '';
+            state.align = element && $isElementNode(element) ? element.getFormatType() : '';
+            const node = selection.anchor.getNode();
+            state.link = $findMatchingParent(node, $isLinkNode) != null || $isLinkNode(node);
+        };
+
+        const setBlock = (creator) => editor.update(() => {
+            const selection = $getSelection();
+            if ($isRangeSelection(selection)) $setBlocksType(selection, creator);
+        });
+        const toggleList = (type, insertCommand) => {
+            if (state.blockType === type) editor.dispatchCommand(REMOVE_LIST_COMMAND, undefined);
+            else editor.dispatchCommand(insertCommand, undefined);
+        };
+        const toggleLink = () => {
+            const url = window.prompt('Link URL', state.link ? '' : 'https://');
+            if (url === null) return;
+            editor.dispatchCommand(TOGGLE_LINK_COMMAND, url === '' ? null : url);
+        };
+        const clearFormatting = () => editor.update(() => {
+            const selection = $getSelection();
+            if (!$isRangeSelection(selection)) return;
+            $forEachSelectedTextNode((textNode) => {
+                if (textNode.getStyle() !== '') textNode.setStyle('');
+                if (textNode.getFormat() !== 0) textNode.setFormat(0);
+            });
+        });
+        const heading = (tag, label) => ({ label, run: () => setBlock(() => $createHeadingNode(tag)), active: () => state.blockType === tag });
+        const mark = (type, label) => ({ label, run: () => editor.dispatchCommand(FORMAT_TEXT_COMMAND, type), active: () => state.format[type] });
+        const align = (type, label) => ({ label, run: () => editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, type), active: () => state.align === type });
+
+        const groups = [
+            [
+                { label: 'Undo', run: () => editor.dispatchCommand(UNDO_COMMAND, undefined), can: () => state.canUndo },
+                { label: 'Redo', run: () => editor.dispatchCommand(REDO_COMMAND, undefined), can: () => state.canRedo },
+            ],
+            [
+                { label: 'Paragraph', run: () => setBlock(() => $createParagraphNode()), active: () => state.blockType === 'paragraph' },
+                heading('h1', 'H1'), heading('h2', 'H2'), heading('h3', 'H3'),
+                { label: 'Bullet List', run: () => toggleList('bullet', INSERT_UNORDERED_LIST_COMMAND), active: () => state.blockType === 'bullet' },
+                { label: 'Numbered List', run: () => toggleList('number', INSERT_ORDERED_LIST_COMMAND), active: () => state.blockType === 'number' },
+                { label: 'Check List', run: () => toggleList('check', INSERT_CHECK_LIST_COMMAND), active: () => state.blockType === 'check' },
+                { label: 'Quote', run: () => setBlock(() => $createQuoteNode()), active: () => state.blockType === 'quote' },
+                { label: 'Code Block', run: () => setBlock(() => $createCodeNode()), active: () => state.blockType === 'code' },
+            ],
+            [
+                mark('bold', 'Bold'), mark('italic', 'Italic'), mark('underline', 'Underline'),
+                mark('strikethrough', 'Strikethrough'), mark('code', 'Code'),
+                mark('subscript', 'Subscript'), mark('superscript', 'Superscript'),
+            ],
+            [
+                { label: 'Link', run: toggleLink, active: () => state.link },
+            ],
+            [
+                align('left', 'Left'), align('center', 'Center'), align('right', 'Right'), align('justify', 'Justify'),
+            ],
+            [
+                { label: 'Insert Table', run: () => editor.dispatchCommand(INSERT_TABLE_COMMAND, { columns: '3', rows: '3', includeHeaders: { rows: true, columns: false } }) },
+                { label: 'Horizontal Rule', run: () => editor.dispatchCommand(INSERT_HORIZONTAL_RULE_COMMAND, undefined) },
+            ],
+            [
+                { label: 'Clear Formatting', run: clearFormatting },
+            ],
+        ];
+
+        const toolbar = document.getElementById('toolbar');
+        const buttonRefs = [];
+        groups.forEach((group, i) => {
+            if (i > 0) { const d = document.createElement('div'); d.className = 'divider'; toolbar.appendChild(d); }
+            for (const def of group) {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.textContent = def.label;
+                btn.addEventListener('mousedown', (e) => e.preventDefault());
+                btn.addEventListener('click', () => def.run());
+                toolbar.appendChild(btn);
+                buttonRefs.push({ btn, def });
+            }
+        });
+
+        const applyToolbar = () => {
+            for (const { btn, def } of buttonRefs) {
+                if (def.active) btn.classList.toggle('is-active', !!def.active());
+                if (def.can) btn.disabled = !def.can();
+            }
+        };
+        editor.registerCommand(CAN_UNDO_COMMAND, (payload) => { state.canUndo = payload; applyToolbar(); return false; }, COMMAND_PRIORITY_LOW);
+        editor.registerCommand(CAN_REDO_COMMAND, (payload) => { state.canRedo = payload; applyToolbar(); return false; }, COMMAND_PRIORITY_LOW);
+
+        // Editor -> markdown. Never write the textarea while it has focus: imports
+        // cascade follow-up updates (table wiring, code highlighting) whose
+        // re-serialization would otherwise echo back over the text being typed.
+        editor.registerUpdateListener(({ editorState }) => {
+            editorState.read(() => {
+                computeState();
+                if (document.activeElement !== output) output.value = $convertToMarkdownString(PLAYGROUND_TRANSFORMERS);
+            });
+            applyToolbar();
+        });
+
+        // Markdown -> editor: re-parse the edited text back into the document.
+        output.addEventListener('input', () => {
+            editor.update(() => importMarkdown(output.value));
+        });
+    </script>
+
+</body>
+</html>

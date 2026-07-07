@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vditor Full</title>
+    <style>
+        body { margin: 0; }
+
+        /* Grow with the page: no fixed inner-scroll box on the editing surface. */
+        #vditor-target .vditor { border: none; }
+        #vditor-target .vditor-content,
+        #vditor-target .vditor-ir,
+        #vditor-target .vditor-wysiwyg,
+        #vditor-target .vditor-sv { overflow: visible; }
+        /* Vditor centers the writing surface by giving the content element
+           (pre.vditor-reset) a large horizontal padding inline from JS, and mirrors
+           that inset onto the toolbar; override both so the content is left-aligned.
+           Keep enough left inset for the IR block-type hints (H1, </>) in the gutter. */
+        #vditor-target .vditor-reset { padding-left: 3rem !important; padding-right: 1rem !important; }
+        #vditor-target .vditor-toolbar { padding-left: 0.5rem !important; }
+        /* Toolbar tooltips render above the buttons and clip at the pinned
+           toolbar's top edge — disable them (they're pure-CSS pseudo-elements). */
+        #vditor-target .vditor-toolbar .vditor-tooltipped::before,
+        #vditor-target .vditor-toolbar .vditor-tooltipped::after { display: none; }
+
+        /* Markdown round-trip panel — matches the minimal demo shell. */
+        .md-export-title { border-top: 1px solid #d0d7de; margin: 0; padding: 0.5rem 1rem; font-size: 0.75rem; letter-spacing: 0.04em; color: #6e7781; background: #f6f8fa; }
+        .md-export-output { width: 100%; box-sizing: border-box; padding: 1rem; font-family: monospace; field-sizing: content; border: none; resize: none; }
+    </style>
+</head>
+<body>
+
+    <div id="vditor-target"></div>
+
+    <h2 class="md-export-title">MARKDOWN 2-WAY EDITABLE</h2>
+    <textarea class="md-export-output" id="vditor-markdown-output" rows="14" spellcheck="false"></textarea>
+
+    <script type="module">
+        // Vditor ships as a classic global-`Vditor` script (official self-contained
+        // build, loaded as a raw exact-version file). Its UMD wrapper assigns the
+        // global via `this`, which is undefined inside a module, so inject it as a
+        // classic script and await it before mounting. Vditor then lazy-loads its
+        // Lute engine, i18n strings, icons, highlight.js, KaTeX, mermaid and emoji
+        // images at runtime from a base URL — every asset comes from this same
+        // pinned path via the `cdn` option (the default would be an unpinned CDN).
+        const CDN = 'https://cdn.jsdelivr.net/npm/vditor@3.11.2';
+
+        const loadScript = (src) => new Promise((resolve, reject) => {
+            const s = document.createElement('script');
+            s.src = src;
+            s.onload = resolve;
+            s.onerror = () => reject(new Error('Failed to load ' + src));
+            document.head.appendChild(s);
+        });
+        await loadScript(CDN + '/dist/index.min.js');
+        const Vditor = window.Vditor;
+
+        const cssLink = document.createElement('link');
+        cssLink.rel = 'stylesheet';
+        cssLink.href = CDN + '/dist/index.css';
+        document.head.appendChild(cssLink);
+
+        const output = document.getElementById('vditor-markdown-output');
+
+        // Seed exercises every full feature: headings, all inline marks, links,
+        // bullet/ordered/task lists, table, image, blockquote, fenced code with a
+        // language (highlighted), inline code, inline & block math, a mermaid
+        // diagram, an emoji shortcode, a footnote and a horizontal rule.
+        const content = [
+            '# Vditor full feature demo',
+            '',
+            'Instant-rendering (IR) mode renders Markdown live as you type, Typora-style.',
+            '',
+            '## Inline formatting',
+            '',
+            'A paragraph with **bold**, *italic*, ~~strike~~, `inline code`, ==highlight==,',
+            'H<sub>2</sub>O, E = mc<sup>2</sup>, an emoji :tada: and a [link](https://b3log.org/vditor).',
+            '',
+            '## Lists',
+            '',
+            '- Bullet one',
+            '- Bullet two',
+            '  - Nested bullet',
+            '',
+            '1. First',
+            '2. Second',
+            '',
+            '- [x] Write the demo',
+            '- [ ] Ship it',
+            '',
+            '## Table',
+            '',
+            '| Name | Role | Age |',
+            '| --- | --- | --- |',
+            '| Ada | Engineer | 36 |',
+            '| Alan | Mathematician | 41 |',
+            '',
+            '## Image',
+            '',
+            '![Placeholder image](https://markdownarena.com/600x200.png)',
+            '',
+            '## Blockquote & code',
+            '',
+            '> A blockquote with a point to make.',
+            '',
+            '```js',
+            "const greet = (name) => console.log(`Hello, ${name}!`);",
+            "greet('Markdown');",
+            '```',
+            '',
+            '## Math',
+            '',
+            'The identity $e^{i\\pi} + 1 = 0$ is famous, and $\\sqrt{2}$ typesets inline.',
+            '',
+            '$$\\int_a^b x^2 \\,dx = \\frac{b^3 - a^3}{3}$$',
+            '',
+            '## Diagram',
+            '',
+            '```mermaid',
+            'graph LR',
+            '  A[Markdown] --> B{Vditor}',
+            '  B --> C[Instant Render]',
+            '  B --> D[Split Preview]',
+            '```',
+            '',
+            'A statement needing a citation.[^1]',
+            '',
+            '[^1]: The footnote text.',
+            '',
+            '---',
+        ].join('\n');
+
+        // Guards the editor -> markdown -> editor loop from echoing back.
+        let syncing = false;
+        // Vditor mounts asynchronously (Lute loads first); block the
+        // markdown -> editor direction until `after` reports it is ready.
+        let ready = false;
+
+        // Config modeled on Vditor's official demo (github.com/Vanessa219/vditor
+        // demo/index.js): the full default toolbar, IR mode (the library default),
+        // pinned toolbar, KaTeX math, and GFM preview extras (toc, mark,
+        // footnotes, autoSpace). `upload` (needs a backend) and `record` (needs
+        // microphone permission) are dropped from the default toolbar, and the
+        // official demo's text counter (a tooltip-styled pill at the toolbar's
+        // right edge) is off; everything else is kept. English UI strings, cache
+        // off for deterministic reloads, height auto so content grows with the page.
+        const vditor = new Vditor('vditor-target', {
+            cdn: CDN,
+            mode: 'ir',
+            lang: 'en_US',
+            height: 'auto',
+            minHeight: 480,
+            cache: { enable: false },
+            toolbar: [
+                'emoji', 'headings', 'bold', 'italic', 'strike', 'link', '|',
+                'list', 'ordered-list', 'check', 'outdent', 'indent', '|',
+                'quote', 'line', 'code', 'inline-code', 'insert-before', 'insert-after', '|',
+                'table', '|',
+                'undo', 'redo', '|',
+                'fullscreen', 'edit-mode',
+                {
+                    name: 'more',
+                    toolbar: [
+                        'both', 'code-theme', 'content-theme', 'export',
+                        'outline', 'preview', 'devtools', 'info', 'help',
+                    ],
+                },
+            ],
+            toolbarConfig: { pin: true },
+            // wysiwyg mode (reachable via the edit-mode toggle) calls
+            // customWysiwygToolbar unconditionally when a block is clicked and
+            // throws if it is absent; a no-op keeps mode-switching error-free.
+            customWysiwygToolbar: () => {},
+            outline: { enable: false, position: 'right' },
+            preview: {
+                markdown: { toc: true, mark: true, footnotes: true, autoSpace: true },
+                math: { engine: 'KaTeX', inlineDigit: true },
+            },
+            hint: {
+                // `:` emoji autocomplete uses Vditor's defaults; add English
+                // @-mention and #-tag hints (the official demo's are in Chinese).
+                extend: [
+                    {
+                        key: '@',
+                        hint: (key) => [
+                            { value: '@ada', html: 'Ada Lovelace' },
+                            { value: '@alan', html: 'Alan Turing' },
+                        ].filter((i) => i.value.toLowerCase().includes(key.toLowerCase())),
+                    },
+                    {
+                        key: '#',
+                        hint: (key) => [
+                            { value: '#markdown', html: '#markdown' },
+                            { value: '#vditor', html: '#vditor' },
+                        ].filter((i) => i.value.toLowerCase().includes(key.toLowerCase())),
+                    },
+                ],
+            },
+            value: content,
+            // Vditor -> Markdown: fires with the Markdown text on every edit.
+            input: (markdown) => {
+                if (syncing) return;
+                output.value = markdown;
+            },
+            after: () => {
+                ready = true;
+                output.value = vditor.getValue();
+            },
+        });
+
+        // Markdown -> editor: replace the whole document with the edited text
+        // (setValue does not fire `input`, so nothing echoes back).
+        output.addEventListener('input', () => {
+            if (!ready) return;
+            syncing = true;
+            vditor.setValue(output.value);
+            syncing = false;
+        });
+    </script>
+
+</body>
+</html>

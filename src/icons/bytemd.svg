@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <!-- ByteMD ships no logo of its own; this is a hand-made placeholder mark:
+       a monospace B with the Markdown logo's downward arrow. -->
+  <rect width="128" height="128" rx="24" fill="#24292f"/>
+  <text x="44" y="90" font-family="ui-monospace, Menlo, Consolas, monospace" font-size="76" font-weight="700" fill="#ffffff" text-anchor="middle">B</text>
+  <path d="M94 58v34m0 0-14-15m14 15 14-15" fill="none" stroke="#54aeff" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

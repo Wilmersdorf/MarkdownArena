@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ByteMD Full</title>
+    <!-- Editor chrome + preview typography + code theme + math, all raw
+         exact-version files from jsDelivr, pinned to the versions the import
+         map resolves. Order and choices mirror ByteMD's official playground:
+         github-markdown-css for the preview, highlight.js "vs" theme, then
+         KaTeX last so it overrides code padding. -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bytemd@1.22.0/dist/index.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@5.9.0/github-markdown.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.11.1/styles/vs.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.47/dist/katex.min.css">
+    <style>
+        body { margin: 0; }
+
+        /* Grow with the page: force the whole ByteMD height chain to auto so the
+           split editor + preview expand to their content instead of scrolling
+           internally (pairs with viewportMargin: Infinity, which makes
+           CodeMirror render every line up front). .CodeMirror-scroll uses
+           overflow: clip, not hidden: CodeMirror 5 reserves 50px past the last
+           line and hidden still lets a bottom-edge click script-scroll that
+           phantom range into view (jumping the text); clip disables it. */
+        #bytemd-target .bytemd,
+        #bytemd-target .bytemd-body,
+        #bytemd-target .bytemd-editor,
+        #bytemd-target .bytemd-preview,
+        #bytemd-target .CodeMirror { height: auto; }
+        #bytemd-target .bytemd-preview { overflow: visible; }
+        #bytemd-target .CodeMirror-scroll {
+            overflow: clip !important;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        /* ByteMD caps the source column and preview body at 800px and centers
+           them — uncap both so they grow with their panes. Plus a little
+           breathing room on the left of the source pane. */
+        #bytemd-target .CodeMirror-lines { max-width: none; padding-left: 0.5rem; }
+        #bytemd-target .bytemd-preview .markdown-body { max-width: none; padding: 1rem 1.5rem; }
+
+        .md-export-title { border-top: 1px solid #d0d7de; margin: 0; padding: 0.5rem 1rem; font-size: 0.75rem; letter-spacing: 0.04em; color: #6e7781; background: #f6f8fa; }
+        .md-export-output { width: 100%; box-sizing: border-box; padding: 1rem; font-family: monospace; field-sizing: content; border: none; resize: none; }
+    </style>
+</head>
+<body>
+
+    <div id="bytemd-target"></div>
+
+    <h2 class="md-export-title">MARKDOWN 2-WAY EDITABLE</h2>
+    <textarea class="md-export-output" id="bytemd-markdown-output" rows="14" spellcheck="false"></textarea>
+
+    <!-- Seed markdown (ByteMD's official playground text), kept verbatim in an
+         inert script so its backticks/quotes/indented footnote need no escaping. -->
+    <script type="text/plain" id="seed">
+---
+layout: post
+title: Blogging Like a Hacker
+---
+
+## Markdown Basic Syntax
+
+I just love **bold text**. Italicized text is the _cat's meow_. At the command prompt, type `nano`.
+
+My favorite markdown editor is [ByteMD](https://github.com/bytedance/bytemd).
+
+1. First item
+2. Second item
+3. Third item
+
+> Dorothy followed her through many of the beautiful rooms in her castle.
+
+```js
+import gfm from '@bytemd/plugin-gfm'
+import { Editor, Viewer } from 'bytemd'
+
+const plugins = [
+  gfm(),
+  // Add more plugins here
+]
+
+const editor = new Editor({
+  target: document.body, // DOM to render
+  props: {
+    value: '',
+    plugins,
+  },
+})
+
+editor.on('change', (e) => {
+  editor.$set({ value: e.detail.value })
+})
+```
+
+## GFM Extended Syntax
+
+Automatic URL Linking: https://github.com/bytedance/bytemd
+
+~~The world is flat.~~ We now know that the world is round.
+
+- [x] Write the press release
+- [ ] Update the website
+- [ ] Contact the media
+
+| Syntax    | Description |
+| --------- | ----------- |
+| Header    | Title       |
+| Paragraph | Text        |
+
+## Footnotes
+
+Here's a simple footnote,[^1] and here's a longer one.[^bignote]
+
+[^1]: This is the first footnote.
+[^bignote]: Here's one with multiple paragraphs and code.
+
+    Indent paragraphs to include them in the footnote.
+
+    `{ my code }`
+
+    Add as many paragraphs as you like.
+
+## Gemoji
+
+Thumbs up: :+1:, thumbs down: :-1:.
+
+Families: :family_man_man_boy_boy:
+
+Long flags: :wales:, :scotland:, :england:.
+
+## Math Equation
+
+Inline math equation: $a+b$
+
+$$
+\displaystyle \left( \sum_{k=1}^n a_k b_k \right)^2 \leq \left( \sum_{k=1}^n a_k^2 \right) \left( \sum_{k=1}^n b_k^2 \right)
+$$
+
+## Mermaid Diagrams
+
+```mermaid
+graph TD;
+  A-->B;
+  A-->C;
+  B-->D;
+  C-->D;
+```
+</script>
+
+    <!-- Some deps (mermaid, dompurify) read process.env at module scope. -->
+    <script>window.process = { env: { NODE_ENV: 'production' } };</script>
+
+    <!-- Import map generated by @jspm/generator, pinning the whole dependency
+         graph of bytemd + its eight official plugins to exact versions so one
+         copy of each package loads. Hand-tuned bits, all deep paths JSPM's build
+         does not serve as export subpaths but jsDelivr does: codemirror-ssr (and
+         its continuelist addon), parse5's parser entry, and mdast-util-to-markdown's
+         lib/* (imported piecemeal by the mdast-util-gfm/math packages) — the extra
+         jsDelivr scope maps that package's own deps back to the shared JSPM copies.
+         dagre-d3-es is pinned so mermaid's lazily-imported flowchart renderer
+         resolves. -->
+    <script type="importmap">
+    {
+        "imports": {
+            "bytemd": "https://ga.jspm.io/npm:bytemd@1.22.0/dist/index.mjs",
+            "@bytemd/plugin-breaks": "https://ga.jspm.io/npm:@bytemd/plugin-breaks@1.22.0/dist/index.mjs",
+            "@bytemd/plugin-frontmatter": "https://ga.jspm.io/npm:@bytemd/plugin-frontmatter@1.22.0/dist/index.mjs",
+            "@bytemd/plugin-gemoji": "https://ga.jspm.io/npm:@bytemd/plugin-gemoji@1.22.0/dist/index.mjs",
+            "@bytemd/plugin-gfm": "https://ga.jspm.io/npm:@bytemd/plugin-gfm@1.22.0/dist/index.mjs",
+            "@bytemd/plugin-highlight": "https://ga.jspm.io/npm:@bytemd/plugin-highlight@1.22.0/dist/index.mjs",
+            "@bytemd/plugin-math": "https://ga.jspm.io/npm:@bytemd/plugin-math@1.22.0/dist/index.mjs",
+            "@bytemd/plugin-medium-zoom": "https://ga.jspm.io/npm:@bytemd/plugin-medium-zoom@1.22.0/dist/index.mjs",
+            "@bytemd/plugin-mermaid": "https://ga.jspm.io/npm:@bytemd/plugin-mermaid@1.22.0/dist/index.mjs"
+        },
+        "scopes": {
+            "https://ga.jspm.io/": {
+                "#lib/color.js": "https://ga.jspm.io/npm:unist-util-visit-parents@5.1.3/lib/color.browser.js",
+                "#lib/minpath.js": "https://ga.jspm.io/npm:vfile@5.3.7/lib/minpath.browser.js",
+                "#lib/minproc.js": "https://ga.jspm.io/npm:vfile@5.3.7/lib/minproc.browser.js",
+                "#lib/minurl.js": "https://ga.jspm.io/npm:vfile@5.3.7/lib/minurl.browser.js",
+                "@braintree/sanitize-url": "https://ga.jspm.io/npm:@braintree/sanitize-url@6.0.4/dist/index.js",
+                "@popperjs/core": "https://ga.jspm.io/npm:@popperjs/core@2.11.8/dist/cjs/popper.js",
+                "bail": "https://ga.jspm.io/npm:bail@2.0.2/index.js",
+                "ccount": "https://ga.jspm.io/npm:ccount@2.0.1/index.js",
+                "character-entities-html4": "https://ga.jspm.io/npm:character-entities-html4@2.1.0/index.js",
+                "character-entities-legacy": "https://ga.jspm.io/npm:character-entities-legacy@3.0.0/index.js",
+                "codemirror-ssr": "https://cdn.jsdelivr.net/npm/codemirror-ssr@0.65.0/lib/codemirror.js",
+                "codemirror-ssr/": "https://cdn.jsdelivr.net/npm/codemirror-ssr@0.65.0/",
+                "codemirror-ssr/addon/edit/continuelist.js": "https://cdn.jsdelivr.net/npm/codemirror-ssr@0.65.0/addon/edit/continuelist.js",
+                "comma-separated-tokens": "https://ga.jspm.io/npm:comma-separated-tokens@2.0.3/index.js",
+                "d3": "https://ga.jspm.io/npm:d3@7.9.0/src/index.js",
+                "d3-array": "https://ga.jspm.io/npm:d3-array@3.2.4/src/index.js",
+                "d3-axis": "https://ga.jspm.io/npm:d3-axis@3.0.0/src/index.js",
+                "d3-brush": "https://ga.jspm.io/npm:d3-brush@3.0.0/src/index.js",
+                "d3-chord": "https://ga.jspm.io/npm:d3-chord@3.0.1/src/index.js",
+                "d3-color": "https://ga.jspm.io/npm:d3-color@3.1.0/src/index.js",
+                "d3-contour": "https://ga.jspm.io/npm:d3-contour@4.0.2/src/index.js",
+                "d3-delaunay": "https://ga.jspm.io/npm:d3-delaunay@6.0.4/src/index.js",
+                "d3-dispatch": "https://ga.jspm.io/npm:d3-dispatch@3.0.1/src/index.js",
+                "d3-drag": "https://ga.jspm.io/npm:d3-drag@3.0.0/src/index.js",
+                "d3-dsv": "https://ga.jspm.io/npm:d3-dsv@3.0.1/src/index.js",
+                "d3-ease": "https://ga.jspm.io/npm:d3-ease@3.0.1/src/index.js",
+                "d3-fetch": "https://ga.jspm.io/npm:d3-fetch@3.0.1/src/index.js",
+                "d3-force": "https://ga.jspm.io/npm:d3-force@3.0.0/src/index.js",
+                "d3-format": "https://ga.jspm.io/npm:d3-format@3.1.2/src/index.js",
+                "d3-geo": "https://ga.jspm.io/npm:d3-geo@3.1.1/src/index.js",
+                "d3-hierarchy": "https://ga.jspm.io/npm:d3-hierarchy@3.1.2/src/index.js",
+                "d3-interpolate": "https://ga.jspm.io/npm:d3-interpolate@3.0.1/src/index.js",
+                "d3-path": "https://ga.jspm.io/npm:d3-path@3.1.0/src/index.js",
+                "d3-polygon": "https://ga.jspm.io/npm:d3-polygon@3.0.1/src/index.js",
+                "d3-quadtree": "https://ga.jspm.io/npm:d3-quadtree@3.0.1/src/index.js",
+                "d3-random": "https://ga.jspm.io/npm:d3-random@3.0.1/src/index.js",
+                "d3-scale": "https://ga.jspm.io/npm:d3-scale@4.0.2/src/index.js",
+                "d3-scale-chromatic": "https://ga.jspm.io/npm:d3-scale-chromatic@3.1.0/src/index.js",
+                "d3-selection": "https://ga.jspm.io/npm:d3-selection@3.0.0/src/index.js",
+                "d3-shape": "https://ga.jspm.io/npm:d3-shape@3.2.0/src/index.js",
+                "d3-time": "https://ga.jspm.io/npm:d3-time@3.1.0/src/index.js",
+                "d3-time-format": "https://ga.jspm.io/npm:d3-time-format@4.1.0/src/index.js",
+                "d3-timer": "https://ga.jspm.io/npm:d3-timer@3.0.1/src/index.js",
+                "d3-transition": "https://ga.jspm.io/npm:d3-transition@3.0.1/src/index.js",
+                "d3-zoom": "https://ga.jspm.io/npm:d3-zoom@3.0.0/src/index.js",
+                "dagre-d3-es": "https://ga.jspm.io/npm:dagre-d3-es@7.0.13/src/index.js",
+                "dagre-d3-es/": "https://ga.jspm.io/npm:dagre-d3-es@7.0.13/",
+                "dayjs": "https://ga.jspm.io/npm:dayjs@1.11.21/dayjs.min.js",
+                "decode-named-character-reference": "https://ga.jspm.io/npm:decode-named-character-reference@1.3.0/index.dom.js",
+                "delaunator": "https://ga.jspm.io/npm:delaunator@5.1.0/index.js",
+                "dompurify": "https://ga.jspm.io/npm:dompurify@3.4.0/dist/purify.es.mjs",
+                "escape-string-regexp": "https://ga.jspm.io/npm:escape-string-regexp@5.0.0/index.js",
+                "extend": "https://ga.jspm.io/npm:extend@3.0.2/index.js",
+                "fault": "https://ga.jspm.io/npm:fault@2.0.1/index.js",
+                "format": "https://ga.jspm.io/npm:format@0.2.2/format.js",
+                "gemoji": "https://ga.jspm.io/npm:gemoji@7.1.0/index.js",
+                "hast-util-from-parse5": "https://ga.jspm.io/npm:hast-util-from-parse5@7.1.2/index.js",
+                "hast-util-parse-selector": "https://ga.jspm.io/npm:hast-util-parse-selector@3.1.1/index.js",
+                "hast-util-raw": "https://ga.jspm.io/npm:hast-util-raw@7.2.3/index.js",
+                "hast-util-sanitize": "https://ga.jspm.io/npm:hast-util-sanitize@4.1.0/index.js",
+                "hast-util-to-html": "https://ga.jspm.io/npm:hast-util-to-html@8.0.4/index.js",
+                "hast-util-to-parse5": "https://ga.jspm.io/npm:hast-util-to-parse5@7.1.0/index.js",
+                "hast-util-whitespace": "https://ga.jspm.io/npm:hast-util-whitespace@2.0.1/index.js",
+                "hastscript": "https://ga.jspm.io/npm:hastscript@7.2.0/index.js",
+                "highlight.js": "https://ga.jspm.io/npm:highlight.js@11.11.1/es/index.js",
+                "html-void-elements": "https://ga.jspm.io/npm:html-void-elements@2.0.1/index.js",
+                "internmap": "https://ga.jspm.io/npm:internmap@2.0.3/src/index.js",
+                "is-buffer": "https://ga.jspm.io/npm:is-buffer@2.0.5/index.js",
+                "is-plain-obj": "https://ga.jspm.io/npm:is-plain-obj@4.1.0/index.js",
+                "js-yaml": "https://ga.jspm.io/npm:js-yaml@4.3.0/dist/js-yaml.mjs",
+                "katex": "https://ga.jspm.io/npm:katex@0.16.47/dist/katex.mjs",
+                "khroma": "https://ga.jspm.io/npm:khroma@2.1.0/dist/index.js",
+                "lodash-es": "https://ga.jspm.io/npm:lodash-es@4.18.1/lodash.js",
+                "lodash-es/": "https://ga.jspm.io/npm:lodash-es@4.18.1/",
+                "longest-streak": "https://ga.jspm.io/npm:longest-streak@3.1.0/index.js",
+                "markdown-table": "https://ga.jspm.io/npm:markdown-table@3.0.4/index.js",
+                "mdast-util-definitions": "https://ga.jspm.io/npm:mdast-util-definitions@5.1.2/index.js",
+                "mdast-util-find-and-replace": "https://ga.jspm.io/npm:mdast-util-find-and-replace@2.2.2/index.js",
+                "mdast-util-from-markdown": "https://ga.jspm.io/npm:mdast-util-from-markdown@1.3.1/index.js",
+                "mdast-util-frontmatter": "https://ga.jspm.io/npm:mdast-util-frontmatter@1.0.1/index.js",
+                "mdast-util-gfm": "https://ga.jspm.io/npm:mdast-util-gfm@2.0.2/index.js",
+                "mdast-util-gfm-autolink-literal": "https://ga.jspm.io/npm:mdast-util-gfm-autolink-literal@1.0.3/index.js",
+                "mdast-util-gfm-footnote": "https://ga.jspm.io/npm:mdast-util-gfm-footnote@1.0.2/index.js",
+                "mdast-util-gfm-strikethrough": "https://ga.jspm.io/npm:mdast-util-gfm-strikethrough@1.0.3/index.js",
+                "mdast-util-gfm-table": "https://ga.jspm.io/npm:mdast-util-gfm-table@1.0.7/index.js",
+                "mdast-util-gfm-task-list-item": "https://ga.jspm.io/npm:mdast-util-gfm-task-list-item@1.0.2/index.js",
+                "mdast-util-math": "https://ga.jspm.io/npm:mdast-util-math@2.0.2/index.js",
+                "mdast-util-newline-to-break": "https://ga.jspm.io/npm:mdast-util-newline-to-break@1.0.0/index.js",
+                "mdast-util-phrasing": "https://ga.jspm.io/npm:mdast-util-phrasing@3.0.1/index.js",
+                "mdast-util-to-hast": "https://ga.jspm.io/npm:mdast-util-to-hast@12.3.0/index.js",
+                "mdast-util-to-markdown/lib/": "https://cdn.jsdelivr.net/npm/mdast-util-to-markdown@1.5.0/lib/",
+                "mdast-util-to-markdown/lib/util/pattern-compile.js": "https://cdn.jsdelivr.net/npm/mdast-util-to-markdown@1.5.0/lib/util/pattern-compile.js",
+                "mdast-util-to-markdown/lib/util/safe.js": "https://cdn.jsdelivr.net/npm/mdast-util-to-markdown@1.5.0/lib/util/safe.js",
+                "mdast-util-to-markdown/lib/util/track.js": "https://cdn.jsdelivr.net/npm/mdast-util-to-markdown@1.5.0/lib/util/track.js",
+                "mdast-util-to-string": "https://ga.jspm.io/npm:mdast-util-to-string@3.2.0/index.js",
+                "medium-zoom": "https://ga.jspm.io/npm:medium-zoom@1.1.0/dist/medium-zoom.esm.js",
+                "mermaid": "https://ga.jspm.io/npm:mermaid@10.9.6/dist/mermaid.core.mjs",
+                "micromark-core-commonmark": "https://ga.jspm.io/npm:micromark-core-commonmark@1.1.0/index.js",
+                "micromark-extension-frontmatter": "https://ga.jspm.io/npm:micromark-extension-frontmatter@1.1.1/index.js",
+                "micromark-extension-frontmatter/matters.js": "https://ga.jspm.io/npm:micromark-extension-frontmatter@1.1.1/matters.js",
+                "micromark-extension-gfm": "https://ga.jspm.io/npm:micromark-extension-gfm@2.0.3/index.js",
+                "micromark-extension-gfm-autolink-literal": "https://ga.jspm.io/npm:micromark-extension-gfm-autolink-literal@1.0.5/index.js",
+                "micromark-extension-gfm-footnote": "https://ga.jspm.io/npm:micromark-extension-gfm-footnote@1.1.2/index.js",
+                "micromark-extension-gfm-strikethrough": "https://ga.jspm.io/npm:micromark-extension-gfm-strikethrough@1.0.7/index.js",
+                "micromark-extension-gfm-table": "https://ga.jspm.io/npm:micromark-extension-gfm-table@1.0.7/index.js",
+                "micromark-extension-gfm-tagfilter": "https://ga.jspm.io/npm:micromark-extension-gfm-tagfilter@1.0.2/index.js",
+                "micromark-extension-gfm-task-list-item": "https://ga.jspm.io/npm:micromark-extension-gfm-task-list-item@1.0.5/index.js",
+                "micromark-extension-math": "https://ga.jspm.io/npm:micromark-extension-math@2.1.2/index.js",
+                "micromark-factory-destination": "https://ga.jspm.io/npm:micromark-factory-destination@1.1.0/index.js",
+                "micromark-factory-label": "https://ga.jspm.io/npm:micromark-factory-label@1.1.0/index.js",
+                "micromark-factory-space": "https://ga.jspm.io/npm:micromark-factory-space@1.1.0/index.js",
+                "micromark-factory-title": "https://ga.jspm.io/npm:micromark-factory-title@1.1.0/index.js",
+                "micromark-factory-whitespace": "https://ga.jspm.io/npm:micromark-factory-whitespace@1.1.0/index.js",
+                "micromark-util-character": "https://ga.jspm.io/npm:micromark-util-character@1.2.0/index.js",
+                "micromark-util-chunked": "https://ga.jspm.io/npm:micromark-util-chunked@1.1.0/index.js",
+                "micromark-util-classify-character": "https://ga.jspm.io/npm:micromark-util-classify-character@1.1.0/index.js",
+                "micromark-util-combine-extensions": "https://ga.jspm.io/npm:micromark-util-combine-extensions@1.1.0/index.js",
+                "micromark-util-decode-numeric-character-reference": "https://ga.jspm.io/npm:micromark-util-decode-numeric-character-reference@1.1.0/index.js",
+                "micromark-util-decode-string": "https://ga.jspm.io/npm:micromark-util-decode-string@1.1.0/index.js",
+                "micromark-util-encode": "https://ga.jspm.io/npm:micromark-util-encode@1.1.0/index.js",
+                "micromark-util-html-tag-name": "https://ga.jspm.io/npm:micromark-util-html-tag-name@1.2.0/index.js",
+                "micromark-util-normalize-identifier": "https://ga.jspm.io/npm:micromark-util-normalize-identifier@1.1.0/index.js",
+                "micromark-util-resolve-all": "https://ga.jspm.io/npm:micromark-util-resolve-all@1.1.0/index.js",
+                "micromark-util-sanitize-uri": "https://ga.jspm.io/npm:micromark-util-sanitize-uri@1.2.0/index.js",
+                "micromark-util-subtokenize": "https://ga.jspm.io/npm:micromark-util-subtokenize@1.1.0/index.js",
+                "micromark/lib/": "https://ga.jspm.io/npm:micromark@3.2.0/lib/",
+                "parse5/lib/parser/index.js": "https://ga.jspm.io/npm:parse5@6.0.1/lib/parser/index.js",
+                "property-information": "https://ga.jspm.io/npm:property-information@6.5.0/index.js",
+                "rehype-raw": "https://ga.jspm.io/npm:rehype-raw@6.1.1/index.js",
+                "rehype-sanitize": "https://ga.jspm.io/npm:rehype-sanitize@5.0.1/index.js",
+                "rehype-stringify": "https://ga.jspm.io/npm:rehype-stringify@9.0.4/index.js",
+                "remark-breaks": "https://ga.jspm.io/npm:remark-breaks@3.0.3/index.js",
+                "remark-frontmatter": "https://ga.jspm.io/npm:remark-frontmatter@4.0.1/index.js",
+                "remark-gemoji": "https://ga.jspm.io/npm:remark-gemoji@7.0.1/index.js",
+                "remark-gfm": "https://ga.jspm.io/npm:remark-gfm@3.0.1/index.js",
+                "remark-math": "https://ga.jspm.io/npm:remark-math@5.1.1/index.js",
+                "remark-parse": "https://ga.jspm.io/npm:remark-parse@10.0.2/index.js",
+                "remark-rehype": "https://ga.jspm.io/npm:remark-rehype@10.1.0/index.js",
+                "robust-predicates": "https://ga.jspm.io/npm:robust-predicates@3.0.3/index.js",
+                "select-files": "https://ga.jspm.io/npm:select-files@1.0.1/dist/index.js",
+                "space-separated-tokens": "https://ga.jspm.io/npm:space-separated-tokens@2.0.2/index.js",
+                "stringify-entities": "https://ga.jspm.io/npm:stringify-entities@4.0.4/index.js",
+                "stylis": "https://ga.jspm.io/npm:stylis@4.4.0/index.js",
+                "tippy.js": "https://ga.jspm.io/npm:tippy.js@6.3.7/dist/tippy.cjs.js",
+                "trim-lines": "https://ga.jspm.io/npm:trim-lines@3.0.1/index.js",
+                "trough": "https://ga.jspm.io/npm:trough@2.2.0/index.js",
+                "ts-dedent": "https://ga.jspm.io/npm:ts-dedent@2.3.0/esm/index.js",
+                "unified": "https://ga.jspm.io/npm:unified@10.1.2/index.js",
+                "unist-util-generated": "https://ga.jspm.io/npm:unist-util-generated@2.0.1/index.js",
+                "unist-util-is": "https://ga.jspm.io/npm:unist-util-is@5.2.1/index.js",
+                "unist-util-position": "https://ga.jspm.io/npm:unist-util-position@4.0.4/index.js",
+                "unist-util-stringify-position": "https://ga.jspm.io/npm:unist-util-stringify-position@3.0.3/index.js",
+                "unist-util-visit": "https://ga.jspm.io/npm:unist-util-visit@4.1.2/index.js",
+                "unist-util-visit-parents": "https://ga.jspm.io/npm:unist-util-visit-parents@5.1.3/index.js",
+                "vfile": "https://ga.jspm.io/npm:vfile@5.3.7/index.js",
+                "vfile-location": "https://ga.jspm.io/npm:vfile-location@4.1.0/index.js",
+                "vfile-message": "https://ga.jspm.io/npm:vfile-message@3.1.4/index.js",
+                "web-namespaces": "https://ga.jspm.io/npm:web-namespaces@2.0.1/index.js",
+                "word-count": "https://ga.jspm.io/npm:word-count@0.2.2/index.js",
+                "zwitch": "https://ga.jspm.io/npm:zwitch@2.0.4/index.js"
+            },
+            "https://cdn.jsdelivr.net/npm/mdast-util-to-markdown@1.5.0/": {
+                "longest-streak": "https://ga.jspm.io/npm:longest-streak@3.1.0/index.js",
+                "mdast-util-phrasing": "https://ga.jspm.io/npm:mdast-util-phrasing@3.0.1/index.js",
+                "mdast-util-to-string": "https://ga.jspm.io/npm:mdast-util-to-string@3.2.0/index.js",
+                "micromark-util-decode-string": "https://ga.jspm.io/npm:micromark-util-decode-string@1.1.0/index.js",
+                "unist-util-visit": "https://ga.jspm.io/npm:unist-util-visit@4.1.2/index.js",
+                "zwitch": "https://ga.jspm.io/npm:zwitch@2.0.4/index.js"
+            }
+        }
+    }
+    </script>
+
+    <script type="module">
+        // ByteMD's UI is Svelte compiled to a framework-agnostic class. The full
+        // demo mirrors the official playground: the built-in toolbar plus its
+        // eight official plugins, in a split source/preview view.
+        import { Editor } from 'bytemd';
+        import gfm from '@bytemd/plugin-gfm';
+        import breaks from '@bytemd/plugin-breaks';
+        import frontmatter from '@bytemd/plugin-frontmatter';
+        import gemoji from '@bytemd/plugin-gemoji';
+        import highlight from '@bytemd/plugin-highlight';
+        import math from '@bytemd/plugin-math';
+        import mediumZoom from '@bytemd/plugin-medium-zoom';
+        import mermaid from '@bytemd/plugin-mermaid';
+
+        const output = document.getElementById('bytemd-markdown-output');
+        const content = document.getElementById('seed').textContent.trim();
+
+        // Same plugin set and options as bytemd.js.org/playground.
+        const plugins = [
+            gfm(),
+            breaks(),
+            frontmatter(),
+            gemoji(),
+            highlight(),
+            math({ katexOptions: { output: 'html' } }),
+            mediumZoom(),
+            mermaid(),
+        ];
+
+        const editor = new Editor({
+            target: document.getElementById('bytemd-target'),
+            props: {
+                value: content,
+                plugins,
+                // Split shows the highlighted source beside a live-rendered
+                // preview (where math, mermaid, tables, emoji actually render).
+                mode: 'split',
+                // Pairs with the height: auto CSS above: tell CodeMirror to render
+                // the whole document up front so the source pane sizes to content.
+                editorConfig: { viewportMargin: Infinity },
+            },
+        });
+
+        // Guards against the editor -> markdown -> editor update echoing back.
+        let syncing = false;
+
+        // ByteMD is a controlled component: nothing updates the value prop by
+        // itself, so every change writes the new value back with $set. The value
+        // already is Markdown, so it goes straight to the textarea.
+        editor.$on('change', (e) => {
+            editor.$set({ value: e.detail.value });
+            if (syncing) return;
+            output.value = e.detail.value;
+        });
+
+        // Markdown -> editor: replace the document with the edited text. $set
+        // applies on a microtask and the resulting change event echoes back into
+        // the handler above, so release the guard on a macrotask.
+        output.addEventListener('input', () => {
+            syncing = true;
+            editor.$set({ value: output.value });
+            setTimeout(() => { syncing = false; }, 0);
+        });
+
+        output.value = content;
+    </script>
+
+</body>
+</html>
