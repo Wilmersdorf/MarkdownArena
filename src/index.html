@@ -67,6 +67,10 @@
             flex: none;
             border-radius: 5px;
             background: linear-gradient(135deg, #2563eb, #7c3aed);
+            /* Size the gradient to the border box: with the default
+               padding-box origin the repeating tile wraps under the 1px
+               transparent border, rimming the box with the far end's color. */
+            background-origin: border-box;
             color: #fff;
             border: 1px solid transparent;
             font-family: inherit;
@@ -108,7 +112,8 @@
             gap: 0.4rem;
         }
         .site-links a,
-        .site-links .share-btn {
+        .site-links .share-btn,
+        .site-links .theme-btn {
             display: inline-flex;
             align-items: center;
             justify-content: center;
@@ -123,9 +128,15 @@
             transition: background 0.15s ease, color 0.15s ease;
         }
         .site-links a:hover,
-        .site-links .share-btn:hover { background: #e3e8ee; color: #1d4ed8; }
+        .site-links .share-btn:hover,
+        .site-links .theme-btn:hover { background: #e3e8ee; color: #1d4ed8; }
         .site-links .share-btn.is-copied { background: #dafbe1; color: #1a7f37; }
         .site-links svg { width: 1.25rem; height: 1.25rem; }
+        /* Theme toggle: moon in light mode, sun in dark. State driven by the
+           html.dark class (see the dark-mode block below), no ARIA. */
+        .theme-btn .theme-btn__sun { display: none; }
+        html.dark .theme-btn .theme-btn__sun { display: block; }
+        html.dark .theme-btn .theme-btn__moon { display: none; }
 
         /* ---- Arena stepper (header add/remove control) ---- */
         .arena-ctrl {
@@ -875,10 +886,48 @@
         }
         .md-calc[open] .md-calc__summary::before { transform: rotate(90deg); }
         .md-calc__body { margin: 0.5rem 0 0; line-height: 1.6; }
+
+        /* ---- Dark mode (CSS filter hack) ----
+           Everything is inverted + hue-rotated so light-themed content
+           (including the self-contained editor demos in their iframes) turns
+           dark for free; media is re-inverted so photos/logos keep true
+           colors. The brand logo is EXCLUDED: the filter clamps colors as
+           saturated as its gradient (no re-invert can restore them), so the
+           header's children are filtered individually and the logo is simply
+           left alone. The filter sits on these elements rather than html/body:
+           a filter makes its element the containing block for any fixed
+           descendant, which would pin the fixed .md-modal to the document
+           instead of the viewport. The modal lives OUTSIDE .app-root and gets
+           its own invert instead, so it stays viewport-fixed even when
+           scrolled. */
+        .app-root {
+            display: flex;
+            flex-direction: column;
+            flex: 1 1 auto;
+            min-height: 0;
+        }
+        html.dark #arenas,
+        html.dark .page-title,
+        html.dark .arena-ctrl,
+        html.dark .site-links,
+        html.dark .md-modal { filter: invert(1) hue-rotate(180deg); }
+        /* Re-invert media so it renders in true color; don't touch the demo
+           iframes — the point is the light demos go dark via the same invert. */
+        html.dark #arenas img,
+        html.dark #arenas video,
+        html.dark .md-modal img { filter: invert(1) hue-rotate(180deg); }
+        /* Dark canvas edge-to-edge (overscroll / short content): body sits
+           outside the inverted region, so paint it the color #f4f6f8 inverts to. */
+        html.dark body { background: #0b0d0f; }
     </style>
+    <!-- Set the theme before first paint so a dark reload never flashes white. -->
+    <script>
+        try { if (localStorage.getItem('theme') === 'dark') document.documentElement.classList.add('dark'); } catch (e) {}
+    </script>
 </head>
 <body>
 
+    <div class="app-root">
     <header class="site-header">
         <div class="brand">
             <button type="button" class="site-logo" id="brand-logo">M<span class="site-logo__arrow">↓</span>A</button>
@@ -890,6 +939,10 @@
             <button type="button" class="arena-ctrl__btn" id="arena-add" title="Add arena">+</button>
         </div>
         <nav class="site-links">
+            <button type="button" id="theme-btn" class="theme-btn" title="Switch to dark mode">
+                <svg class="theme-btn__moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                <svg class="theme-btn__sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+            </button>
             <button type="button" id="share-btn" class="share-btn">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
             </button>
@@ -926,6 +979,7 @@
                 <p class="placeholder">Select an editor to load its live demo.</p>
             </div>
         </section>
+    </div>
     </div>
 
     <!-- Markdown-support breakdown, opened from a score's info icon. Lives outside
@@ -2189,9 +2243,9 @@
         // "Show inactive" toggle is off by default, so only active editors
         // appear in every compare table AND in every dropdown menu.
         let showInactive = storage.get('show-inactive') === '1';
-        // "Compact view" toggle state — off by default (all columns shown). When on,
-        // each table gets an `is-compact` class that hides the lower-priority columns.
-        let compactView = storage.get('compact-view') === '1';
+        // "Compact view" toggle state — on by default. When on, each table gets an
+        // `is-compact` class that hides the lower-priority columns.
+        let compactView = storage.get('compact-view') !== '0';
 
         function editorComparator(key, dir) {
             const sort = COMPARE_SORTS[key] || COMPARE_SORTS.downloads;
@@ -2326,23 +2380,6 @@
                     <ul class="compare__note compare__benefits">${rows}</ul>`;
         }
 
-        // Some WYSIWYG editors also ship a plain code/Markdown source mode that these
-        // demos don't surface. Listed here (from each editor's optional `codeVersion`)
-        // so the omission is explicit. Ordered like the table (by weekly downloads).
-        function codeVersionSectionHtml() {
-            const withCode = editorList.filter(e => e.codeVersion);
-            if (!withCode.length) return '';
-            const rows = withCode.map(e => {
-                const icon = e.icon ? `<img class="omit-icon" src="${e.icon}" alt="" />` : '';
-                const label = badgeText({ text: e.codeVersion.via, link: e.codeVersion.url });
-                return `<li>${icon}<strong>${e.name}</strong>${label ? `: ${label}` : ''}</li>`;
-            }).join('');
-            return `
-                    <h2 class="compare__heading">Notes</h2>
-                    <p class="compare__note">These editors also have a code or Markdown style version, which has been omitted in the table for simplicity:</p>
-                    <ul class="compare__note compare__benefits">${rows}</ul>`;
-        }
-
         // The comparison view. Every arena shares the top part — the caption
         // and the sortable table, whose Demo buttons pick the owning arena's
         // editor — but only the PRIMARY arena gets the toggles and the notes
@@ -2394,7 +2431,6 @@
                         <li><strong>AI-ready</strong>: markdown is the native format LLMs read and write, so AI features just work.</li>
                     </ul>
                     ${omittedSectionHtml()}
-                    ${codeVersionSectionHtml()}
                     <h2 class="compare__heading">Card game</h2>
                     <p class="compare__note">There's also a <a class="compare-link" href="game/">card game</a>: play your deck's stats against the computer.</p>
                     <h2 class="compare__heading">Feedback</h2>
@@ -2487,6 +2523,23 @@
             });
             arena.viewport.appendChild(frame);
         }
+
+        /* ---------- Dark mode toggle ---------- */
+        // An early inline script (in <head>) already set html.dark from the
+        // stored choice before first paint; here we just wire the toggle and
+        // keep the button's tooltip in step. Default is light.
+        const THEME_KEY = 'theme';
+        const themeBtn = document.getElementById('theme-btn');
+        const applyTheme = (dark) => {
+            document.documentElement.classList.toggle('dark', dark);
+            themeBtn.title = dark ? 'Switch to light mode' : 'Switch to dark mode';
+        };
+        applyTheme(document.documentElement.classList.contains('dark'));
+        themeBtn.addEventListener('click', () => {
+            const dark = !document.documentElement.classList.contains('dark');
+            applyTheme(dark);
+            storage.set(THEME_KEY, dark ? 'dark' : 'light');
+        });
 
         /* ---------- Share button ---------- */
         // Use the native share sheet when available (mostly mobile); otherwise

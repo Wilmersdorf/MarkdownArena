@@ -126,10 +126,6 @@
       "name": "ProseMirror",
       "icon": "icons/prosemirror.svg",
       "type": "WYSIWYG",
-      "codeVersion": {
-        "via": "Markdown example (source toggle)",
-        "url": "https://prosemirror.net/examples/markdown/"
-      },
       "frameworks": [{ "name": "JS" }],
       "maintainer": {
         "name": "Marijn Haverbeke",
@@ -445,10 +441,6 @@
       "name": "CKEditor 5",
       "icon": "icons/ckeditor.svg",
       "type": "WYSIWYG",
-      "codeVersion": {
-        "via": "Source editing feature",
-        "url": "https://ckeditor.com/docs/ckeditor5/latest/features/source-editing/source-editing.html"
-      },
       "frameworks": [
         { "name": "JS" },
         {
@@ -563,10 +555,6 @@
       "name": "TinyMCE",
       "icon": "icons/tinymce.svg",
       "type": "WYSIWYG",
-      "codeVersion": {
-        "via": "Source code plugin",
-        "url": "https://www.tiny.cloud/docs/tinymce/latest/code/"
-      },
       "frameworks": [
         { "name": "JS" },
         {
@@ -849,10 +837,6 @@
       "name": "Toast UI Editor",
       "icon": "icons/toastui.svg",
       "type": "WYSIWYG",
-      "codeVersion": {
-        "via": "Markdown / WYSIWYG mode switch",
-        "url": "https://ui.toast.com/tui-editor"
-      },
       "frameworks": [
         { "name": "JS" },
         {
@@ -1028,10 +1012,6 @@
       "name": "MDXEditor",
       "icon": "icons/mdxeditor.svg",
       "type": "WYSIWYG",
-      "codeVersion": {
-        "via": "diffSourcePlugin source mode",
-        "url": "https://mdxeditor.dev/editor/docs/diff-source"
-      },
       "frameworks": [
         {
           "name": "React",
@@ -1150,10 +1130,6 @@
       "name": "Summernote",
       "icon": "icons/summernote.png",
       "type": "WYSIWYG",
-      "codeVersion": {
-        "via": "Codeview (HTML source view)",
-        "url": "https://summernote.org/deep-dive/"
-      },
       "frameworks": [{ "name": "JS" }],
       "maintainer": {
         "name": "Summernote",
@@ -1319,10 +1295,6 @@
       "name": "Vditor",
       "icon": "icons/vditor.png",
       "type": "WYSIWYG",
-      "codeVersion": {
-        "via": "sv (split view) / ir mode switch",
-        "url": "https://github.com/Vanessa219/vditor/blob/master/README_en_US.md#-editing-modes"
-      },
       "frameworks": [{ "name": "JS" }],
       "maintainer": {
         "name": "Vanessa",
